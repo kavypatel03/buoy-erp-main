@@ -50,7 +50,7 @@ exports.getDashboard = async (req, res) => {
       .from('app_settings')
       .select('value')
       .eq('key', 'registration_enabled')
-      .single();
+      .maybeSingle();
       
     if (!settingsError && settingsData) {
       regEnabled = settingsData.value === 'true' || settingsData.value === true;
@@ -68,26 +68,31 @@ exports.toggleRegister = async (req, res) => {
     const { enabled } = req.body;
     const isEnabled = enabled === 'true';
     
-    const { data: existingData } = await supabaseAdmin
+    const { data: existingData, error: fetchError } = await supabaseAdmin
       .from('app_settings')
       .select('*')
       .eq('key', 'registration_enabled')
       .maybeSingle();
 
+    if (fetchError) throw fetchError;
+
     if (existingData) {
-      await supabaseAdmin
+      const { error: updateError } = await supabaseAdmin
         .from('app_settings')
         .update({ value: isEnabled.toString() })
         .eq('key', 'registration_enabled');
+      if (updateError) throw updateError;
     } else {
-      await supabaseAdmin
+      const { error: insertError } = await supabaseAdmin
         .from('app_settings')
         .insert({ key: 'registration_enabled', value: isEnabled.toString() });
+      if (insertError) throw insertError;
     }
     
     res.redirect('/admin');
   } catch (err) {
-    res.redirect('/admin');
+    console.error("Toggle Error:", err);
+    res.render('dashboard', { users: [], regEnabled: true, error: "Failed to toggle registration: " + err.message });
   }
 };
 
