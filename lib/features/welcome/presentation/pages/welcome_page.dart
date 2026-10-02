@@ -6,9 +6,44 @@ import '../../../../app/constants/app_constants.dart';
 
 import '../../../../core/widgets/buoy_logo_widget.dart';
 import '../../../../core/widgets/custom_button.dart';
+import '../../../../core/services/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class WelcomePage extends StatelessWidget {
+class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
+
+  @override
+  State<WelcomePage> createState() => _WelcomePageState();
+}
+
+class _WelcomePageState extends State<WelcomePage> {
+  bool _isAutoLoggingIn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAutoLogin();
+  }
+
+  Future<void> _checkAutoLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rememberMe = prefs.getBool('rememberMe') ?? false;
+    
+    if (rememberMe) {
+      final email = prefs.getString('saved_email') ?? '';
+      final password = prefs.getString('saved_password') ?? '';
+      
+      if (email.isNotEmpty && password.isNotEmpty) {
+        setState(() => _isAutoLoggingIn = true);
+        final result = await AuthService.login(email, password);
+        if (result['success'] && mounted) {
+          Navigator.pushReplacementNamed(context, '/dashboard');
+        } else if (mounted) {
+          setState(() => _isAutoLoggingIn = false);
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,35 +104,40 @@ class WelcomePage extends StatelessWidget {
                       ],
                     ),
 
-                    Column(
-                      children: [
-                        const SizedBox(height: 32),
-                        CustomButton(
-                          text: 'Login',
-                          variant: CustomButtonVariant.primary,
-                          onPressed: () {
-                            Navigator.pushNamed(context, '/login');
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Or',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.textSecondary,
+                    _isAutoLoggingIn 
+                    ? const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 40.0),
+                        child: CircularProgressIndicator(),
+                      )
+                    : Column(
+                        children: [
+                          const SizedBox(height: 32),
+                          CustomButton(
+                            text: 'Login',
+                            variant: CustomButtonVariant.primary,
+                            onPressed: () {
+                              Navigator.pushNamed(context, '/login');
+                            },
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        CustomButton(
-                          text: 'Register',
-                          variant: CustomButtonVariant.secondary,
-                          onPressed: () {
-                            Navigator.pushNamed(context, '/register');
-                          },
-                        ),
-                      ],
-                    ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Or',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          CustomButton(
+                            text: 'Register',
+                            variant: CustomButtonVariant.secondary,
+                            onPressed: () {
+                              Navigator.pushNamed(context, '/register');
+                            },
+                          ),
+                        ],
+                      ),
 
 
                     Padding(

@@ -6,6 +6,7 @@ import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/erp_input_field.dart';
 import '../../../../core/widgets/google_logo_widget.dart';
 import '../../../../core/services/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -40,6 +41,16 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = false);
 
     if (result['success']) {
+      final prefs = await SharedPreferences.getInstance();
+      if (_rememberMe) {
+        await prefs.setBool('rememberMe', true);
+        await prefs.setString('saved_email', _emailController.text.trim());
+        await prefs.setString('saved_password', _passwordController.text);
+      } else {
+        await prefs.remove('rememberMe');
+        await prefs.remove('saved_email');
+        await prefs.remove('saved_password');
+      }
       Navigator.pushReplacementNamed(context, '/dashboard');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
