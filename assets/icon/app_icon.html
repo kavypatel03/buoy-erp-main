@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 0;
+    width: 1024px;
+    height: 1024px;
+    background-color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  .logo-box {
+    width: 800px;
+    height: 800px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .row {
+    display: flex;
+    align-items: baseline;
+    line-height: 0.85;
+  }
+  .b { color: #0038FF; font-size: 380px; font-weight: 900; }
+  .u { color: #FF334B; font-size: 360px; font-weight: 900; transform: rotate(7deg); display: inline-block; }
+  .o { color: #FFD600; font-size: 380px; font-weight: 900; }
+  .y { color: #EC6BBA; font-size: 390px; font-weight: 900; transform: rotate(-5deg); display: inline-block; }
+  .excl { color: #00B039; font-size: 400px; font-weight: 900; }
+</style>
+</head>
+<body>
+  <div class="logo-box">
+    <div class="row">
+      <span class="b">b</span>
+      <span class="u">u</span>
+    </div>
+    <div class="row">
+      <span class="o">o</span>
+      <span class="y">y</span>
+      <span class="excl">!</span>
+    </div>
+  </div>
+</body>
+</html>
