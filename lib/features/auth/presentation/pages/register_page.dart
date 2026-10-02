@@ -22,8 +22,31 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _obscureConfirmPassword = true;
   bool _agreeToTerms = true;
   bool _isLoading = false;
+  bool _isRegistrationEnabled = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkRegistrationStatus();
+  }
+
+  Future<void> _checkRegistrationStatus() async {
+    final isEnabled = await AuthService.getRegistrationStatus();
+    if (mounted) {
+      setState(() {
+        _isRegistrationEnabled = isEnabled;
+      });
+    }
+  }
 
   Future<void> _register() async {
+    if (!_isRegistrationEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Registration is currently disabled by the administrator.')),
+      );
+      return;
+    }
+
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill all fields')),
@@ -147,6 +170,36 @@ class _RegisterPageState extends State<RegisterPage> {
 
                 const SizedBox(height: 28),
 
+                const SizedBox(height: 16),
+                
+                if (!_isRegistrationEnabled)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF2F2),
+                      border: Border.all(color: const Color(0xFFFCA5A5)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444)),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Registration is currently disabled by the administrator.',
+                            style: TextStyle(
+                              color: Color(0xFFB91C1C),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
                 // Email Field
                 ErpInputField(
                   label: 'Email',
@@ -245,7 +298,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 // Register Button
                 CustomButton(
                   text: _isLoading ? 'Registering...' : 'Register',
-                  onPressed: _isLoading ? () {} : _register,
+                  onPressed: (_isLoading || !_isRegistrationEnabled) ? null : _register,
                 ),
 
                 const SizedBox(height: 20),

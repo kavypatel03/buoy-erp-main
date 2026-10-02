@@ -143,9 +143,9 @@ class _WelcomePageState extends State<WelcomePage> {
                           CustomButton(
                             text: 'Register',
                             variant: CustomButtonVariant.secondary,
-                            onPressed: _isRegistrationEnabled ? () {
+                            onPressed: () {
                               Navigator.pushNamed(context, '/register');
-                            } : null,
+                            },
                           ),
                         ],
                       ),
