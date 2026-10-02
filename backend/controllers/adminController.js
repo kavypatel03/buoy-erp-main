@@ -118,3 +118,37 @@ exports.updateUser = async (req, res) => {
     res.redirect('/admin');
   }
 };
+
+exports.sendNotification = async (req, res) => {
+  try {
+    const { targetUserId, title, message } = req.body;
+    
+    if (targetUserId === 'all') {
+      // Fetch all users to send to everyone
+      const { data: { users }, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
+      if (usersError) throw usersError;
+      
+      const notifications = users.map(u => ({
+        user_id: u.id,
+        title,
+        message,
+        is_read: false
+      }));
+      
+      await supabaseAdmin.from('notifications').insert(notifications);
+    } else {
+      // Send to specific user
+      await supabaseAdmin.from('notifications').insert({
+        user_id: targetUserId,
+        title,
+        message,
+        is_read: false
+      });
+    }
+    
+    res.redirect('/admin');
+  } catch (err) {
+    console.error(err);
+    res.redirect('/admin');
+  }
+};

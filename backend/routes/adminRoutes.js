@@ -18,5 +18,6 @@ router.get('/', requireAdmin, adminController.getDashboard);
 router.post('/toggle-register', requireAdmin, adminController.toggleRegister);
 router.post('/create-user', requireAdmin, adminController.createUser);
 router.post('/update-user', requireAdmin, adminController.updateUser);
+router.post('/send-notification', requireAdmin, adminController.sendNotification);
 
 module.exports = router;

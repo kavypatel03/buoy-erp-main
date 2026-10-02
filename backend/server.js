@@ -9,6 +9,7 @@ const itemRoutes = require('./routes/itemRoutes');
 const authRoutes = require('./routes/authRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 const requireAuth = require('./middleware/authMiddleware');
 
 const app = express();
@@ -28,6 +29,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', requireAuth, profileRoutes);
 app.use('/api/items', requireAuth, itemRoutes);
+app.use('/api/notifications', requireAuth, notificationRoutes);
 app.use('/admin', adminRoutes);
 
 // Basic health check route

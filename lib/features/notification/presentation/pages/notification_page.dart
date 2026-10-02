@@ -1,9 +1,49 @@
 import 'package:flutter/material.dart';
 import '../../../../core/widgets/erp_header_bar.dart';
 import '../../../../core/widgets/glass_container.dart';
+import '../../../../core/services/notification_service.dart';
+import 'package:intl/intl.dart';
 
-class NotificationPage extends StatelessWidget {
+class NotificationPage extends StatefulWidget {
   const NotificationPage({super.key});
+
+  @override
+  State<NotificationPage> createState() => _NotificationPageState();
+}
+
+class _NotificationPageState extends State<NotificationPage> {
+  List<dynamic> _notifications = [];
+  bool _isLoading = true;
+  String _error = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchNotifications();
+  }
+
+  Future<void> _fetchNotifications() async {
+    final result = await NotificationService.getNotifications();
+    if (!mounted) return;
+
+    if (result['success']) {
+      setState(() {
+        _notifications = result['data'] ?? [];
+        _isLoading = false;
+      });
+      // Mark all as read optionally here
+      for (var n in _notifications) {
+        if (n['is_read'] == false) {
+          NotificationService.markAsRead(n['id']);
+        }
+      }
+    } else {
+      setState(() {
+        _error = result['error'] ?? 'Failed to load notifications';
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,61 +63,36 @@ class NotificationPage extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              // Notification List Content
+            // Notification List Content
               Expanded(
-                child: SingleChildScrollView(
-                  physics: const ClampingScrollPhysics(),
-                  padding: const EdgeInsets.only(bottom: 40.0),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                    child: GlassContainer(
-                      useGradientBorder: true,
-                      borderRadius: 26,
-                      padding: const EdgeInsets.all(22),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Item 1: Paper Stock is Very Low
-                          _buildNotificationStockItem(
-                            title: 'Paper Stock is Very Low',
-                            subtitle: 'White - 150 GSM',
-                            metric: '25',
-                            unit: 'KG',
-                            metricColor: const Color(0xFFFF334B),
+                child: _isLoading 
+                  ? const Center(child: CircularProgressIndicator(color: Color(0xFF5B3DF5)))
+                  : _error.isNotEmpty 
+                  ? Center(child: Text(_error, style: const TextStyle(color: Colors.red)))
+                  : _notifications.isEmpty 
+                  ? const Center(child: Text('No notifications yet', style: TextStyle(color: Colors.grey)))
+                  : ListView.builder(
+                      physics: const ClampingScrollPhysics(),
+                      padding: const EdgeInsets.only(bottom: 40.0, left: 20, right: 20, top: 10),
+                      itemCount: _notifications.length,
+                      itemBuilder: (context, index) {
+                        final notif = _notifications[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: GlassContainer(
+                            useGradientBorder: true,
+                            borderRadius: 16,
+                            padding: const EdgeInsets.all(18),
+                            child: _buildNotificationItem(
+                              title: notif['title'] ?? 'Notification',
+                              message: notif['message'] ?? '',
+                              isRead: notif['is_read'] ?? true,
+                              date: notif['created_at'],
+                            ),
                           ),
-
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 18),
-                            child: Divider(color: Color(0xFFF1F5F9), height: 1),
-                          ),
-
-                          // Item 2: Graphite Stock Alert
-                          _buildNotificationStockItem(
-                            title: 'Graphite Stock Alert',
-                            subtitle: 'Synthetic Block',
-                            metric: '150',
-                            unit: 'KG',
-                            metricColor: const Color(0xFFF59E0B),
-                          ),
-
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 18),
-                            child: Divider(color: Color(0xFFF1F5F9), height: 1),
-                          ),
-
-                          // Item 3: Glue Stock Received
-                          _buildNotificationStockItem(
-                            title: 'B-7000 Glue Batch Received',
-                            subtitle: 'Grey Adhesive',
-                            metric: '200',
-                            unit: 'KG',
-                            metricColor: const Color(0xFF00B039),
-                          ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
-                  ),
-                ),
               ),
             ],
           ),
@@ -86,62 +101,71 @@ class NotificationPage extends StatelessWidget {
     );
   }
 
-  Widget _buildNotificationStockItem({
+  Widget _buildNotificationItem({
     required String title,
-    required String subtitle,
-    required String metric,
-    required String unit,
-    required Color metricColor,
+    required String message,
+    required bool isRead,
+    required String? date,
   }) {
+    String formattedDate = '';
+    if (date != null) {
+      try {
+        final dt = DateTime.parse(date).toLocal();
+        formattedDate = DateFormat('MMM dd, hh:mm a').format(dt);
+      } catch (e) {
+        formattedDate = '';
+      }
+    }
+
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Container(
+          width: 8,
+          height: 8,
+          margin: const EdgeInsets.only(top: 6, right: 12),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isRead ? Colors.transparent : const Color(0xFF5B3DF5),
+          ),
+        ),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F172A),
+                  fontWeight: isRead ? FontWeight.w600 : FontWeight.bold,
+                  color: const Color(0xFF0F172A),
                 ),
               ),
               const SizedBox(height: 4),
               Text(
-                subtitle,
+                message,
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 13,
                   color: Color(0xFF64748B),
                 ),
               ),
+              if (formattedDate.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    formattedDate,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Color(0xFF94A3B8),
+                    ),
+                  ),
+                ),
             ],
           ),
-        ),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              metric,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: metricColor,
-              ),
-            ),
-            Text(
-              unit,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: metricColor,
-              ),
-            ),
-          ],
         ),
       ],
     );
   }
 }
+
+
