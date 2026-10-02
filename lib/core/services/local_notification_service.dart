@@ -24,7 +24,7 @@ class LocalNotificationService {
       iOS: initializationSettingsIOS,
     );
 
-    await _notificationsPlugin.initialize(initializationSettings);
+    await _notificationsPlugin.initialize(settings: initializationSettings);
     _initialized = true;
   }
 
@@ -60,6 +60,11 @@ class LocalNotificationService {
       iOS: iosDetails,
     );
 
-    await _notificationsPlugin.show(id, title, body, notificationDetails);
+    await _notificationsPlugin.show(
+      id: id,
+      title: title,
+      body: body,
+      notificationDetails: notificationDetails,
+    );
   }
 }
