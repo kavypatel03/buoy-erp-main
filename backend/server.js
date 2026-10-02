@@ -1,11 +1,14 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
+const path = require('path');
 
 // Import routes and middleware
 const itemRoutes = require('./routes/itemRoutes');
 const authRoutes = require('./routes/authRoutes');
 const profileRoutes = require('./routes/profileRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const requireAuth = require('./middleware/authMiddleware');
 
 const app = express();
@@ -14,11 +17,18 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser('buoy-erp-secret-key'));
+
+// View Engine
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', requireAuth, profileRoutes);
 app.use('/api/items', requireAuth, itemRoutes);
+app.use('/admin', adminRoutes);
 
 // Basic health check route
 app.get('/health', (req, res) => {

@@ -4,6 +4,7 @@ import '../../../../core/widgets/glass_container.dart';
 import 'change_password_page.dart';
 import 'help_support_page.dart';
 import 'my_profile_page.dart';
+import '../../../../core/services/profile_service.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -15,6 +16,39 @@ class SettingsPage extends StatefulWidget {
 class SettingsPageState extends State<SettingsPage> {
   int _currentSubIndex = 0; // 0: Main Settings, 1: My Profile, 2: Change Password, 3: Help & Support
   bool _isDarkMode = false;
+  String _firstName = 'Admin user';
+  String _email = 'admin@factory.com';
+  String _occupation = 'Administrator';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProfile();
+  }
+
+  Future<void> _fetchProfile() async {
+    final result = await ProfileService.getProfile();
+    if (result['success'] && mounted) {
+      final data = result['data'];
+      setState(() {
+        final fName = data['first_name']?.toString();
+        final sName = data['surname']?.toString();
+        if (fName != null && fName.isNotEmpty) {
+          _firstName = fName + (sName != null && sName.isNotEmpty ? ' $sName' : '');
+        }
+        
+        final e = data['email']?.toString();
+        if (e != null && e.isNotEmpty) {
+          _email = e;
+        }
+
+        final o = data['occupation']?.toString();
+        if (o != null && o.isNotEmpty) {
+          _occupation = o;
+        }
+      });
+    }
+  }
 
   bool get hasSubScreen => _currentSubIndex > 0;
 
@@ -106,27 +140,27 @@ class SettingsPageState extends State<SettingsPage> {
                       const SizedBox(width: 16),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                        children: [
                           Text(
-                            'Admin user',
-                            style: TextStyle(
+                            _firstName,
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
                           ),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
-                            'admin@factory.com',
-                            style: TextStyle(
+                            _email,
+                            style: const TextStyle(
                               fontSize: 12,
                               color: Colors.white70,
                             ),
                           ),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
-                            'Administrator',
-                            style: TextStyle(
+                            _occupation,
+                            style: const TextStyle(
                               fontSize: 11,
                               color: Colors.white60,
                               fontWeight: FontWeight.w500,

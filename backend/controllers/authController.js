@@ -4,6 +4,17 @@ const register = async (req, res) => {
   try {
     const { email, password, ...metadata } = req.body;
     
+    // Check if registration is enabled
+    const { data: settingsData } = await supabase
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'registration_enabled')
+      .single();
+      
+    if (settingsData && (settingsData.value === 'false' || settingsData.value === false)) {
+      return res.status(403).json({ error: 'Registration is currently disabled by the administrator' });
+    }
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,

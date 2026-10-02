@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../app/constants/app_assets.dart';
 import '../../../../core/widgets/erp_header_bar.dart';
 import '../../../../core/widgets/glass_container.dart';
+import '../../../../core/services/profile_service.dart';
 
 class DashboardPage extends StatefulWidget {
   final VoidCallback? onNavigateToLowStocks;
@@ -213,8 +214,32 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 }
 
-class _GreetingBanner extends StatelessWidget {
+class _GreetingBanner extends StatefulWidget {
   const _GreetingBanner();
+
+  @override
+  State<_GreetingBanner> createState() => _GreetingBannerState();
+}
+
+class _GreetingBannerState extends State<_GreetingBanner> {
+  String _firstName = 'Admin';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchName();
+  }
+
+  Future<void> _fetchName() async {
+    final result = await ProfileService.getProfile();
+    if (result['success'] && mounted) {
+      final data = result['data'];
+      final name = data['first_name'];
+      if (name != null && name.toString().isNotEmpty) {
+        setState(() => _firstName = name);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -240,17 +265,17 @@ class _GreetingBanner extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
+          children: [
             Text(
-              'Good Morning Admin 👋',
-              style: TextStyle(
+              'Good Morning $_firstName 👋',
+              style: const TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
             ),
-            SizedBox(height: 4),
-            Text(
+            const SizedBox(height: 4),
+            const Text(
               "Here's what's happening today",
               style: TextStyle(
                 fontSize: 12.5,
