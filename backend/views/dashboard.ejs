@@ -3,29 +3,138 @@
 <head>
   <meta charset="UTF-8">
   <title>Admin Dashboard - Buoy ERP</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
-    body { font-family: system-ui, sans-serif; background: #f1f5f9; margin: 0; padding: 2rem; color: #0f172a; }
+    body { 
+      font-family: 'Inter', sans-serif; 
+      background: #f8fafc; 
+      margin: 0; 
+      padding: 2rem; 
+      color: #0f172a; 
+    }
     .container { max-width: 1000px; margin: 0 auto; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-    .card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
-    h2 { margin-top: 0; }
-    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-    th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #e2e8f0; }
-    th { background: #f8fafc; font-weight: 600; }
-    button { padding: 0.5rem 1rem; background: #5b3df5; color: white; border: none; border-radius: 6px; cursor: pointer; }
-    button:hover { background: #4a31cc; }
-    .btn-danger { background: #ef4444; }
-    .btn-danger:hover { background: #dc2626; }
-    input[type="text"], input[type="email"], input[type="password"] { padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 4px; margin-right: 0.5rem; }
-    .error-banner { background: #fee2e2; color: #991b1b; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-weight: bold; }
+    
+    .header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-bottom: 2.5rem;
+      background: white;
+      padding: 1rem 1.5rem;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.02), 0 4px 6px rgba(0,0,0,0.01);
+      border: 1px solid #f1f5f9;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo-container {
+      width: 48px;
+      height: 48px;
+      background: white;
+      border-radius: 12px;
+      border: 1.2px solid #F1F5F9;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.06), -2px -2px 8px rgba(255,255,255,0.9);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      line-height: 0.85;
+    }
+    .logo-row { display: flex; align-items: baseline; }
+    .logo-char { font-family: Arial, sans-serif; font-weight: 900; font-size: 14px; }
+    .char-b { color: #2563EB; font-size: 14px; }
+    .char-u { color: #EF4444; font-size: 13px; transform: rotate(6.8deg); }
+    .char-o { color: #F59E0B; font-size: 14px; }
+    .char-y { color: #EC4899; font-size: 15px; transform: rotate(-5.7deg); }
+    .char-exc { color: #10B981; font-size: 16px; }
+
+    h1 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+    h2 { margin-top: 0; font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 1.25rem; }
+    
+    .card { 
+      background: white; 
+      padding: 1.75rem; 
+      border-radius: 20px; 
+      box-shadow: 0 10px 25px rgba(0,0,0,0.02), 0 4px 6px rgba(0,0,0,0.01); 
+      border: 1px solid #f1f5f9;
+      margin-bottom: 1.5rem; 
+    }
+
+    table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 0.5rem; }
+    th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #f1f5f9; }
+    th { background: #f8fafc; font-weight: 600; color: #475569; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+    th:first-child { border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
+    th:last-child { border-top-right-radius: 8px; border-bottom-right-radius: 8px; }
+    td { font-size: 14px; }
+    
+    button { 
+      padding: 0.65rem 1.25rem; 
+      background: #5b3df5; 
+      color: white; 
+      border: none; 
+      border-radius: 8px; 
+      cursor: pointer; 
+      font-weight: 600; 
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      transition: opacity 0.2s;
+    }
+    button:hover { opacity: 0.9; }
+    
+    input[type="text"], input[type="email"], input[type="password"], select { 
+      padding: 0.65rem 1rem; 
+      border: 1.5px solid #e2e8f0; 
+      border-radius: 8px; 
+      margin-right: 0.5rem; 
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus { border-color: #5b3df5; }
+    
+    .error-banner { background: #fee2e2; color: #991b1b; padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 600; border: 1px solid #fecaca; }
     .flex-form { display: flex; gap: 0.5rem; align-items: center; }
+
+    .logout-btn {
+      color: #ef4444;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      background: #fef2f2;
+      transition: background 0.2s;
+    }
+    .logout-btn:hover { background: #fee2e2; }
+
+    label { font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; }
+    input[type="radio"] { accent-color: #5b3df5; width: 16px; height: 16px; margin: 0; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>Buoy ERP - Admin Dashboard</h1>
-      <a href="/admin/logout" style="color: #64748b; text-decoration: none;">Logout</a>
+      <div class="header-left">
+        <div class="logo-container">
+          <div class="logo-row">
+            <span class="logo-char char-b">b</span>
+            <span class="logo-char char-u">u</span>
+          </div>
+          <div class="logo-row">
+            <span class="logo-char char-o">o</span>
+            <span class="logo-char char-y">y</span>
+            <span class="logo-char char-exc">!</span>
+          </div>
+        </div>
+        <h1>Admin Dashboard</h1>
+      </div>
+      <a href="/admin/logout" class="logout-btn">Logout</a>
     </div>
 
     <% if (error) { %>

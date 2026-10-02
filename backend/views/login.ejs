@@ -3,25 +3,148 @@
 <head>
   <meta charset="UTF-8">
   <title>Admin Login - Buoy ERP</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
   <style>
-    body { font-family: system-ui, sans-serif; background: #f1f5f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-    .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-    h1 { margin-top: 0; color: #0f172a; }
-    input { width: 100%; padding: 0.75rem; margin-bottom: 1rem; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
-    button { width: 100%; padding: 0.75rem; background: #5b3df5; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-    button:hover { background: #4a31cc; }
-    .error { color: #ef4444; margin-bottom: 1rem; font-size: 0.875rem; }
+    body { 
+      font-family: 'Inter', sans-serif; 
+      background: #f8fafc; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      height: 100vh; 
+      margin: 0; 
+    }
+    .card { 
+      background: white; 
+      padding: 2.5rem 2rem; 
+      border-radius: 24px; 
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05), 0 4px 6px rgba(0,0,0,0.02); 
+      width: 100%; 
+      max-width: 380px; 
+      border: 1px solid #f1f5f9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .logo-container {
+      width: 65px;
+      height: 65px;
+      background: white;
+      border-radius: 16px;
+      border: 1.2px solid #F1F5F9;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.06), -2px -2px 8px rgba(255,255,255,0.9);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      line-height: 0.85;
+    }
+    .logo-row {
+      display: flex;
+      align-items: baseline;
+    }
+    .logo-char {
+      font-family: Arial, sans-serif;
+      font-weight: 900;
+      font-size: 20px;
+    }
+    .char-b { color: #2563EB; font-size: 20px; }
+    .char-u { color: #EF4444; font-size: 18px; transform: rotate(6.8deg); }
+    .char-o { color: #F59E0B; font-size: 20px; }
+    .char-y { color: #EC4899; font-size: 22px; transform: rotate(-5.7deg); }
+    .char-exc { color: #10B981; font-size: 24px; }
+
+    h1 { 
+      margin-top: 0; 
+      margin-bottom: 0.25rem;
+      color: #0f172a; 
+      font-weight: 800;
+      font-size: 24px;
+      letter-spacing: -0.5px;
+    }
+    p.subtitle {
+      color: #64748B;
+      font-size: 13px;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+    
+    input { 
+      width: 100%; 
+      padding: 1rem; 
+      margin-bottom: 1rem; 
+      border: 1.5px solid #e2e8f0; 
+      border-radius: 12px; 
+      box-sizing: border-box; 
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      color: #0f172a;
+      transition: border-color 0.2s;
+      background: #f8fafc;
+    }
+    input:focus {
+      outline: none;
+      border-color: #5b3df5;
+      background: white;
+    }
+
+    button { 
+      width: 100%; 
+      padding: 1rem; 
+      background: #5b3df5; 
+      color: white; 
+      border: none; 
+      border-radius: 12px; 
+      cursor: pointer; 
+      font-weight: 700; 
+      font-size: 15px;
+      font-family: 'Inter', sans-serif;
+      transition: opacity 0.2s;
+      margin-top: 0.5rem;
+    }
+    button:hover { 
+      opacity: 0.9;
+    }
+    .error { 
+      color: #ef4444; 
+      margin-bottom: 1rem; 
+      font-size: 0.875rem; 
+      background: #fee2e2;
+      padding: 0.75rem;
+      border-radius: 8px;
+      width: 100%;
+      box-sizing: border-box;
+      text-align: center;
+      font-weight: 600;
+    }
+    form { width: 100%; }
   </style>
 </head>
 <body>
   <div class="card">
-    <h1>Admin Login</h1>
+    <div class="logo-container">
+      <div class="logo-row">
+        <span class="logo-char char-b">b</span>
+        <span class="logo-char char-u">u</span>
+      </div>
+      <div class="logo-row">
+        <span class="logo-char char-o">o</span>
+        <span class="logo-char char-y">y</span>
+        <span class="logo-char char-exc">!</span>
+      </div>
+    </div>
+    
+    <h1>Admin Portal</h1>
+    <p class="subtitle">Welcome back! Please login to your account</p>
+    
     <% if (error) { %>
       <div class="error"><%= error %></div>
     <% } %>
+    
     <form action="/admin/login" method="POST">
-      <input type="email" name="email" placeholder="Email" required autofocus>
-      <input type="password" name="password" placeholder="Password" required>
+      <input type="email" name="email" placeholder="admin@factory.com" required autofocus>
+      <input type="password" name="password" placeholder="••••••••" required>
       <button type="submit">Login</button>
     </form>
   </div>
