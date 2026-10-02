@@ -41,3 +41,32 @@ exports.markAsRead = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+exports.clearAll = async (req, res) => {
+  try {
+    const { error } = await supabaseAdmin
+      .from('notifications')
+      .delete()
+      .eq('user_id', req.user.id);
+      
+    if (error) throw error;
+    res.status(200).json({ message: 'All notifications cleared' });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+exports.deleteNotification = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { error } = await supabaseAdmin
+      .from('notifications')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', req.user.id);
+
+    if (error) throw error;
+    res.status(200).json({ message: 'Notification deleted' });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};

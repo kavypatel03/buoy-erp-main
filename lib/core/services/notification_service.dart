@@ -58,4 +58,55 @@ class NotificationService {
       return {'success': false, 'error': e.toString()};
     }
   }
+  static Future<Map<String, dynamic>> clearAll() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      
+      if (token == null) return {'success': false, 'error': 'Not authenticated'};
+
+      final response = await http.delete(
+        Uri.parse('$baseUrl/all'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true};
+      } else {
+        final errorData = jsonDecode(response.body);
+        return {'success': false, 'error': errorData['error'] ?? 'Failed to clear notifications'};
+      }
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteNotification(String notificationId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      
+      if (token == null) return {'success': false, 'error': 'Not authenticated'};
+
+      final response = await http.delete(
+        Uri.parse('$baseUrl/$notificationId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true};
+      } else {
+        final errorData = jsonDecode(response.body);
+        return {'success': false, 'error': errorData['error'] ?? 'Failed to delete notification'};
+      }
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
 }

@@ -45,6 +45,32 @@ class _NotificationPageState extends State<NotificationPage> {
     }
   }
 
+  Future<void> _clearAllNotifications() async {
+    final result = await NotificationService.clearAll();
+    if (result['success']) {
+      setState(() {
+        _notifications.clear();
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['error'] ?? 'Failed to clear notifications')),
+      );
+    }
+  }
+
+  Future<void> _deleteNotification(String id) async {
+    final result = await NotificationService.deleteNotification(id);
+    if (result['success']) {
+      setState(() {
+        _notifications.removeWhere((n) => n['id'] == id);
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['error'] ?? 'Failed to delete notification')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -61,7 +87,34 @@ class _NotificationPageState extends State<NotificationPage> {
                 onBackTap: () => Navigator.pop(context),
               ),
 
-              const SizedBox(height: 16),
+              if (!_isLoading && _notifications.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: _clearAllNotifications,
+                      icon: const Icon(Icons.clear_all_rounded, size: 18, color: Color(0xFFFF334B)),
+                      label: const Text(
+                        'Clear All',
+                        style: TextStyle(
+                          color: Color(0xFFFF334B),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        backgroundColor: const Color(0x1FFF334B),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      ),
+                    ),
+                  ),
+                ),
+
+              const SizedBox(height: 8),
 
             // Notification List Content
               Expanded(
@@ -73,7 +126,7 @@ class _NotificationPageState extends State<NotificationPage> {
                   ? const Center(child: Text('No notifications yet', style: TextStyle(color: Colors.grey)))
                   : ListView.builder(
                       physics: const ClampingScrollPhysics(),
-                      padding: const EdgeInsets.only(bottom: 40.0, left: 20, right: 20, top: 10),
+                      padding: const EdgeInsets.only(bottom: 40.0, left: 20, right: 20),
                       itemCount: _notifications.length,
                       itemBuilder: (context, index) {
                         final notif = _notifications[index];
@@ -84,6 +137,7 @@ class _NotificationPageState extends State<NotificationPage> {
                             borderRadius: 16,
                             padding: const EdgeInsets.all(18),
                             child: _buildNotificationItem(
+                              id: notif['id'],
                               title: notif['title'] ?? 'Notification',
                               message: notif['message'] ?? '',
                               isRead: notif['is_read'] ?? true,
@@ -102,6 +156,7 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 
   Widget _buildNotificationItem({
+    required String id,
     required String title,
     required String message,
     required bool isRead,
@@ -161,6 +216,22 @@ class _NotificationPageState extends State<NotificationPage> {
                   ),
                 ),
             ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        GestureDetector(
+          onTap: () => _deleteNotification(id),
+          child: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: const BoxDecoration(
+              color: Color(0x1FFF334B),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.close_rounded,
+              size: 14,
+              color: Color(0xFFFF334B),
+            ),
           ),
         ),
       ],

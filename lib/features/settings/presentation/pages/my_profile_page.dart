@@ -3,6 +3,8 @@ import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/erp_header_bar.dart';
 import '../../../../core/widgets/erp_input_field.dart';
 import '../../../../core/widgets/glass_container.dart';
+import 'dart:convert';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/services/profile_service.dart';
 
 class MyProfilePage extends StatefulWidget {
@@ -27,6 +29,19 @@ class _MyProfilePageState extends State<MyProfilePage> {
 
   bool _isLoading = true;
   bool _isSaving = false;
+  String _avatarUrl = '';
+  String? _base64Image;
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+    if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes();
+      setState(() {
+        _base64Image = base64Encode(bytes);
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -45,6 +60,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
         _mobileController.text = data['mobile'] ?? '';
         _emailController.text = data['email'] ?? '';
         _occupationController.text = data['occupation'] ?? '';
+        _avatarUrl = data['avatar_url'] ?? '';
         _isLoading = false;
       });
     } else if (mounted) {
@@ -60,6 +76,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
       'surname': _surnameController.text,
       'mobile': _mobileController.text,
       'occupation': _occupationController.text,
+      if (_base64Image != null) 'avatar_base64': _base64Image,
     });
     
     if (!mounted) return;
@@ -157,18 +174,23 @@ class _MyProfilePageState extends State<MyProfilePage> {
                                     color: Color(0xFFFCD34D),
                                     shape: BoxShape.circle,
                                   ),
-                                ),
-                                const Icon(
-                                  Icons.account_circle_rounded,
-                                  size: 74,
-                                  color: Color(0xFF1E3A8A),
+                                  clipBehavior: Clip.hardEdge,
+                                  child: _base64Image != null
+                                      ? Image.memory(base64Decode(_base64Image!), fit: BoxFit.cover)
+                                      : _avatarUrl.isNotEmpty
+                                          ? Image.network(_avatarUrl, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.account_circle_rounded, size: 74, color: Color(0xFF1E3A8A)))
+                                          : const Icon(
+                                              Icons.account_circle_rounded,
+                                              size: 74,
+                                              color: Color(0xFF1E3A8A),
+                                            ),
                                 ),
                               ],
                             ),
                           ),
                           const SizedBox(height: 8),
                           GestureDetector(
-                            onTap: () {},
+                            onTap: _pickImage,
                             child: const Text(
                               'Upload Image',
                               style: TextStyle(

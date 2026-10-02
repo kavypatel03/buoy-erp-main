@@ -31,23 +31,73 @@ const getProfile = async (req, res) => {
   }
 };
 
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY,
+  { auth: { persistSession: false } }
+);
+
 const updateProfile = async (req, res) => {
   try {
-    const { first_name, middle_name, surname, mobile, occupation } = req.body;
+    const { first_name, middle_name, surname, mobile, occupation, avatar_base64 } = req.body;
     
+    let avatar_url = undefined;
+
+    if (avatar_base64) {
+      try {
+        const base64Data = avatar_base64.replace(/^data:image\/\w+;base64,/, "");
+        const buffer = Buffer.from(base64Data, 'base64');
+        const fileName = `${req.user.id}-${Date.now()}.jpg`;
+
+        // Ensure bucket exists
+        const { data: buckets } = await supabaseAdmin.storage.listBuckets();
+        if (!buckets || !buckets.find(b => b.name === 'avatars')) {
+          await supabaseAdmin.storage.createBucket('avatars', {
+            public: true,
+            allowedMimeTypes: ['image/jpeg', 'image/png'],
+            fileSizeLimit: 10485760 // 10MB
+          });
+        }
+
+        // Upload using admin client to bypass storage RLS
+        const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+          .from('avatars')
+          .upload(fileName, buffer, {
+            contentType: 'image/jpeg',
+            upsert: true
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data: publicUrlData } = supabaseAdmin.storage
+          .from('avatars')
+          .getPublicUrl(fileName);
+
+        avatar_url = publicUrlData.publicUrl;
+      } catch (e) {
+        console.error("Avatar upload failed:", e);
+      }
+    }
+
+    const updates = {
+      id: req.user.id,
+      first_name,
+      middle_name,
+      surname,
+      mobile,
+      occupation,
+      updated_at: new Date()
+    };
+    
+    if (avatar_url) {
+      updates.avatar_url = avatar_url;
+    }
+
     // Upsert (Insert or Update) profile data
     const supabaseClient = getAuthClient(req);
     const { data, error } = await supabaseClient
       .from('profiles')
-      .upsert({
-        id: req.user.id, // linked to the auth.users ID
-        first_name,
-        middle_name,
-        surname,
-        mobile,
-        occupation,
-        updated_at: new Date()
-      }, { onConflict: 'id' })
+      .upsert(updates, { onConflict: 'id' })
       .select();
 
     if (error) throw error;

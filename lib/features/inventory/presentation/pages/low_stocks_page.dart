@@ -4,6 +4,8 @@ import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/erp_header_bar.dart';
 import '../../../../core/widgets/erp_input_field.dart';
 import '../../../../core/services/inventory_service.dart';
+import 'dart:convert';
+import 'package:image_picker/image_picker.dart';
 
 class InventoryItemModel {
   final String id;
@@ -20,6 +22,7 @@ class InventoryItemModel {
   final String stockQuantity;
   final String minQuantity;
   final String description;
+  final String imageUrl;
 
   InventoryItemModel({
     required this.id,
@@ -36,6 +39,7 @@ class InventoryItemModel {
     required this.stockQuantity,
     required this.minQuantity,
     required this.description,
+    required this.imageUrl,
   });
 }
 
@@ -117,6 +121,7 @@ class LowStocksPageState extends State<LowStocksPage> {
             stockQuantity: json['stock_quantity']?.toString() ?? '0',
             minQuantity: json['min_quantity']?.toString() ?? '0',
             description: json['description']?.toString() ?? '',
+            imageUrl: json['image_url']?.toString() ?? '',
           );
         }).toList();
         _isLoading = false;
@@ -235,13 +240,16 @@ class LowStocksPageState extends State<LowStocksPage> {
                                         color: item.iconBgColor,
                                         borderRadius: BorderRadius.circular(14),
                                       ),
-                                      child: Center(
-                                        child: Icon(
-                                          item.icon,
-                                          color: const Color(0xFF475569),
-                                          size: 26,
-                                        ),
-                                      ),
+                                      clipBehavior: Clip.hardEdge,
+                                      child: item.imageUrl.isNotEmpty
+                                          ? Image.network(item.imageUrl, fit: BoxFit.cover, errorBuilder: (c, e, s) => Icon(item.icon, color: const Color(0xFF475569), size: 26))
+                                          : Center(
+                                              child: Icon(
+                                                item.icon,
+                                                color: const Color(0xFF475569),
+                                                size: 26,
+                                              ),
+                                            ),
                                     ),
                                     const SizedBox(width: 14),
                                     // Details
@@ -400,17 +408,25 @@ class LowStocksPageState extends State<LowStocksPage> {
                             alignment: Alignment.center,
                             children: [
                               Container(color: const Color(0xFF334155)),
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(item.icon, size: 54, color: const Color(0xFF94A3B8)),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    item.title,
-                                    style: const TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w600),
-                                  ),
-                                ],
-                              ),
+                              if (item.imageUrl.isNotEmpty)
+                                Image.network(
+                                  item.imageUrl,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  fit: BoxFit.cover,
+                                )
+                              else
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(item.icon, size: 54, color: const Color(0xFF94A3B8)),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      item.title,
+                                      style: const TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
                             ],
                           ),
                         ),
@@ -532,9 +548,21 @@ class LowStocksPageState extends State<LowStocksPage> {
 
     String selectedCategory = 'Papers';
     String selectedType = 'Raw Material';
+    String? base64Image;
 
     return StatefulBuilder(
       builder: (context, setStateBuilder) {
+        Future<void> pickImage() async {
+          final picker = ImagePicker();
+          final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+          if (pickedFile != null) {
+            final bytes = await pickedFile.readAsBytes();
+            setStateBuilder(() {
+              base64Image = base64Encode(bytes);
+            });
+          }
+        }
+
         return Scaffold(
           backgroundColor: Colors.white,
           body: SafeArea(
@@ -576,22 +604,25 @@ class LowStocksPageState extends State<LowStocksPage> {
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: const Color(0xFFCBD5E1), width: 1),
                         ),
-                        child: const Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.image_outlined, color: Color(0xFF64748B), size: 28),
-                            SizedBox(height: 2),
-                            Text(
-                              'Preview\n(Only .jpg,.png)',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: 8.5, color: Color(0xFF94A3B8)),
-                            ),
-                          ],
-                        ),
+                        clipBehavior: Clip.hardEdge,
+                        child: base64Image != null
+                            ? Image.memory(base64Decode(base64Image!), fit: BoxFit.cover)
+                            : const Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.image_outlined, color: Color(0xFF64748B), size: 28),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'Preview\n(Only .jpg,.png)',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontSize: 8.5, color: Color(0xFF94A3B8)),
+                                  ),
+                                ],
+                              ),
                       ),
                       const SizedBox(height: 6),
                       GestureDetector(
-                        onTap: () {},
+                        onTap: pickImage,
                         child: const Text(
                           'Upload Image',
                           style: TextStyle(
@@ -704,6 +735,7 @@ class LowStocksPageState extends State<LowStocksPage> {
                             'metric': stockCtrl.text,
                             'unit': unitCtrl.text,
                             'description': descCtrl.text,
+                            if (base64Image != null) 'image_base64': base64Image,
                           };
 
                           final res = await InventoryService.createItem(newItem);
