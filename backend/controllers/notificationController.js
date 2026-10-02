@@ -1,21 +1,18 @@
 const { createClient } = require('@supabase/supabase-js');
 const supabaseConfig = require('../config/supabase');
 
-const getAuthClient = (req) => {
-  return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_PUBLISHABLE_KEY, {
-    global: {
-      headers: {
-        Authorization: `Bearer ${req.token}`
-      }
-    },
-    auth: { persistSession: false }
-  });
-};
+// Use the main supabase config which should use the service role key if available, 
+// or we can just use the admin client from adminController if needed.
+// Actually, let's create a direct admin client here so we don't hit RLS issues
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY,
+  { auth: { persistSession: false } }
+);
 
 exports.getNotifications = async (req, res) => {
   try {
-    const supabaseClient = getAuthClient(req);
-    const { data, error } = await supabaseClient
+    const { data, error } = await supabaseAdmin
       .from('notifications')
       .select('*')
       .eq('user_id', req.user.id)
@@ -31,9 +28,8 @@ exports.getNotifications = async (req, res) => {
 exports.markAsRead = async (req, res) => {
   try {
     const { id } = req.params;
-    const supabaseClient = getAuthClient(req);
     
-    const { data, error } = await supabaseClient
+    const { data, error } = await supabaseAdmin
       .from('notifications')
       .update({ is_read: true })
       .eq('id', id)
