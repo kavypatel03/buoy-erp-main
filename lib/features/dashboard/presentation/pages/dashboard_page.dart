@@ -58,16 +58,20 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Future<void> _pollNotifications() async {
     final result = await NotificationService.getNotifications();
+    print("🔔 Notification Poll Result: $result");
     if (result['success'] && mounted) {
       final List<dynamic> notifs = result['data'];
       for (var n in notifs) {
         if (n['is_read'] == false && !_poppedNotificationIds.contains(n['id'])) {
           _poppedNotificationIds.add(n['id']);
+          print("🔔 Triggering Local Notification for: ${n['title']}");
           LocalNotificationService.showNotification(
-            id: n['id'].hashCode,
+            id: (n['id'].hashCode.abs()) & 0x7FFFFFFF, // Ensure valid 32-bit positive integer
             title: n['title'] ?? 'New Notification',
             body: n['message'] ?? '',
           );
+          // Optionally mark as read on server if needed:
+          // NotificationService.markAsRead(n['id']);
         }
       }
     }

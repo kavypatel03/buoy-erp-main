@@ -11,7 +11,7 @@ class LocalNotificationService {
     if (_initialized) return;
 
     const initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@mipmap/launcher_icon');
         
     const initializationSettingsIOS = DarwinInitializationSettings(
       requestAlertPermission: true,
@@ -40,13 +40,14 @@ class LocalNotificationService {
     required String title,
     required String body,
   }) async {
+    print("🔔 Sending notification request to OS: $title");
     const androidDetails = AndroidNotificationDetails(
       'buoy_erp_notifications',
       'Buoy ERP Notifications',
       channelDescription: 'Notifications from Buoy ERP Admin',
       importance: Importance.max,
       priority: Priority.high,
-      icon: '@mipmap/ic_launcher',
+      icon: '@mipmap/launcher_icon',
     );
     
     const iosDetails = DarwinNotificationDetails(
