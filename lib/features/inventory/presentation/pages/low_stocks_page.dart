@@ -3,6 +3,7 @@ import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/erp_header_bar.dart';
 import '../../../../core/widgets/erp_input_field.dart';
+import '../../../../core/services/inventory_service.dart';
 
 class InventoryItemModel {
   final String id;
@@ -66,88 +67,64 @@ class LowStocksPageState extends State<LowStocksPage> {
     });
   }
 
-  final List<InventoryItemModel> _inventoryItems = [
-    InventoryItemModel(
-      id: '1',
-      title: 'Brown Paper roll',
-      subtitle: '150 GSM',
-      metric: '250',
-      unit: 'Kg',
-      metricColor: const Color(0xFF00B039),
-      icon: Icons.description_rounded,
-      iconBgColor: const Color(0xFFFEF3C7),
-      itemCode: 'BP-0112',
-      type: 'Raw Material',
-      category: 'Papers',
-      stockQuantity: '250',
-      minQuantity: '100',
-      description: 'Heavy duty brown craft paper rolls for packaging & box lining.',
-    ),
-    InventoryItemModel(
-      id: '2',
-      title: 'Black Graphite',
-      subtitle: 'Synthetic',
-      metric: '150',
-      unit: 'Kg',
-      metricColor: const Color(0xFFF59E0B),
-      icon: Icons.grain_rounded,
-      iconBgColor: const Color(0xFFE0E7FF),
-      itemCode: 'BG-0623',
-      type: 'Synthetic',
-      category: 'Graphite Lead',
-      stockQuantity: '175',
-      minQuantity: '50',
-      description: 'High Quality Synthetic Graphite used in manufacturing process of lead making',
-    ),
-    InventoryItemModel(
-      id: '3',
-      title: 'White Paper roll',
-      subtitle: '150 GSM',
-      metric: '25',
-      unit: 'Kg',
-      metricColor: const Color(0xFFFF334B),
-      icon: Icons.receipt_long_rounded,
-      iconBgColor: const Color(0xFFF1F5F9),
-      itemCode: 'WP-0881',
-      type: 'Raw Material',
-      category: 'Papers',
-      stockQuantity: '25',
-      minQuantity: '100',
-      description: 'Premium bleached white paper rolls for printing & label wrapping.',
-    ),
-    InventoryItemModel(
-      id: '4',
-      title: 'B-7000 Glue',
-      subtitle: 'Grey',
-      metric: '200',
-      unit: 'Kg',
-      metricColor: const Color(0xFF00B039),
-      icon: Icons.science_rounded,
-      iconBgColor: const Color(0xFFFEE2E2),
-      itemCode: 'GL-9902',
-      type: 'Adhesive',
-      category: 'Chemicals',
-      stockQuantity: '200',
-      minQuantity: '50',
-      description: 'Industrial multi-purpose epoxy adhesive liquid for high bonding.',
-    ),
-    InventoryItemModel(
-      id: '5',
-      title: 'Opus Color',
-      subtitle: 'Dark-Brown',
-      metric: '50',
-      unit: 'Liter',
-      metricColor: const Color(0xFFF59E0B),
-      icon: Icons.color_lens_rounded,
-      iconBgColor: const Color(0xFFE0F2FE),
-      itemCode: 'OC-4410',
-      type: 'Pigment Liquid',
-      category: 'Colors',
-      stockQuantity: '50',
-      minQuantity: '30',
-      description: 'Concentrated dark-brown pigment solution for paper dye processing.',
-    ),
-  ];
+  List<InventoryItemModel> _inventoryItems = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchItems();
+  }
+
+  Future<void> _fetchItems() async {
+    setState(() => _isLoading = true);
+    final result = await InventoryService.getItems();
+    if (result['success'] && mounted) {
+      final List<dynamic> data = result['data'];
+      setState(() {
+        _inventoryItems = data.map((json) {
+          // Determine color based on stock
+          double stock = double.tryParse(json['stock_quantity']?.toString() ?? '0') ?? 0;
+          double min = double.tryParse(json['min_quantity']?.toString() ?? '0') ?? 0;
+          Color metricColor = stock <= min ? const Color(0xFFFF334B) : const Color(0xFF00B039);
+          
+          // Determine icon based on category
+          IconData icon = Icons.inventory_2_rounded;
+          Color iconBg = const Color(0xFFF1F5F9);
+          String cat = json['category']?.toString().toLowerCase() ?? '';
+          if (cat.contains('paper')) {
+            icon = Icons.description_rounded; iconBg = const Color(0xFFFEF3C7);
+          } else if (cat.contains('lead') || cat.contains('graphite')) {
+            icon = Icons.grain_rounded; iconBg = const Color(0xFFE0E7FF);
+          } else if (cat.contains('color') || cat.contains('pigment')) {
+            icon = Icons.color_lens_rounded; iconBg = const Color(0xFFE0F2FE);
+          } else if (cat.contains('chemical') || cat.contains('adhesive')) {
+            icon = Icons.science_rounded; iconBg = const Color(0xFFFEE2E2);
+          }
+
+          return InventoryItemModel(
+            id: json['id']?.toString() ?? '',
+            title: json['title']?.toString() ?? 'Unknown',
+            subtitle: json['subtitle']?.toString() ?? '',
+            metric: json['metric']?.toString() ?? '0',
+            unit: json['unit']?.toString() ?? 'Kg',
+            metricColor: metricColor,
+            icon: icon,
+            iconBgColor: iconBg,
+            itemCode: json['item_code']?.toString() ?? '',
+            type: json['type']?.toString() ?? '',
+            category: json['category']?.toString() ?? 'Other',
+            stockQuantity: json['stock_quantity']?.toString() ?? '0',
+            minQuantity: json['min_quantity']?.toString() ?? '0',
+            description: json['description']?.toString() ?? '',
+          );
+        }).toList();
+        _isLoading = false;
+      });
+    } else {
+      setState(() => _isLoading = false);
+    }
+  }
 
   void _onSelectItem(InventoryItemModel item) {
     setState(() {
@@ -217,6 +194,17 @@ class LowStocksPageState extends State<LowStocksPage> {
               const SizedBox(height: 16),
 
               // Main List Container Card with + button inside at bottom-right
+              if (_isLoading)
+                const Padding(
+                  padding: EdgeInsets.all(40.0),
+                  child: Center(child: CircularProgressIndicator(color: Color(0xFF5B3DF5))),
+                )
+              else if (filteredList.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(40.0),
+                  child: Center(child: Text("No items found in inventory.")),
+                )
+              else
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: GlassContainer(
@@ -371,7 +359,8 @@ class LowStocksPageState extends State<LowStocksPage> {
   // SCREEN 2.2: INVENTORY ITEM DETAILS
   // ---------------------------------------------------------------------------
   Widget _buildItemDetailsScreen() {
-    final item = _selectedItem ?? _inventoryItems[1];
+    final item = _selectedItem;
+    if (item == null) return const SizedBox();
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -534,13 +523,22 @@ class LowStocksPageState extends State<LowStocksPage> {
   // ---------------------------------------------------------------------------
   Widget _buildAddNewItemScreen() {
     final nameCtrl = TextEditingController();
+    final subtitleCtrl = TextEditingController();
+    final codeCtrl = TextEditingController();
     final minQtyCtrl = TextEditingController();
+    final stockCtrl = TextEditingController();
     final descCtrl = TextEditingController();
+    final unitCtrl = TextEditingController();
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
+    String selectedCategory = 'Papers';
+    String selectedType = 'Raw Material';
+
+    return StatefulBuilder(
+      builder: (context, setStateBuilder) {
+        return Scaffold(
+          backgroundColor: Colors.white,
+          body: SafeArea(
+            child: SingleChildScrollView(
           physics: const ClampingScrollPhysics(),
           padding: const EdgeInsets.only(bottom: 85.0),
           child: Column(
@@ -614,20 +612,64 @@ class LowStocksPageState extends State<LowStocksPage> {
                       ),
                       const SizedBox(height: 14),
 
-                      // Item Category Dropdown
-                      _buildDropdownField('Item category', 'Select Item Category'),
-                      const SizedBox(height: 14),
-
-                      // Item Volume Dropdown
-                      _buildDropdownField('Item Volume', 'Select Item Volume'),
-                      const SizedBox(height: 14),
-
-                      // Minimum Quantity
                       ErpInputField(
-                        label: 'Minimum Quantity',
-                        hintText: 'Enter Minimum Quantity',
-                        controller: minQtyCtrl,
-                        keyboardType: TextInputType.number,
+                        label: 'Subtitle / Specs',
+                        hintText: 'e.g., 150 GSM',
+                        controller: subtitleCtrl,
+                      ),
+                      const SizedBox(height: 14),
+
+                      ErpInputField(
+                        label: 'Item Code',
+                        hintText: 'e.g., BP-0112',
+                        controller: codeCtrl,
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Category & Type Dropdowns
+                      _buildRealDropdown(
+                        'Item Category',
+                        ['Papers', 'Graphite Lead', 'Colors', 'Chemicals', 'Other'],
+                        selectedCategory,
+                        (val) => setStateBuilder(() => selectedCategory = val!),
+                      ),
+                      const SizedBox(height: 14),
+
+                      _buildRealDropdown(
+                        'Item Type',
+                        ['Raw Material', 'Synthetic', 'Adhesive', 'Pigment Liquid', 'Other'],
+                        selectedType,
+                        (val) => setStateBuilder(() => selectedType = val!),
+                      ),
+                      const SizedBox(height: 14),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ErpInputField(
+                              label: 'Current Stock',
+                              hintText: 'Qty',
+                              controller: stockCtrl,
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: ErpInputField(
+                              label: 'Min Quantity',
+                              hintText: 'Alert at',
+                              controller: minQtyCtrl,
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      ErpInputField(
+                        label: 'Unit',
+                        hintText: 'e.g., Kg, Liter',
+                        controller: unitCtrl,
                       ),
                       const SizedBox(height: 14),
 
@@ -643,11 +685,39 @@ class LowStocksPageState extends State<LowStocksPage> {
 
                       CustomButton(
                         text: 'Add New Item',
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('New Item Added Successfully!')),
-                          );
-                          _onBackToList();
+                        onPressed: () async {
+                          if (nameCtrl.text.isEmpty || codeCtrl.text.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Name and Code are required!')),
+                            );
+                            return;
+                          }
+
+                          final newItem = {
+                            'title': nameCtrl.text,
+                            'subtitle': subtitleCtrl.text,
+                            'item_code': codeCtrl.text,
+                            'category': selectedCategory,
+                            'type': selectedType,
+                            'stock_quantity': stockCtrl.text,
+                            'min_quantity': minQtyCtrl.text,
+                            'metric': stockCtrl.text,
+                            'unit': unitCtrl.text,
+                            'description': descCtrl.text,
+                          };
+
+                          final res = await InventoryService.createItem(newItem);
+                          if (res['success']) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('New Item Added Successfully!')),
+                            );
+                            _fetchItems();
+                            _onBackToList();
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Failed: ${res['error']}')),
+                            );
+                          }
                         },
                       ),
                     ],
@@ -659,9 +729,11 @@ class LowStocksPageState extends State<LowStocksPage> {
         ),
       ),
     );
+      },
+    );
   }
 
-  Widget _buildDropdownField(String label, String hint) {
+  Widget _buildRealDropdown(String label, List<String> items, String value, ValueChanged<String?> onChanged) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -675,21 +747,25 @@ class LowStocksPageState extends State<LowStocksPage> {
         ),
         const SizedBox(height: 8),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                hint,
-                style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-              ),
-              const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),
-            ],
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              isExpanded: true,
+              value: value,
+              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),
+              items: items.map((String val) {
+                return DropdownMenuItem<String>(
+                  value: val,
+                  child: Text(val, style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B))),
+                );
+              }).toList(),
+              onChanged: onChanged,
+            ),
           ),
         ),
       ],
