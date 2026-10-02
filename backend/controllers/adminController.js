@@ -68,10 +68,22 @@ exports.toggleRegister = async (req, res) => {
     const { enabled } = req.body;
     const isEnabled = enabled === 'true';
     
-    await supabaseAdmin.from('app_settings').upsert({
-      key: 'registration_enabled',
-      value: isEnabled.toString()
-    });
+    const { data: existingData } = await supabaseAdmin
+      .from('app_settings')
+      .select('*')
+      .eq('key', 'registration_enabled')
+      .maybeSingle();
+
+    if (existingData) {
+      await supabaseAdmin
+        .from('app_settings')
+        .update({ value: isEnabled.toString() })
+        .eq('key', 'registration_enabled');
+    } else {
+      await supabaseAdmin
+        .from('app_settings')
+        .insert({ key: 'registration_enabled', value: isEnabled.toString() });
+    }
     
     res.redirect('/admin');
   } catch (err) {

@@ -51,8 +51,28 @@ const getProfile = async (req, res) => {
   res.status(200).json({ user: req.user });
 };
 
+const getRegistrationStatus = async (req, res) => {
+  try {
+    const { data: settingsData } = await supabase
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'registration_enabled')
+      .maybeSingle();
+
+    let isEnabled = true; // default
+    if (settingsData && (settingsData.value === 'false' || settingsData.value === false)) {
+      isEnabled = false;
+    }
+    
+    res.status(200).json({ enabled: isEnabled });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   register,
   login,
-  getProfile
+  getProfile,
+  getRegistrationStatus
 };

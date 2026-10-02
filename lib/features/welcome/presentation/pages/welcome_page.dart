@@ -18,11 +18,22 @@ class WelcomePage extends StatefulWidget {
 
 class _WelcomePageState extends State<WelcomePage> {
   bool _isAutoLoggingIn = false;
+  bool _isRegistrationEnabled = true;
 
   @override
   void initState() {
     super.initState();
+    _checkRegistrationStatus();
     _checkAutoLogin();
+  }
+
+  Future<void> _checkRegistrationStatus() async {
+    final isEnabled = await AuthService.getRegistrationStatus();
+    if (mounted) {
+      setState(() {
+        _isRegistrationEnabled = isEnabled;
+      });
+    }
   }
 
   Future<void> _checkAutoLogin() async {
@@ -132,9 +143,9 @@ class _WelcomePageState extends State<WelcomePage> {
                           CustomButton(
                             text: 'Register',
                             variant: CustomButtonVariant.secondary,
-                            onPressed: () {
+                            onPressed: _isRegistrationEnabled ? () {
                               Navigator.pushNamed(context, '/register');
-                            },
+                            } : null,
                           ),
                         ],
                       ),

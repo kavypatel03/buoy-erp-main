@@ -5,7 +5,7 @@ enum CustomButtonVariant { primary, secondary, outline }
 
 class CustomButton extends StatelessWidget {
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final CustomButtonVariant variant;
   final bool isLoading;
   final double? width;
@@ -13,7 +13,7 @@ class CustomButton extends StatelessWidget {
   const CustomButton({
     super.key,
     required this.text,
-    required this.onPressed,
+    this.onPressed,
     this.variant = CustomButtonVariant.primary,
     this.isLoading = false,
     this.width,
@@ -55,13 +55,19 @@ class CustomButton extends StatelessWidget {
         break;
     }
 
+    if (onPressed == null) {
+      backgroundColor = const Color(0xFFE2E8F0);
+      textColor = const Color(0xFF94A3B8);
+      shadow = null;
+    }
+
     return Container(
       width: width ?? double.infinity,
       height: 54,
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(30),
-        border: variant == CustomButtonVariant.outline
+        border: (variant == CustomButtonVariant.outline && onPressed != null)
             ? Border.all(color: AppColors.primary, width: 1.5)
             : null,
         boxShadow: shadow,

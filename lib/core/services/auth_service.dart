@@ -54,4 +54,17 @@ class AuthService {
       return {'success': false, 'error': 'Connection error: $e'};
     }
   }
+
+  static Future<bool> getRegistrationStatus() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/registration-status'));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['enabled'] ?? true;
+      }
+      return true;
+    } catch (e) {
+      return true;
+    }
+  }
 }
