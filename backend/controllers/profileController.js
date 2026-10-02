@@ -1,8 +1,22 @@
-const supabase = require('../config/supabase');
+const { createClient } = require('@supabase/supabase-js');
+const supabaseConfig = require('../config/supabase');
+
+// Helper to create an authenticated client for the current request
+const getAuthClient = (req) => {
+  return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_PUBLISHABLE_KEY, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${req.token}`
+      }
+    },
+    auth: { persistSession: false }
+  });
+};
 
 const getProfile = async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const supabaseClient = getAuthClient(req);
+    const { data, error } = await supabaseClient
       .from('profiles')
       .select('*')
       .eq('id', req.user.id)
@@ -22,7 +36,8 @@ const updateProfile = async (req, res) => {
     const { first_name, middle_name, surname, mobile, occupation } = req.body;
     
     // Upsert (Insert or Update) profile data
-    const { data, error } = await supabase
+    const supabaseClient = getAuthClient(req);
+    const { data, error } = await supabaseClient
       .from('profiles')
       .upsert({
         id: req.user.id, // linked to the auth.users ID

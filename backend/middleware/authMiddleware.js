@@ -15,8 +15,9 @@ const requireAuth = async (req, res, next) => {
     if (error) throw error;
     if (!user) throw new Error('User not found');
     
-    // Attach user data to request object
+    // Attach user data and token to request object
     req.user = user;
+    req.token = token;
     next();
   } catch (error) {
     return res.status(401).json({ error: error.message || 'Unauthorized access' });
