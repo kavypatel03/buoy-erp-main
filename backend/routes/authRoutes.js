@@ -10,5 +10,6 @@ router.get('/registration-status', authController.getRegistrationStatus);
 
 // Protected route (requires valid JWT token)
 router.get('/profile', requireAuth, authController.getProfile);
+router.post('/fcm-token', requireAuth, authController.updateFcmToken);
 
 module.exports = router;

@@ -67,4 +67,23 @@ class AuthService {
       return true;
     }
   }
+
+  static Future<void> updateFcmToken(String token) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userToken = prefs.getString('token');
+      if (userToken == null) return;
+
+      await http.post(
+        Uri.parse('$baseUrl/fcm-token'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $userToken',
+        },
+        body: jsonEncode({'fcmToken': token}),
+      );
+    } catch (e) {
+      print('Failed to update FCM token: $e');
+    }
+  }
 }

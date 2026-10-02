@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "36372456608",
+    "project_id": "buoy-erp",
+    "storage_bucket": "buoy-erp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:36372456608:android:1d8eb7f697635fc62615c5",
+        "android_client_info": {
+          "package_name": "com.example.final_project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC0TNDfV2wadIlGM25MHVZKp_Ld8djVacQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

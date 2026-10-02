@@ -70,9 +70,26 @@ const getRegistrationStatus = async (req, res) => {
   }
 };
 
+const updateFcmToken = async (req, res) => {
+  try {
+    const { fcmToken } = req.body;
+    const userId = req.user.id;
+    
+    const { error } = await supabase
+      .from('user_fcm_tokens')
+      .upsert({ user_id: userId, token: fcmToken }, { onConflict: 'user_id' });
+      
+    if (error) throw error;
+    res.status(200).json({ message: 'Token updated' });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
 module.exports = {
   register,
   login,
   getProfile,
-  getRegistrationStatus
+  getRegistrationStatus,
+  updateFcmToken
 };

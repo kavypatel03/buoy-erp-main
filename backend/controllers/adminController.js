@@ -136,14 +136,31 @@ exports.updateUser = async (req, res) => {
   }
 };
 
+const admin = require('firebase-admin');
+
+try {
+  let cert;
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    cert = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  } else {
+    cert = require('../firebase-adminsdk.json');
+  }
+  admin.initializeApp({
+    credential: admin.credential.cert(cert)
+  });
+} catch (e) {
+  console.warn("Firebase Admin SDK not initialized. FCM will not be sent.", e.message);
+}
+
 exports.sendNotification = async (req, res) => {
   try {
     const { targetUserId, title, message } = req.body;
     
+    let targetUsers = [];
     if (targetUserId === 'all') {
-      // Fetch all users to send to everyone
       const { data: { users }, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
       if (usersError) throw usersError;
+      targetUsers = users;
       
       const notifications = users.map(u => ({
         user_id: u.id,
@@ -151,16 +168,39 @@ exports.sendNotification = async (req, res) => {
         message,
         is_read: false
       }));
-      
       await supabaseAdmin.from('notifications').insert(notifications);
     } else {
-      // Send to specific user
+      targetUsers = [{ id: targetUserId }];
       await supabaseAdmin.from('notifications').insert({
         user_id: targetUserId,
         title,
         message,
         is_read: false
       });
+    }
+
+    // Try to send FCM pushes
+    if (admin.apps.length > 0) {
+      for (const u of targetUsers) {
+        // Get the FCM token for this user
+        const { data: tokenData } = await supabaseAdmin
+          .from('user_fcm_tokens')
+          .select('token')
+          .eq('user_id', u.id)
+          .single();
+          
+        if (tokenData && tokenData.token) {
+          try {
+            await admin.messaging().send({
+              token: tokenData.token,
+              notification: { title, body: message }
+            });
+            console.log(`Pushed FCM to ${u.id}`);
+          } catch (e) {
+            console.error(`Failed to push FCM to ${u.id}:`, e);
+          }
+        }
+      }
     }
     
     res.redirect('/admin');
