@@ -51,8 +51,11 @@ class _LoginPageState extends State<LoginPage> {
         await prefs.remove('saved_email');
         await prefs.remove('saved_password');
       }
+      
+      if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/dashboard');
     } else {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result['error'].toString())),
       );
