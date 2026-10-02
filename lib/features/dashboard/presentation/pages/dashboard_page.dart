@@ -5,6 +5,8 @@ import '../../../../app/constants/app_assets.dart';
 import '../../../../core/widgets/erp_header_bar.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/services/profile_service.dart';
+import '../../../../core/services/notification_service.dart';
+import '../../../../core/services/local_notification_service.dart';
 
 class DashboardPage extends StatefulWidget {
   final VoidCallback? onNavigateToLowStocks;
@@ -22,6 +24,8 @@ class _DashboardPageState extends State<DashboardPage> {
   final PageController _pageController = PageController();
   final ValueNotifier<int> _currentCarouselIndex = ValueNotifier<int>(1);
   Timer? _autoSlideTimer;
+  Timer? _notificationPollTimer;
+  final Set<String> _poppedNotificationIds = {};
 
   @override
   void initState() {
@@ -39,11 +43,40 @@ class _DashboardPageState extends State<DashboardPage> {
         );
       }
     });
+
+    // Request permission on app open (Dashboard load)
+    LocalNotificationService.requestPermission();
+
+    // Poll for new notifications every 15 seconds
+    _notificationPollTimer = Timer.periodic(const Duration(seconds: 15), (timer) {
+      _pollNotifications();
+    });
+    
+    // Initial poll
+    _pollNotifications();
+  }
+
+  Future<void> _pollNotifications() async {
+    final result = await NotificationService.getNotifications();
+    if (result['success'] && mounted) {
+      final List<dynamic> notifs = result['data'];
+      for (var n in notifs) {
+        if (n['is_read'] == false && !_poppedNotificationIds.contains(n['id'])) {
+          _poppedNotificationIds.add(n['id']);
+          LocalNotificationService.showNotification(
+            id: n['id'].hashCode,
+            title: n['title'] ?? 'New Notification',
+            body: n['message'] ?? '',
+          );
+        }
+      }
+    }
   }
 
   @override
   void dispose() {
     _autoSlideTimer?.cancel();
+    _notificationPollTimer?.cancel();
     _pageController.dispose();
     _currentCarouselIndex.dispose();
     super.dispose();
