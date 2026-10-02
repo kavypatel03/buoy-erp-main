@@ -5,6 +5,7 @@ import '../../../../app/constants/app_colors.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/erp_input_field.dart';
 import '../../../../core/widgets/google_logo_widget.dart';
+import '../../../../core/services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -19,6 +20,33 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _rememberMe = true;
+  bool _isLoading = false;
+
+  Future<void> _login() async {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter both email and password')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    final result = await AuthService.login(
+      _emailController.text.trim(),
+      _passwordController.text,
+    );
+    
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (result['success']) {
+      Navigator.pushReplacementNamed(context, '/dashboard');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['error'].toString())),
+      );
+    }
+  }
 
   @override
   void dispose() {
@@ -189,10 +217,8 @@ class _LoginPageState extends State<LoginPage> {
 
                 // Login Button
                 CustomButton(
-                  text: 'Login',
-                  onPressed: () {
-                    Navigator.pushReplacementNamed(context, '/dashboard');
-                  },
+                  text: _isLoading ? 'Logging in...' : 'Login',
+                  onPressed: _isLoading ? () {} : _login,
                 ),
 
                 const SizedBox(height: 24),

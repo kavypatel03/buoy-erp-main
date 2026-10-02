@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/erp_header_bar.dart';
 import '../../../../core/widgets/erp_input_field.dart';
+import '../../../../core/widgets/erp_input_field.dart';
 import '../../../../core/widgets/glass_container.dart';
+import '../../../../core/services/profile_service.dart';
 
 class MyProfilePage extends StatefulWidget {
   final VoidCallback? onBack;
@@ -21,8 +23,64 @@ class _MyProfilePageState extends State<MyProfilePage> {
   final _middleNameController = TextEditingController();
   final _surnameController = TextEditingController();
   final _mobileController = TextEditingController();
-  final _emailController = TextEditingController(text: 'admin@factory.com');
+  final _emailController = TextEditingController();
   final _occupationController = TextEditingController();
+
+  bool _isLoading = true;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final result = await ProfileService.getProfile();
+    if (result['success'] && mounted) {
+      final data = result['data'];
+      setState(() {
+        _firstNameController.text = data['first_name'] ?? '';
+        _middleNameController.text = data['middle_name'] ?? '';
+        _surnameController.text = data['surname'] ?? '';
+        _mobileController.text = data['mobile'] ?? '';
+        _emailController.text = data['email'] ?? '';
+        _occupationController.text = data['occupation'] ?? '';
+        _isLoading = false;
+      });
+    } else if (mounted) {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _updateProfile() async {
+    setState(() => _isSaving = true);
+    final result = await ProfileService.updateProfile({
+      'first_name': _firstNameController.text,
+      'middle_name': _middleNameController.text,
+      'surname': _surnameController.text,
+      'mobile': _mobileController.text,
+      'occupation': _occupationController.text,
+    });
+    
+    if (!mounted) return;
+    setState(() => _isSaving = false);
+
+    if (result['success']) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile Updated Successfully!')),
+      );
+      if (widget.onBack != null) {
+        widget.onBack!();
+      } else {
+        Navigator.pop(context);
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['error'].toString())),
+      );
+    }
+  }
 
   @override
   void dispose() {
@@ -60,9 +118,14 @@ class _MyProfilePageState extends State<MyProfilePage> {
                   useGradientBorder: true,
                   borderRadius: 26,
                   padding: const EdgeInsets.all(22),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
+                  child: _isLoading 
+                    ? const Center(child: Padding(
+                        padding: EdgeInsets.all(40.0),
+                        child: CircularProgressIndicator(),
+                      ))
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
                       const Text(
                         'Edit Profile',
                         textAlign: TextAlign.center,
@@ -191,17 +254,8 @@ class _MyProfilePageState extends State<MyProfilePage> {
 
                       // Update Profile Button
                       CustomButton(
-                        text: 'Update Profile',
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Profile Updated Successfully!')),
-                          );
-                          if (widget.onBack != null) {
-                            widget.onBack!();
-                          } else {
-                            Navigator.pop(context);
-                          }
-                        },
+                        text: _isSaving ? 'Updating...' : 'Update Profile',
+                        onPressed: _isSaving ? () {} : _updateProfile,
                       ),
                     ],
                   ),

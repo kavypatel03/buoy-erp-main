@@ -4,6 +4,7 @@ import '../../../../app/constants/app_assets.dart';
 import '../../../../app/constants/app_colors.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/erp_input_field.dart';
+import '../../../../core/services/auth_service.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -20,6 +21,47 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _agreeToTerms = true;
+  bool _isLoading = false;
+
+  Future<void> _register() async {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill all fields')),
+      );
+      return;
+    }
+    
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passwords do not match')),
+      );
+      return;
+    }
+
+    if (!_agreeToTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please agree to the Terms and Privacy Policy')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    final result = await AuthService.register(
+      _emailController.text.trim(),
+      _passwordController.text,
+    );
+    
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (result['success']) {
+      Navigator.pushReplacementNamed(context, '/dashboard');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['error'].toString())),
+      );
+    }
+  }
 
   @override
   void dispose() {
@@ -202,10 +244,8 @@ class _RegisterPageState extends State<RegisterPage> {
 
                 // Register Button
                 CustomButton(
-                  text: 'Register',
-                  onPressed: () {
-                    Navigator.pushReplacementNamed(context, '/dashboard');
-                  },
+                  text: _isLoading ? 'Registering...' : 'Register',
+                  onPressed: _isLoading ? () {} : _register,
                 ),
 
                 const SizedBox(height: 20),
