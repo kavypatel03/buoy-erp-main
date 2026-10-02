@@ -137,17 +137,27 @@ exports.updateUser = async (req, res) => {
 };
 
 const admin = require('firebase-admin');
+const fs = require('fs');
+const path = require('path');
 
 try {
   let cert;
   if (process.env.FIREBASE_SERVICE_ACCOUNT) {
     cert = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
   } else {
-    cert = require('../firebase-adminsdk.json');
+    const certPath = path.join(__dirname, '../firebase-adminsdk.json');
+    if (fs.existsSync(certPath)) {
+      cert = JSON.parse(fs.readFileSync(certPath, 'utf8'));
+    }
   }
-  admin.initializeApp({
-    credential: admin.credential.cert(cert)
-  });
+  
+  if (cert) {
+    admin.initializeApp({
+      credential: admin.credential.cert(cert)
+    });
+  } else {
+    console.warn("Firebase Admin SDK not initialized: No service account found.");
+  }
 } catch (e) {
   console.warn("Firebase Admin SDK not initialized. FCM will not be sent.", e.message);
 }
