@@ -11,7 +11,7 @@ const getProfile = async (req, res) => {
     // PGRST116 means 0 rows found (which is fine if they haven't saved a profile yet)
     if (error && error.code !== 'PGRST116') throw error;
     
-    res.status(200).json(data || { email: req.user.email }); // fallback to auth email if no profile
+    res.status(200).json({ ...(data || {}), email: req.user.email });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
