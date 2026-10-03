@@ -105,7 +105,7 @@ class _RegisterPageState extends State<RegisterPage> {
           child: Form(
             key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Top Circular Back Button
                 Align(
@@ -135,20 +135,12 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
 
-                const SizedBox(height: 12),
-
-                // Illustration
-                SvgPicture.asset(
-                  AppAssets.registerIllustration,
-                  height: 165,
-                  fit: BoxFit.contain,
-                ),
-
                 const SizedBox(height: 24),
 
                 // Title
                 const Text(
                   'Register',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w800,
@@ -169,34 +161,24 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
 
                 const SizedBox(height: 28),
-
-                const SizedBox(height: 16),
                 
                 if (!_isRegistrationEnabled)
                   Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFEF2F2),
                       border: Border.all(color: const Color(0xFFFCA5A5)),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444)),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Registration is currently disabled by the administrator.',
-                            style: TextStyle(
-                              color: Color(0xFFB91C1C),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
+                    child: const Text(
+                      'Registration is currently disabled by the administrator.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Color(0xFFB91C1C),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
 

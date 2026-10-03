@@ -1,8 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/erp_header_bar.dart';
 import '../../../../core/widgets/erp_input_field.dart';
 import '../../../../core/widgets/glass_container.dart';
+import '../../../../core/services/employee_service.dart';
 
 class EmployeeModel {
   final String id;
@@ -17,6 +21,7 @@ class EmployeeModel {
   final String attendanceHours;
   final String payableSalary;
   final Color avatarBgColor;
+  final String? profilePicUrl;
 
   EmployeeModel({
     required this.id,
@@ -31,7 +36,28 @@ class EmployeeModel {
     required this.attendanceHours,
     required this.payableSalary,
     required this.avatarBgColor,
+    this.profilePicUrl,
   });
+
+  factory EmployeeModel.fromJson(Map<String, dynamic> json) {
+    return EmployeeModel(
+      id: json['id']?.toString() ?? '',
+      name: json['name'] ?? 'Unknown',
+      phone: json['phone'] ?? '',
+      isIn: json['is_clocked_in'] ?? false,
+      role: json['role'] ?? 'Worker',
+      joinDate: json['created_at'] != null 
+          ? json['created_at'].toString().split('T')[0] 
+          : 'Unknown',
+      hourlySalary: json['hourly_salary']?.toString() ?? '0',
+      work: json['role'] ?? 'Worker',
+      address: json['address'] ?? '',
+      attendanceHours: json['total_hours']?.toString() ?? '0',
+      payableSalary: json['total_salary']?.toString() ?? '0',
+      avatarBgColor: const Color(0xFFFCD34D),
+      profilePicUrl: json['profile_pic_url'],
+    );
+  }
 }
 
 class EmployeePage extends StatefulWidget {
@@ -46,6 +72,37 @@ class EmployeePageState extends State<EmployeePage> {
   String _selectedFilter = 'All Employee';
   EmployeeModel? _selectedEmployee;
 
+  bool _isLoading = false;
+  List<EmployeeModel> _employees = [];
+
+  final ImagePicker _picker = ImagePicker();
+  File? _selectedImage;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchEmployees();
+  }
+
+  Future<void> _fetchEmployees() async {
+    setState(() => _isLoading = true);
+    final res = await EmployeeService.getEmployees();
+    setState(() => _isLoading = false);
+
+    if (res['success']) {
+      final List<dynamic> data = res['data'];
+      setState(() {
+        _employees = data.map((e) => EmployeeModel.fromJson(e)).toList();
+      });
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to fetch employees: ${res['error']}')),
+        );
+      }
+    }
+  }
+
   bool get hasSubScreen => _currentSubIndex > 0;
 
   void popSubScreen() {
@@ -59,81 +116,9 @@ class EmployeePageState extends State<EmployeePage> {
   void goToAddNewEmployee() {
     setState(() {
       _currentSubIndex = 1;
+      _selectedImage = null;
     });
   }
-
-  final List<EmployeeModel> _employees = [
-    EmployeeModel(
-      id: '1',
-      name: 'Mahesh Gupta',
-      phone: '+91-11111-11111',
-      isIn: true,
-      role: 'Worker',
-      joinDate: '21 June 2025',
-      hourlySalary: '800',
-      work: 'Paper rolling',
-      address: 'Ahmedabad',
-      attendanceHours: '100 Hours',
-      payableSalary: '8000/- INR',
-      avatarBgColor: const Color(0xFFFCD34D),
-    ),
-    EmployeeModel(
-      id: '2',
-      name: 'Rajesh Jain',
-      phone: '+91-22222-22222',
-      isIn: false,
-      role: 'Machine Operator',
-      joinDate: '15 Jan 2024',
-      hourlySalary: '950',
-      work: 'Lead cutting',
-      address: 'Surat',
-      attendanceHours: '90 Hours',
-      payableSalary: '8550/- INR',
-      avatarBgColor: const Color(0xFFF87171),
-    ),
-    EmployeeModel(
-      id: '3',
-      name: 'Minal Makwana',
-      phone: '+91-33333-33333',
-      isIn: true,
-      role: 'Quality Supervisor',
-      joinDate: '10 Aug 2023',
-      hourlySalary: '1100',
-      work: 'Quality Audit',
-      address: 'Vadodara',
-      attendanceHours: '120 Hours',
-      payableSalary: '13200/- INR',
-      avatarBgColor: const Color(0xFF60A5FA),
-    ),
-    EmployeeModel(
-      id: '4',
-      name: 'Ketan Raina',
-      phone: '+91-44444-44444',
-      isIn: true,
-      role: 'Packaging Lead',
-      joinDate: '05 Mar 2025',
-      hourlySalary: '750',
-      work: 'Box Packing',
-      address: 'Rajkot',
-      attendanceHours: '110 Hours',
-      payableSalary: '8250/- INR',
-      avatarBgColor: const Color(0xFFFBBF24),
-    ),
-    EmployeeModel(
-      id: '5',
-      name: 'Riddhi Chauhan',
-      phone: '+91-55555-55555',
-      isIn: false,
-      role: 'Inventory Helper',
-      joinDate: '12 Nov 2024',
-      hourlySalary: '700',
-      work: 'Stock Sorting',
-      address: 'Ahmedabad',
-      attendanceHours: '80 Hours',
-      payableSalary: '5600/- INR',
-      avatarBgColor: const Color(0xFFF472B6),
-    ),
-  ];
 
   void _onSelectEmployee(EmployeeModel employee) {
     setState(() {
@@ -162,9 +147,6 @@ class EmployeePageState extends State<EmployeePage> {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // SCREEN 1.1: EMPLOYEE LIST
-  // ---------------------------------------------------------------------------
   Widget _buildEmployeeListScreen() {
     final filteredList = _employees.where((emp) {
       if (_selectedFilter == 'Available') return emp.isIn;
@@ -174,8 +156,18 @@ class EmployeePageState extends State<EmployeePage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 80.0), // Added padding to avoid overlapping with menubar
+        child: FloatingActionButton(
+          onPressed: goToAddNewEmployee,
+          backgroundColor: const Color(0xFF5B3DF5),
+          child: const Icon(Icons.add, color: Colors.white),
+        ),
+      ),
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: _isLoading 
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
           physics: const ClampingScrollPhysics(),
           padding: const EdgeInsets.only(bottom: 85.0),
           child: Column(
@@ -184,7 +176,6 @@ class EmployeePageState extends State<EmployeePage> {
 
               const SizedBox(height: 8),
 
-              // Filter Chips Row
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Row(
@@ -200,7 +191,12 @@ class EmployeePageState extends State<EmployeePage> {
 
               const SizedBox(height: 16),
 
-              // Main Employee List Container Card with + button inside at bottom-right
+              if (filteredList.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.only(top: 40.0),
+                  child: Center(child: Text("No employees found.")),
+                )
+              else
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: GlassContainer(
@@ -230,12 +226,19 @@ class EmployeePageState extends State<EmployeePage> {
                                       decoration: BoxDecoration(
                                         color: emp.avatarBgColor,
                                         shape: BoxShape.circle,
+                                        image: emp.profilePicUrl != null && emp.profilePicUrl!.isNotEmpty
+                                          ? DecorationImage(
+                                              image: MemoryImage(base64Decode(emp.profilePicUrl!)),
+                                              fit: BoxFit.cover,
+                                            )
+                                          : null,
                                       ),
-                                      child: const Icon(
+                                      child: emp.profilePicUrl == null || emp.profilePicUrl!.isEmpty
+                                      ? const Icon(
                                         Icons.person_rounded,
                                         color: Colors.white,
                                         size: 28,
-                                      ),
+                                      ) : null,
                                     ),
                                     const SizedBox(width: 14),
                                     // Details
@@ -297,7 +300,6 @@ class EmployeePageState extends State<EmployeePage> {
     );
   }
 
-
   Widget _buildFilterChip(String label) {
     final isSelected = _selectedFilter == label;
 
@@ -344,277 +346,367 @@ class EmployeePageState extends State<EmployeePage> {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // SCREEN 1.2: ADD NEW EMPLOYEE
-  // ---------------------------------------------------------------------------
   Widget _buildAddNewEmployeeScreen() {
     final nameCtrl = TextEditingController();
     final salaryCtrl = TextEditingController();
     final phoneCtrl = TextEditingController();
     final workCtrl = TextEditingController();
     final addressCtrl = TextEditingController();
+    bool isSaving = false;
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: 85.0),
-          child: Column(
+    Future<void> pickImage(ImageSource source) async {
+      final pickedFile = await _picker.pickImage(source: source, imageQuality: 50);
+      if (pickedFile != null) {
+        setState(() {
+          _selectedImage = File(pickedFile.path);
+        });
+      }
+    }
+
+    void showImageSourceSelector() {
+      showModalBottomSheet(
+        context: context,
+        builder: (ctx) => SafeArea(
+          child: Wrap(
             children: [
-              ErpHeaderBar(
-                title: 'Employee',
-                onBackTap: _onBackToList,
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Photo Library'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  pickImage(ImageSource.gallery);
+                },
               ),
-
-              const SizedBox(height: 16),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: GlassContainer(
-                  useGradientBorder: true,
-                  borderRadius: 26,
-                  padding: const EdgeInsets.all(22),
-                  child: Column(
-                    children: [
-                      // Avatar
-                      Container(
-                        width: 72,
-                        height: 72,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFFCD34D),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.person_rounded,
-                          color: Color(0xFF1E3A8A),
-                          size: 48,
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      ErpInputField(
-                        label: 'Employee Name',
-                        hintText: 'Enter Name of Employee',
-                        controller: nameCtrl,
-                      ),
-                      const SizedBox(height: 14),
-                      ErpInputField(
-                        label: 'Employee Salary (Hourly)',
-                        hintText: 'Enter salary on based of One Hour',
-                        controller: salaryCtrl,
-                        keyboardType: TextInputType.number,
-                      ),
-                      const SizedBox(height: 14),
-                      ErpInputField(
-                        label: 'Employee Mo. Number',
-                        hintText: 'Enter Mobile Number',
-                        controller: phoneCtrl,
-                        keyboardType: TextInputType.phone,
-                      ),
-                      const SizedBox(height: 14),
-                      ErpInputField(
-                        label: 'Employee Work',
-                        hintText: 'Employee work in factory',
-                        controller: workCtrl,
-                      ),
-                      const SizedBox(height: 14),
-                      ErpInputField(
-                        label: 'Employee Address',
-                        hintText: 'Enter full address of Employee',
-                        controller: addressCtrl,
-                      ),
-                      const SizedBox(height: 24),
-
-                      CustomButton(
-                        text: 'Add New Employee',
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('New Employee Added Successfully!')),
-                          );
-                          _onBackToList();
-                        },
-                      ),
-                    ],
-                  ),
-                ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera),
+                title: const Text('Camera'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  pickImage(ImageSource.camera);
+                },
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
+      );
+    }
 
-  // ---------------------------------------------------------------------------
-  // SCREEN 1.3: EMPLOYEE DETAILS
-  // ---------------------------------------------------------------------------
-  Widget _buildEmployeeDetailsScreen() {
-    final emp = _selectedEmployee ?? _employees.first;
+    return StatefulBuilder(
+      builder: (context, setLocalState) {
+        return Scaffold(
+          backgroundColor: Colors.white,
+          body: SafeArea(
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              padding: const EdgeInsets.only(bottom: 85.0),
+              child: Column(
+                children: [
+                  ErpHeaderBar(
+                    title: 'Add Employee',
+                    onBackTap: _onBackToList,
+                  ),
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: 85.0),
-          child: Column(
-            children: [
-              ErpHeaderBar(
-                title: 'Employee',
-                onBackTap: _onBackToList,
-              ),
+                  const SizedBox(height: 16),
 
-              const SizedBox(height: 16),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: GlassContainer(
-                  useGradientBorder: true,
-                  borderRadius: 26,
-                  padding: const EdgeInsets.all(22),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Avatar
-                      Container(
-                        width: 72,
-                        height: 72,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFFCD34D),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.person_rounded,
-                          color: Color(0xFF1E3A8A),
-                          size: 48,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        emp.name,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        emp.role,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF64748B),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-
-                      // Present Badge
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE6F4EA),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text(
-                          'Present',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF137333),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Details Key-Value Table
-                      _buildDetailRow('Employee Mo. Number', emp.phone),
-                      const SizedBox(height: 14),
-                      _buildDetailRow('Join Date', emp.joinDate),
-                      const SizedBox(height: 14),
-                      _buildDetailRow('Salary Hourly', '${emp.hourlySalary}/h INR'),
-                      const SizedBox(height: 14),
-                      _buildDetailRow('Work', emp.work),
-                      const SizedBox(height: 14),
-                      _buildDetailRow('Address', emp.address),
-                      const SizedBox(height: 14),
-                      _buildDetailRow('Attendance (Hours)\n(This Month Only)', emp.attendanceHours),
-                      const SizedBox(height: 14),
-                      _buildDetailRow(
-                        'Payable Salary',
-                        emp.payableSalary,
-                        valueColor: const Color(0xFF00B039),
-                        isBoldValue: true,
-                        fontSize: 15,
-                      ),
-
-                      const SizedBox(height: 28),
-
-                      // Action Buttons (Edit Employee & Pay Salary)
-                      Row(
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: GlassContainer(
+                      useGradientBorder: true,
+                      borderRadius: 26,
+                      padding: const EdgeInsets.all(22),
+                      child: Column(
                         children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () {
-                                setState(() {
-                                  _currentSubIndex = 3;
-                                });
-                              },
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                side: const BorderSide(color: Color(0xFFCBD5E1), width: 1),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(25),
-                                ),
+                          GestureDetector(
+                            onTap: showImageSourceSelector,
+                            child: Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF1F5F9),
+                                shape: BoxShape.circle,
+                                image: _selectedImage != null
+                                    ? DecorationImage(
+                                        image: FileImage(_selectedImage!),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : null,
                               ),
-                              child: const Text(
-                                'Edit Employee',
-                                style: TextStyle(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF0F172A),
-                                ),
-                              ),
+                              child: _selectedImage == null
+                                  ? const Icon(
+                                      Icons.camera_alt,
+                                      color: Color(0xFF64748B),
+                                      size: 32,
+                                    )
+                                  : null,
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () {
+                          const SizedBox(height: 8),
+                          const Text("Tap to upload photo", style: TextStyle(fontSize: 12, color: Colors.grey)),
+
+                          const SizedBox(height: 20),
+
+                          ErpInputField(
+                            label: 'Employee Name',
+                            hintText: 'Enter Name of Employee',
+                            controller: nameCtrl,
+                          ),
+                          const SizedBox(height: 14),
+                          ErpInputField(
+                            label: 'Employee Salary (Hourly)',
+                            hintText: 'Enter hourly salary',
+                            controller: salaryCtrl,
+                            keyboardType: TextInputType.number,
+                          ),
+                          const SizedBox(height: 14),
+                          ErpInputField(
+                            label: 'Employee Mo. Number',
+                            hintText: 'Enter Mobile Number',
+                            controller: phoneCtrl,
+                            keyboardType: TextInputType.phone,
+                          ),
+                          const SizedBox(height: 14),
+                          ErpInputField(
+                            label: 'Employee Role / Work',
+                            hintText: 'Employee work in factory',
+                            controller: workCtrl,
+                          ),
+                          const SizedBox(height: 14),
+                          ErpInputField(
+                            label: 'Employee Address',
+                            hintText: 'Enter full address of Employee',
+                            controller: addressCtrl,
+                          ),
+                          const SizedBox(height: 24),
+
+                          isSaving ? const CircularProgressIndicator() : CustomButton(
+                            text: 'Add New Employee',
+                            onPressed: () async {
+                              if (nameCtrl.text.isEmpty || salaryCtrl.text.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Salary paid for ${emp.name}!')),
+                                  const SnackBar(content: Text('Name and Salary are required')),
                                 );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF5B3DF5),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(25),
-                                ),
-                              ),
-                              child: const Text(
-                                'Pay Salary',
-                                style: TextStyle(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
+                                return;
+                              }
+
+                              setLocalState(() => isSaving = true);
+                              String? base64Image;
+                              if (_selectedImage != null) {
+                                final bytes = await _selectedImage!.readAsBytes();
+                                base64Image = base64Encode(bytes);
+                              }
+
+                              final res = await EmployeeService.createEmployee({
+                                'name': nameCtrl.text,
+                                'hourly_salary': double.tryParse(salaryCtrl.text) ?? 0,
+                                'phone': phoneCtrl.text,
+                                'role': workCtrl.text,
+                                'address': addressCtrl.text,
+                                'profile_pic_url': base64Image ?? '',
+                              });
+
+                              setLocalState(() => isSaving = false);
+
+                              if (res['success']) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('New Employee Added Successfully!')),
+                                );
+                                _fetchEmployees();
+                                _onBackToList();
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Failed: ${res['error']}')),
+                                );
+                              }
+                            },
                           ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      }
+    );
+  }
+
+  Widget _buildEmployeeDetailsScreen() {
+    if (_selectedEmployee == null) return Container();
+    final emp = _selectedEmployee!;
+    bool isProcessing = false;
+
+    return StatefulBuilder(
+      builder: (context, setLocalState) {
+        return Scaffold(
+          backgroundColor: Colors.white,
+          body: SafeArea(
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              padding: const EdgeInsets.only(bottom: 85.0),
+              child: Column(
+                children: [
+                  ErpHeaderBar(
+                    title: 'Employee Details',
+                    onBackTap: _onBackToList,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: GlassContainer(
+                      useGradientBorder: true,
+                      borderRadius: 26,
+                      padding: const EdgeInsets.all(22),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 72,
+                            height: 72,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFCD34D),
+                              shape: BoxShape.circle,
+                              image: emp.profilePicUrl != null && emp.profilePicUrl!.isNotEmpty
+                                  ? DecorationImage(
+                                      image: MemoryImage(base64Decode(emp.profilePicUrl!)),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : null,
+                            ),
+                            child: emp.profilePicUrl == null || emp.profilePicUrl!.isEmpty
+                                ? const Icon(
+                                    Icons.person_rounded,
+                                    color: Color(0xFF1E3A8A),
+                                    size: 48,
+                                  )
+                                : null,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            emp.name,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            emp.role,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+
+                          // Present/Out Badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: emp.isIn ? const Color(0xFFE6F4EA) : const Color(0xFFFCE8E6),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              emp.isIn ? 'Present' : 'Absent',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: emp.isIn ? const Color(0xFF137333) : const Color(0xFFC5221F),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          // Details Key-Value Table
+                          _buildDetailRow('Employee Mo. Number', emp.phone),
+                          const SizedBox(height: 14),
+                          _buildDetailRow('Join Date', emp.joinDate),
+                          const SizedBox(height: 14),
+                          _buildDetailRow('Salary Hourly', '${emp.hourlySalary}/h INR'),
+                          const SizedBox(height: 14),
+                          _buildDetailRow('Work', emp.work),
+                          const SizedBox(height: 14),
+                          _buildDetailRow('Address', emp.address),
+                          const SizedBox(height: 14),
+                          _buildDetailRow('Attendance (Hours)', emp.attendanceHours),
+                          const SizedBox(height: 14),
+                          _buildDetailRow(
+                            'Payable Salary',
+                            '${emp.payableSalary} INR',
+                            valueColor: const Color(0xFF00B039),
+                            isBoldValue: true,
+                            fontSize: 15,
+                          ),
+
+                          const SizedBox(height: 28),
+
+                          if (isProcessing)
+                            const CircularProgressIndicator()
+                          else
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: emp.isIn ? null : () async {
+                                      setLocalState(() => isProcessing = true);
+                                      final res = await EmployeeService.clockIn(emp.id);
+                                      setLocalState(() => isProcessing = false);
+                                      if (res['success']) {
+                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Clocked in successfully')));
+                                        _fetchEmployees();
+                                        _onBackToList();
+                                      } else {
+                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['error'])));
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.green,
+                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                                    ),
+                                    child: const Text('Clock In', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: !emp.isIn ? null : () async {
+                                      setLocalState(() => isProcessing = true);
+                                      final res = await EmployeeService.clockOut(emp.id);
+                                      setLocalState(() => isProcessing = false);
+                                      if (res['success']) {
+                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Clocked out successfully')));
+                                        _fetchEmployees();
+                                        _onBackToList();
+                                      } else {
+                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['error'])));
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.redAccent,
+                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                                    ),
+                                    child: const Text('Clock Out', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
     );
   }
 
@@ -656,113 +748,9 @@ class EmployeePageState extends State<EmployeePage> {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // SCREEN 1.4: EDIT EMPLOYEE
-  // ---------------------------------------------------------------------------
   Widget _buildEditEmployeeScreen() {
-    final emp = _selectedEmployee ?? _employees.first;
-    final nameCtrl = TextEditingController(text: emp.name);
-    final salaryCtrl = TextEditingController(text: emp.hourlySalary);
-    final phoneCtrl = TextEditingController(text: emp.phone);
-    final workCtrl = TextEditingController(text: emp.work);
-    final addressCtrl = TextEditingController(text: emp.address);
-
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: 85.0),
-          child: Column(
-            children: [
-              ErpHeaderBar(
-                title: 'Employee',
-                onBackTap: () {
-                  setState(() {
-                    _currentSubIndex = 2;
-                  });
-                },
-              ),
-
-              const SizedBox(height: 16),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: GlassContainer(
-                  useGradientBorder: true,
-                  borderRadius: 26,
-                  padding: const EdgeInsets.all(22),
-                  child: Column(
-                    children: [
-                      // Avatar
-                      Container(
-                        width: 72,
-                        height: 72,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFFCD34D),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.person_rounded,
-                          color: Color(0xFF1E3A8A),
-                          size: 48,
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      ErpInputField(
-                        label: 'Employee Name',
-                        hintText: 'Mahesh Gupta',
-                        controller: nameCtrl,
-                      ),
-                      const SizedBox(height: 14),
-                      ErpInputField(
-                        label: 'Employee Salary (Hourly)',
-                        hintText: '800',
-                        controller: salaryCtrl,
-                        keyboardType: TextInputType.number,
-                      ),
-                      const SizedBox(height: 14),
-                      ErpInputField(
-                        label: 'Employee Mo. Number',
-                        hintText: '+91-11111-11111',
-                        controller: phoneCtrl,
-                        keyboardType: TextInputType.phone,
-                      ),
-                      const SizedBox(height: 14),
-                      ErpInputField(
-                        label: 'Employee Work',
-                        hintText: 'Paper rolling',
-                        controller: workCtrl,
-                      ),
-                      const SizedBox(height: 14),
-                      ErpInputField(
-                        label: 'Employee Address',
-                        hintText: 'Ahmedabad',
-                        controller: addressCtrl,
-                      ),
-                      const SizedBox(height: 24),
-
-                      CustomButton(
-                        text: 'Update Employee',
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Employee Updated Successfully!')),
-                          );
-                          setState(() {
-                            _currentSubIndex = 2;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      body: Center(child: Text("Edit feature coming soon")),
     );
   }
 }

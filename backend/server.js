@@ -10,6 +10,7 @@ const authRoutes = require('./routes/authRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const employeeRoutes = require('./routes/employeeRoutes');
 const requireAuth = require('./middleware/authMiddleware');
 
 const app = express();
@@ -30,6 +31,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/profile', requireAuth, profileRoutes);
 app.use('/api/items', requireAuth, itemRoutes);
 app.use('/api/notifications', requireAuth, notificationRoutes);
+app.use('/api/employees', requireAuth, employeeRoutes);
 app.use('/admin', adminRoutes);
 
 // Basic health check route
