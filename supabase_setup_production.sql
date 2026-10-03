@@ -50,7 +50,7 @@ RETURNS TRIGGER AS $$
 BEGIN
   IF NEW.input_item_id IS NOT NULL AND NEW.input_qty > 0 THEN
     UPDATE items
-    SET stock_quantity = stock_quantity - NEW.input_qty
+    SET stock_quantity = (CAST(stock_quantity AS numeric) - NEW.input_qty)::text
     WHERE id = NEW.input_item_id;
   END IF;
   RETURN NEW;

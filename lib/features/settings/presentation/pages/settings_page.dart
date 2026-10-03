@@ -5,6 +5,7 @@ import 'change_password_page.dart';
 import 'help_support_page.dart';
 import 'my_profile_page.dart';
 import '../../../../core/services/profile_service.dart';
+import '../../../../core/services/auth_service.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -218,8 +219,11 @@ class SettingsPageState extends State<SettingsPage> {
                         textColor: const Color(0xFFFF334B),
                         iconColor: const Color(0xFFFF334B),
                         hideChevron: true,
-                        onTap: () {
-                          Navigator.pushReplacementNamed(context, '/login');
+                        onTap: () async {
+                          await AuthService.logout();
+                          if (context.mounted) {
+                            Navigator.pushReplacementNamed(context, '/');
+                          }
                         },
                       ),
                     ],
