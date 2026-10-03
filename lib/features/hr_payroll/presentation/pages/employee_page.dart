@@ -156,14 +156,6 @@ class EmployeePageState extends State<EmployeePage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 80.0), // Added padding to avoid overlapping with menubar
-        child: FloatingActionButton(
-          onPressed: goToAddNewEmployee,
-          backgroundColor: const Color(0xFF5B3DF5),
-          child: const Icon(Icons.add, color: Colors.white),
-        ),
-      ),
       body: SafeArea(
         child: _isLoading 
           ? const Center(child: CircularProgressIndicator())
