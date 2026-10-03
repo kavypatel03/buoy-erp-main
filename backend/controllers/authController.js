@@ -1,15 +1,22 @@
+const { createClient } = require('@supabase/supabase-js');
 const supabase = require('../config/supabase');
+
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  { auth: { autoRefreshToken: false, persistSession: false } }
+);
 
 const register = async (req, res) => {
   try {
     const { email, password, ...metadata } = req.body;
     
     // Check if registration is enabled
-    const { data: settingsData } = await supabase
+    const { data: settingsData, error: settingsError } = await supabaseAdmin
       .from('app_settings')
       .select('value')
       .eq('key', 'registration_enabled')
-      .single();
+      .maybeSingle();
       
     if (settingsData && (settingsData.value === 'false' || settingsData.value === false)) {
       return res.status(403).json({ error: 'Registration is currently disabled by the administrator' });
@@ -53,7 +60,7 @@ const getProfile = async (req, res) => {
 
 const getRegistrationStatus = async (req, res) => {
   try {
-    const { data: settingsData } = await supabase
+    const { data: settingsData, error } = await supabaseAdmin
       .from('app_settings')
       .select('value')
       .eq('key', 'registration_enabled')
