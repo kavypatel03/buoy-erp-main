@@ -103,10 +103,10 @@ exports.addProcessLog = async (req, res) => {
         .single();
       
       if (!itemError && itemData) {
-        if (itemData.stock_quantity <= itemData.min_quantity) {
+        if (parseFloat(itemData.stock_quantity || 0) <= parseFloat(itemData.min_quantity || 0)) {
           // Trigger a low stock notification
           await supabaseAdmin.from('notifications').insert([{
-            owner_id: userId,
+            user_id: userId,
             title: 'Low Stock Alert',
             message: `Stock for ${itemData.title} has fallen to ${itemData.stock_quantity} (Minimum: ${itemData.min_quantity}). Please restock!`,
             is_read: false

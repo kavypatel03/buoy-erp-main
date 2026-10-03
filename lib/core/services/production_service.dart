@@ -39,6 +39,22 @@ class ProductionService {
     }
   }
 
+  static Future<Map<String, dynamic>> completeOrder(String orderId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      if (token == null) return {'success': false, 'error': 'Not authenticated'};
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/orders/$orderId/complete'),
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
   static Future<Map<String, dynamic>> addProcessLog(String orderId, Map<String, dynamic> logData) async {
     try {
       final prefs = await SharedPreferences.getInstance();

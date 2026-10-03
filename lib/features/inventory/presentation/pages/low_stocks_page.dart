@@ -110,7 +110,7 @@ class LowStocksPageState extends State<LowStocksPage> {
             id: json['id']?.toString() ?? '',
             title: json['title']?.toString() ?? 'Unknown',
             subtitle: json['subtitle']?.toString() ?? '',
-            metric: json['metric']?.toString() ?? '0',
+            metric: json['stock_quantity']?.toString() ?? '0',
             unit: json['unit']?.toString() ?? 'Kg',
             metricColor: metricColor,
             icon: icon,

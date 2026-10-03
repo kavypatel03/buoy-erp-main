@@ -21,11 +21,10 @@ exports.getSummary = async (req, res) => {
       employeesResult,
       clockedInResult,
     ] = await Promise.all([
-      // Total inventory items
+      // Total inventory items (items table has no owner_id)
       supabaseAdmin
         .from('items')
-        .select('id', { count: 'exact', head: true })
-        .eq('owner_id', userId),
+        .select('id', { count: 'exact', head: true }),
 
       // Active production orders
       supabaseAdmin
@@ -49,17 +48,15 @@ exports.getSummary = async (req, res) => {
 
       // Employees currently clocked in
       supabaseAdmin
-        .from('employees')
+        .from('attendance')
         .select('id', { count: 'exact', head: true })
-        .eq('owner_id', userId)
-        .eq('is_in', true),
+        .is('clock_out', null),
     ]);
 
-    // Low stock needs a separate query comparing two columns
+    // Low stock needs a separate query
     const { data: allItems } = await supabaseAdmin
       .from('items')
-      .select('stock_quantity, min_quantity')
-      .eq('owner_id', userId);
+      .select('stock_quantity, min_quantity');
 
     const lowStockCount = (allItems || []).filter(
       (item) => parseFloat(item.stock_quantity || 0) <= parseFloat(item.min_quantity || 0)

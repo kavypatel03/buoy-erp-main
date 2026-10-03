@@ -180,7 +180,13 @@ class ProductionPageState extends State<ProductionPage> {
                   final res = await ProductionService.updateProcessLog(log['id'], outputQty);
                   
                   if (res['success']) {
-                    _fetchOrders();
+                    setState(() {
+                      log['output_qty'] = outputQty;
+                      log['wastage_qty'] = (log['input_qty'] ?? 0) - outputQty;
+                      _isLoading = false;
+                    });
+                    // Refresh in background without spinner
+                    _fetchOrders().then((_) {});
                   } else {
                     setState(() => _isLoading = false);
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['error'])));
@@ -397,9 +403,30 @@ class ProductionPageState extends State<ProductionPage> {
             ErpHeaderBar(
               title: _selectedOrder['product_name'],
               onBackTap: popSubScreen,
-              trailing: IconButton(
-                icon: const Icon(Icons.add_task, color: Colors.black),
-                onPressed: _showAddLogModal,
+              trailing: Row(
+                children: [
+                  if (_selectedOrder['status'] != 'Completed')
+                    IconButton(
+                      icon: const Icon(Icons.check_circle_outline, color: Colors.green),
+                      onPressed: () async {
+                        setState(() => _isLoading = true);
+                        final res = await ProductionService.completeOrder(_selectedOrder['id']);
+                        if (res['success']) {
+                          setState(() {
+                            _selectedOrder['status'] = 'Completed';
+                            _isLoading = false;
+                          });
+                        } else {
+                          setState(() => _isLoading = false);
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['error'])));
+                        }
+                      },
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.add_task, color: Colors.black),
+                    onPressed: _showAddLogModal,
+                  ),
+                ],
               ),
             ),
             Expanded(

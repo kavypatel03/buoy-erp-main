@@ -46,13 +46,16 @@ class BuoyLogoWidget extends StatelessWidget {
         ],
       ),
       child: Center(
-        child: Image.asset(
-          'assets/icon/app_icon.png',
-          height: imgHeight,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) {
-            return _buildFallbackTextLogo();
-          },
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.asset(
+            'assets/icon/app_icon.png',
+            height: imgHeight,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildFallbackTextLogo();
+            },
+          ),
         ),
       ),
     );
