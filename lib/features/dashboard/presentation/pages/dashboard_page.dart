@@ -2,11 +2,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../app/constants/app_assets.dart';
+import '../../../../app/constants/app_colors.dart';
 import '../../../../core/widgets/erp_header_bar.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/services/profile_service.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/services/local_notification_service.dart';
+import '../../../../core/services/dashboard_service.dart';
 
 class DashboardPage extends StatefulWidget {
   final VoidCallback? onNavigateToLowStocks;
@@ -25,13 +27,23 @@ class _DashboardPageState extends State<DashboardPage> {
   final ValueNotifier<int> _currentCarouselIndex = ValueNotifier<int>(1);
   Timer? _autoSlideTimer;
   Timer? _notificationPollTimer;
+  Timer? _summaryRefreshTimer;
   final Set<String> _poppedNotificationIds = {};
+
+  // Summary stats — start with '-' to show loading
+  String _totalItems = '-';
+  String _lowStockItems = '-';
+  String _activeOrders = '-';
+  String _clockedIn = '-';
+  String _totalEmployees = '-';
+  String _logsToday = '-';
+  bool _summaryLoading = true;
 
   @override
   void initState() {
     super.initState();
 
-    // Auto-sliding for top carousel
+    // Auto-sliding carousel
     _autoSlideTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
       if (_pageController.hasClients) {
         int nextPage = (_pageController.page?.round() ?? 0) + 1;
@@ -44,34 +56,51 @@ class _DashboardPageState extends State<DashboardPage> {
       }
     });
 
-    // Request permission on app open (Dashboard load)
     LocalNotificationService.requestPermission();
 
-    // Poll for new notifications every 15 seconds
-    _notificationPollTimer = Timer.periodic(const Duration(seconds: 15), (timer) {
+    // Notification polling every 15s
+    _notificationPollTimer = Timer.periodic(const Duration(seconds: 15), (_) {
       _pollNotifications();
     });
-    
-    // Initial poll
     _pollNotifications();
+
+    // Fetch summary immediately, then refresh every 30s
+    _fetchSummary();
+    _summaryRefreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      _fetchSummary();
+    });
+  }
+
+  Future<void> _fetchSummary() async {
+    final result = await DashboardService.getSummary();
+    if (result['success'] && mounted) {
+      final data = result['data'];
+      setState(() {
+        _totalItems = '${data['totalItems'] ?? 0}';
+        _lowStockItems = '${data['lowStockItems'] ?? 0}';
+        _activeOrders = '${data['activeOrders'] ?? 0}';
+        _clockedIn = '${data['clockedInEmployees'] ?? 0}';
+        _totalEmployees = '${data['totalEmployees'] ?? 0}';
+        _logsToday = '${data['logsToday'] ?? 0}';
+        _summaryLoading = false;
+      });
+    } else if (mounted) {
+      setState(() => _summaryLoading = false);
+    }
   }
 
   Future<void> _pollNotifications() async {
     final result = await NotificationService.getNotifications();
-    print("🔔 Notification Poll Result: $result");
     if (result['success'] && mounted) {
       final List<dynamic> notifs = result['data'];
       for (var n in notifs) {
         if (n['is_read'] == false && !_poppedNotificationIds.contains(n['id'])) {
           _poppedNotificationIds.add(n['id']);
-          print("🔔 Triggering Local Notification for: ${n['title']}");
           LocalNotificationService.showNotification(
-            id: (n['id'].hashCode.abs()) & 0x7FFFFFFF, // Ensure valid 32-bit positive integer
+            id: (n['id'].hashCode.abs()) & 0x7FFFFFFF,
             title: n['title'] ?? 'New Notification',
             body: n['message'] ?? '',
           );
-          // Optionally mark as read on server if needed:
-          // NotificationService.markAsRead(n['id']);
         }
       }
     }
@@ -81,16 +110,15 @@ class _DashboardPageState extends State<DashboardPage> {
   void dispose() {
     _autoSlideTimer?.cancel();
     _notificationPollTimer?.cancel();
+    _summaryRefreshTimer?.cancel();
     _pageController.dispose();
     _currentCarouselIndex.dispose();
     super.dispose();
   }
 
   Future<void> _handleRefresh() async {
-    await Future.delayed(const Duration(milliseconds: 800));
-    if (mounted) {
-      setState(() {});
-    }
+    setState(() => _summaryLoading = true);
+    await _fetchSummary();
   }
 
   @override
@@ -102,29 +130,24 @@ class _DashboardPageState extends State<DashboardPage> {
         backgroundColor: Colors.white,
         onRefresh: _handleRefresh,
         child: SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.only(bottom: 85.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Top Bar
               const ErpHeaderBar(title: 'Dashboard'),
-
               const SizedBox(height: 12),
 
               // Greeting Banner
               const _GreetingBanner(),
-
               const SizedBox(height: 20),
 
-              // Horizontal Feature Banners Carousel
+              // Feature carousel
               SizedBox(
                 height: 165,
                 child: PageView(
                   controller: _pageController,
-                  onPageChanged: (index) {
-                    _currentCarouselIndex.value = index;
-                  },
+                  onPageChanged: (index) => _currentCarouselIndex.value = index,
                   children: const [
                     _CarouselCard(
                       title: 'Warehouse Control',
@@ -149,7 +172,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
               const SizedBox(height: 10),
 
-              // Page Indicator Dots (Only this small widget rebuilds on page swipe!)
+              // Carousel dots
               ValueListenableBuilder<int>(
                 valueListenable: _currentCarouselIndex,
                 builder: (context, activeIndex, _) {
@@ -163,9 +186,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         width: isActive ? 16 : 6,
                         height: 6,
                         decoration: BoxDecoration(
-                          color: isActive
-                              ? const Color(0xFF5B3DF5)
-                              : const Color(0xFFCBD5E1),
+                          color: isActive ? const Color(0xFF5B3DF5) : const Color(0xFFCBD5E1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       );
@@ -176,32 +197,63 @@ class _DashboardPageState extends State<DashboardPage> {
 
               const SizedBox(height: 24),
 
-              // 4 Grid Action Cards (2x2)
+              // Section header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Live Overview',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    if (_summaryLoading)
+                      const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF5B3DF5)),
+                      )
+                    else
+                      GestureDetector(
+                        onTap: _handleRefresh,
+                        child: const Icon(Icons.refresh_rounded, size: 18, color: Color(0xFF5B3DF5)),
+                      ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // 2x2 grid stat cards — now LIVE
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Column(
                   children: [
                     Row(
-                      children: const [
+                      children: [
                         Expanded(
                           child: _GridCard(
-                            title: 'Total Items',
-                            value: '12',
-                            unit: 'Categories',
+                            title: 'Inventory Items',
+                            value: _totalItems,
+                            unit: 'Total Items',
                             icon: Icons.inventory_2_rounded,
-                            iconColor: Color(0xFF5B3DF5),
-                            iconBg: Color(0x1F5B3DF5),
+                            iconColor: const Color(0xFF5B3DF5),
+                            iconBg: const Color(0x1F5B3DF5),
                           ),
                         ),
-                        SizedBox(width: 16),
+                        const SizedBox(width: 16),
                         Expanded(
                           child: _GridCard(
-                            title: 'Processes',
-                            value: '24',
-                            unit: 'Active',
+                            title: 'Production',
+                            value: _activeOrders,
+                            unit: 'Active Orders',
                             icon: Icons.settings_suggest_rounded,
-                            iconColor: Color(0xFFFF334B),
-                            iconBg: Color(0x1FFF334B),
+                            iconColor: const Color(0xFFFF8C00),
+                            iconBg: const Color(0x1FFF8C00),
                           ),
                         ),
                       ],
@@ -209,26 +261,26 @@ class _DashboardPageState extends State<DashboardPage> {
                     const SizedBox(height: 16),
                     Row(
                       children: [
-                        const Expanded(
+                        Expanded(
                           child: _GridCard(
                             title: 'Attendance',
-                            value: '10',
-                            unit: 'Member Available',
-                            icon: Icons.battery_charging_full_rounded,
-                            iconColor: Color(0xFF00B039),
-                            iconBg: Color(0x1F00B039),
+                            value: _clockedIn,
+                            unit: '$_totalEmployees Total Emp.',
+                            icon: Icons.people_rounded,
+                            iconColor: const Color(0xFF00B039),
+                            iconBg: const Color(0x1F00B039),
                           ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
                           child: _GridCard(
-                            title: 'Low stock Items',
-                            value: '5',
-                            unit: 'Very Low',
+                            title: 'Low Stock',
+                            value: _lowStockItems,
+                            unit: 'Need Restock',
                             icon: Icons.notifications_active_rounded,
                             iconColor: const Color(0xFFFF334B),
                             iconBg: const Color(0x1FFF334B),
-                            isAlert: true,
+                            isAlert: int.tryParse(_lowStockItems) != null && int.parse(_lowStockItems) > 0,
                             onTap: () {
                               if (widget.onNavigateToLowStocks != null) {
                                 widget.onNavigateToLowStocks!();
@@ -240,6 +292,16 @@ class _DashboardPageState extends State<DashboardPage> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 16),
+                    // Extra wide card for process logs today
+                    _GridCardWide(
+                      title: 'Process Steps Logged Today',
+                      value: _logsToday,
+                      unit: 'Steps across all orders',
+                      icon: Icons.playlist_add_check_rounded,
+                      iconColor: const Color(0xFF5B3DF5),
+                      iconBg: const Color(0x1F5B3DF5),
+                    ),
                   ],
                 ),
               ),
@@ -250,6 +312,8 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 }
+
+// ─── Greeting Banner ────────────────────────────────────────────────────────
 
 class _GreetingBanner extends StatefulWidget {
   const _GreetingBanner();
@@ -278,6 +342,13 @@ class _GreetingBannerState extends State<_GreetingBanner> {
     }
   }
 
+  String _greeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -304,7 +375,7 @@ class _GreetingBannerState extends State<_GreetingBanner> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Good Morning $_firstName 👋',
+              '${_greeting()} $_firstName 👋',
               style: const TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.bold,
@@ -326,6 +397,8 @@ class _GreetingBannerState extends State<_GreetingBanner> {
     );
   }
 }
+
+// ─── Smart Inventory Carousel Card ──────────────────────────────────────────
 
 class _SmartInventoryCard extends StatelessWidget {
   const _SmartInventoryCard();
@@ -353,11 +426,7 @@ class _SmartInventoryCard extends StatelessWidget {
                     color: const Color(0xFF5B3DF5),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
-                    Icons.inventory_2_rounded,
-                    color: Colors.white,
-                    size: 15,
-                  ),
+                  child: const Icon(Icons.inventory_2_rounded, color: Colors.white, size: 15),
                 ),
                 const SizedBox(height: 6),
                 const Text(
@@ -372,30 +441,19 @@ class _SmartInventoryCard extends StatelessWidget {
                 const SizedBox(height: 3),
                 const Text(
                   'Track, Manage and optimize your inventory real-time.',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Color(0xFF64748B),
-                  ),
+                  style: TextStyle(fontSize: 10, color: Color(0xFF64748B)),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 5),
-                Row(
-                  children: const [
+                const Row(
+                  children: [
                     Text(
                       'Get Started',
-                      style: TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF5B3DF5),
-                      ),
+                      style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF5B3DF5)),
                     ),
                     SizedBox(width: 3),
-                    Icon(
-                      Icons.arrow_forward_rounded,
-                      size: 11,
-                      color: Color(0xFF5B3DF5),
-                    ),
+                    Icon(Icons.arrow_forward_rounded, size: 11, color: Color(0xFF5B3DF5)),
                   ],
                 ),
               ],
@@ -403,17 +461,15 @@ class _SmartInventoryCard extends StatelessWidget {
           ),
           const SizedBox(width: 6),
           RepaintBoundary(
-            child: SvgPicture.asset(
-              AppAssets.factoryIllustration,
-              height: 80,
-              fit: BoxFit.contain,
-            ),
+            child: SvgPicture.asset(AppAssets.factoryIllustration, height: 80, fit: BoxFit.contain),
           ),
         ],
       ),
     );
   }
 }
+
+// ─── Carousel Card ──────────────────────────────────────────────────────────
 
 class _CarouselCard extends StatelessWidget {
   final String title;
@@ -437,10 +493,7 @@ class _CarouselCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(20),
-      ),
+      decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(20)),
       child: Row(
         children: [
           Expanded(
@@ -450,46 +503,19 @@ class _CarouselCard extends StatelessWidget {
               children: [
                 Container(
                   padding: const EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    color: iconBg,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(8)),
                   child: Icon(icon, color: Colors.white, size: 15),
                 ),
                 const SizedBox(height: 6),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
+                Text(title, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
                 const SizedBox(height: 3),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 10.5,
-                    color: Color(0xFF64748B),
-                  ),
-                ),
+                Text(subtitle, style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B))),
                 const SizedBox(height: 6),
                 Row(
                   children: [
-                    Text(
-                      buttonText,
-                      style: TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w700,
-                        color: iconBg,
-                      ),
-                    ),
+                    Text(buttonText, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: iconBg)),
                     const SizedBox(width: 3),
-                    Icon(
-                      Icons.arrow_forward_rounded,
-                      size: 11,
-                      color: iconBg,
-                    ),
+                    Icon(Icons.arrow_forward_rounded, size: 11, color: iconBg),
                   ],
                 ),
               ],
@@ -500,6 +526,8 @@ class _CarouselCard extends StatelessWidget {
     );
   }
 }
+
+// ─── Grid Stat Card ─────────────────────────────────────────────────────────
 
 class _GridCard extends StatelessWidget {
   final String title;
@@ -536,29 +564,26 @@ class _GridCard extends StatelessWidget {
             Container(
               width: 44,
               height: 44,
-              decoration: BoxDecoration(
-                color: iconBg,
-                borderRadius: BorderRadius.circular(14),
-              ),
+              decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(14)),
               child: Icon(icon, color: iconColor, size: 22),
             ),
             const SizedBox(height: 12),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF64748B),
-              ),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
             ),
             const SizedBox(height: 4),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
-                color: isAlert ? const Color(0xFFFF334B) : const Color(0xFF0F172A),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 400),
+              child: Text(
+                value,
+                key: ValueKey(value),
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  color: isAlert ? const Color(0xFFFF334B) : const Color(0xFF0F172A),
+                ),
               ),
             ),
             const SizedBox(height: 2),
@@ -573,6 +598,64 @@ class _GridCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ─── Wide Stat Card (full width) ────────────────────────────────────────────
+
+class _GridCardWide extends StatelessWidget {
+  final String title;
+  final String value;
+  final String unit;
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBg;
+
+  const _GridCardWide({
+    required this.title,
+    required this.value,
+    required this.unit,
+    required this.icon,
+    required this.iconColor,
+    required this.iconBg,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassContainer(
+      useGradientBorder: true,
+      borderRadius: 22,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(14)),
+            child: Icon(icon, color: iconColor, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+                const SizedBox(height: 4),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 400),
+                  child: Text(
+                    value,
+                    key: ValueKey(value),
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                  ),
+                ),
+                Text(unit, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

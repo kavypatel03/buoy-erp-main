@@ -12,6 +12,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const employeeRoutes = require('./routes/employeeRoutes');
 const productionRoutes = require('./routes/productionRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 const requireAuth = require('./middleware/authMiddleware');
 
 const app = express();
@@ -34,6 +35,7 @@ app.use('/api/items', requireAuth, itemRoutes);
 app.use('/api/notifications', requireAuth, notificationRoutes);
 app.use('/api/employees', requireAuth, employeeRoutes);
 app.use('/api/production', requireAuth, productionRoutes);
+app.use('/api/dashboard', requireAuth, dashboardRoutes);
 app.use('/admin', adminRoutes);
 
 // Basic health check route
