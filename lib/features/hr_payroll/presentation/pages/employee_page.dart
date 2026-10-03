@@ -575,22 +575,24 @@ class EmployeePageState extends State<EmployeePage> {
               Material(
                 type: MaterialType.transparency,
                 child: ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: const Text('Photo Library'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  pickImage(ImageSource.gallery);
-                },
+                  leading: const Icon(Icons.photo_library),
+                  title: const Text('Photo Library'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    pickImage(ImageSource.gallery);
+                  },
+                ),
               ),
               Material(
                 type: MaterialType.transparency,
                 child: ListTile(
-                leading: const Icon(Icons.photo_camera),
-                title: const Text('Camera'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  pickImage(ImageSource.camera);
-                },
+                  leading: const Icon(Icons.photo_camera),
+                  title: const Text('Camera'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    pickImage(ImageSource.camera);
+                  },
+                ),
               ),
             ],
           ),

@@ -17,13 +17,13 @@ void main() {
       await tester.pumpAndSettle();
       
       // 2. Login Flow (if not authenticated)
-      final isDashboardPresent = find.text('Dashboard').evaluate().isNotEmpty;
+      final isDashboardPresent = find.text('Live Overview').evaluate().isNotEmpty;
       if (!isDashboardPresent) {
-        final emailField = find.byType(TextField).first;
-        final passwordField = find.byType(TextField).last;
-        final loginButton = find.text('Login');
-
-        if (emailField.evaluate().isNotEmpty) {
+        final textFields = find.byType(TextField);
+        if (textFields.evaluate().isNotEmpty) {
+          final emailField = textFields.first;
+          final passwordField = textFields.last;
+          final loginButton = find.text('Login');
           await tester.enterText(emailField, 'kavypatel03@gmail.com'); 
           await tester.enterText(passwordField, '123456'); 
           await tester.tap(loginButton);
