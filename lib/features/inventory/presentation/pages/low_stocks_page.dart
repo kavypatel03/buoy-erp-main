@@ -529,9 +529,10 @@ class LowStocksPageState extends State<LowStocksPage> {
           ),
         ),
       ),
+    );
   }
 
-  void _showRestockDialog(InventoryItem item) {
+  void _showRestockDialog(InventoryItemModel item) {
     final qtyCtrl = TextEditingController();
     showDialog(
       context: context,
@@ -573,14 +574,16 @@ class LowStocksPageState extends State<LowStocksPage> {
                 });
 
                 if (res['success']) {
+                  if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Restocked Successfully!')));
                   Navigator.pop(context);
                   _fetchItems();
                   setState(() {
                     _selectedItem = null;
-                    _currentScreen = 0;
+                    _currentSubIndex = 0;
                   });
                 } else {
+                  if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: ${res['error']}')));
                 }
               },
@@ -592,7 +595,7 @@ class LowStocksPageState extends State<LowStocksPage> {
     );
   }
 
-  void _showEditItemDialog(InventoryItem item) {
+  void _showEditItemDialog(InventoryItemModel item) {
     final nameCtrl = TextEditingController(text: item.title);
     final subtitleCtrl = TextEditingController(text: item.subtitle);
     final stockCtrl = TextEditingController(text: item.stockQuantity);
@@ -656,14 +659,16 @@ class LowStocksPageState extends State<LowStocksPage> {
                 });
 
                 if (res['success']) {
+                  if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Updated Successfully!')));
                   Navigator.pop(context);
                   _fetchItems();
                   setState(() {
                     _selectedItem = null;
-                    _currentScreen = 0;
+                    _currentSubIndex = 0;
                   });
                 } else {
+                  if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: ${res['error']}')));
                 }
               },
@@ -905,12 +910,14 @@ class LowStocksPageState extends State<LowStocksPage> {
 
                           final res = await InventoryService.createItem(newItem);
                           if (res['success']) {
+                            if (!mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('New Item Added Successfully!')),
                             );
                             _fetchItems();
                             _onBackToList();
                           } else {
+                            if (!mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text('Failed: ${res['error']}')),
                             );
