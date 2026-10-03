@@ -13,24 +13,17 @@ exports.getEmployees = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Fetch employees
+    // Fetch employees AND their attendance in a single optimized query
     const { data: employees, error: empError } = await supabaseAdmin
       .from('employees')
-      .select('*')
+      .select('*, attendance(*)')
       .eq('owner_id', userId)
       .order('created_at', { ascending: false });
 
     if (empError) throw empError;
 
-    // Fetch attendance to calculate total hours and salary
-    const { data: attendance, error: attError } = await supabaseAdmin
-      .from('attendance')
-      .select('*');
-
-    if (attError) throw attError;
-
     const employeesWithStats = employees.map(emp => {
-      const empAttendance = attendance.filter(a => a.employee_id === emp.id);
+      const empAttendance = emp.attendance || [];
       
       let totalHours = 0;
       empAttendance.forEach(record => {
