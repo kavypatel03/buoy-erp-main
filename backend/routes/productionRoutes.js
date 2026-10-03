@@ -11,6 +11,7 @@ router.post('/orders/:id/complete', productionController.completeOrder);
 
 // Production Logs (Processes)
 router.post('/orders/:id/log', productionController.addProcessLog);
+router.put('/logs/:logId', productionController.updateProcessLog);
 
 // Wastage Report
 router.get('/wastage-report', productionController.getWastageReport);

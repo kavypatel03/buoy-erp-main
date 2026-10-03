@@ -2,6 +2,10 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../../core/services/production_service.dart';
 import '../../../../core/services/inventory_service.dart';
+import '../../../../core/widgets/erp_header_bar.dart';
+import '../../../../core/widgets/glass_container.dart';
+import '../../../../core/widgets/erp_input_field.dart';
+import '../../../../core/widgets/custom_button.dart';
 
 class ProductionPage extends StatefulWidget {
   const ProductionPage({super.key});
@@ -129,6 +133,67 @@ class ProductionPageState extends State<ProductionPage> {
                 ),
                 child: const Text('Create Order', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showUpdateOutputModal(dynamic log) {
+    _outputQtyCtrl.clear();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text('Add Output (Log Process Complete)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _outputQtyCtrl,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Output Qty',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () async {
+                  if (_outputQtyCtrl.text.isEmpty) return;
+                  Navigator.pop(ctx);
+                  setState(() => _isLoading = true);
+                  
+                  final outputQty = double.tryParse(_outputQtyCtrl.text) ?? 0;
+                  final res = await ProductionService.updateProcessLog(log['id'], outputQty);
+                  
+                  if (res['success']) {
+                    _fetchOrders();
+                  } else {
+                    setState(() => _isLoading = false);
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['error'])));
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Complete Process', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+              const SizedBox(height: 16),
             ],
           ),
         ),
@@ -186,30 +251,11 @@ class ProductionPageState extends State<ProductionPage> {
                     onChanged: (val) => setModalState(() => _selectedItemId = val),
                   ),
                   const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _inputQtyCtrl,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            labelText: 'Input Qty',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          controller: _outputQtyCtrl,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            labelText: 'Output Qty',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                        ),
-                      ),
-                    ],
+                  ErpInputField(
+                    controller: _inputQtyCtrl,
+                    keyboardType: TextInputType.number,
+                    label: 'Input Qty',
+                    hintText: 'Enter input quantity',
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
@@ -222,7 +268,7 @@ class ProductionPageState extends State<ProductionPage> {
                         'process_name': _processNameCtrl.text,
                         'input_item_id': _selectedItemId,
                         'input_qty': double.tryParse(_inputQtyCtrl.text) ?? 0,
-                        'output_qty': double.tryParse(_outputQtyCtrl.text) ?? 0,
+                        'output_qty': 0, // initially 0, updated later when complete
                       };
 
                       final res = await ProductionService.addProcessLog(_selectedOrder['id'], logData);
@@ -271,52 +317,73 @@ class ProductionPageState extends State<ProductionPage> {
   Widget _buildOrdersListScreen() {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text('Factory Production', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.analytics_outlined, color: Colors.black),
-            onPressed: () {
-              setState(() => _currentSubIndex = 2);
-              _fetchWastageReport();
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.add, color: Colors.black),
-            onPressed: _showAddOrderModal,
-          ),
-        ],
+      body: SafeArea(
+        child: Column(
+          children: [
+            ErpHeaderBar(
+              title: 'Factory Production',
+              trailing: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.analytics_outlined, color: Colors.black),
+                    onPressed: () {
+                      setState(() => _currentSubIndex = 2);
+                      _fetchWastageReport();
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.add, color: Colors.black),
+                    onPressed: _showAddOrderModal,
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _orders.isEmpty
+                      ? const Center(child: Text('No active production orders.'))
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(20).copyWith(bottom: 100),
+                          itemCount: _orders.length,
+                          itemBuilder: (ctx, i) {
+                            final order = _orders[i];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: GlassContainer(
+                                useGradientBorder: true,
+                                borderRadius: 20,
+                                padding: const EdgeInsets.all(16),
+                                child: ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(order['product_name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                  subtitle: Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Status: ${order['status']}', style: const TextStyle(color: Color(0xFF5B3DF5), fontWeight: FontWeight.w600)),
+                                        const SizedBox(height: 4),
+                                        Text('Started: ${order['start_date'].toString().split('T')[0]}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                      ],
+                                    ),
+                                  ),
+                                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 18, color: Color(0xFF0F172A)),
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedOrder = order;
+                                      _currentSubIndex = 1;
+                                    });
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+            ),
+          ],
+        ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _orders.isEmpty
-              ? const Center(child: Text('No active production orders.'))
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16).copyWith(bottom: 100),
-                  itemCount: _orders.length,
-                  itemBuilder: (ctx, i) {
-                    final order = _orders[i];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.all(16),
-                        title: Text(order['product_name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        subtitle: Text('Status: ${order['status']}\nStarted: ${order['start_date'].toString().split('T')[0]}'),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                        isThreeLine: true,
-                        onTap: () {
-                          setState(() {
-                            _selectedOrder = order;
-                            _currentSubIndex = 1;
-                          });
-                        },
-                      ),
-                    );
-                  },
-                ),
     );
   }
 
@@ -324,49 +391,62 @@ class ProductionPageState extends State<ProductionPage> {
     final logs = (_selectedOrder['production_logs'] as List?) ?? [];
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: popSubScreen,
-        ),
-        title: Text(_selectedOrder['product_name'], style: const TextStyle(color: Colors.black, fontSize: 16)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_task, color: Colors.black),
-            onPressed: _showAddLogModal,
-          ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Expanded(
-                  child: logs.isEmpty
+      body: SafeArea(
+        child: Column(
+          children: [
+            ErpHeaderBar(
+              title: _selectedOrder['product_name'],
+              onBackTap: popSubScreen,
+              trailing: IconButton(
+                icon: const Icon(Icons.add_task, color: Colors.black),
+                onPressed: _showAddLogModal,
+              ),
+            ),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : logs.isEmpty
                       ? const Center(child: Text('No processes logged yet.'))
                       : ListView.builder(
-                          padding: const EdgeInsets.all(16).copyWith(bottom: 100),
+                          padding: const EdgeInsets.all(20).copyWith(bottom: 100),
                           itemCount: logs.length,
                           itemBuilder: (ctx, i) {
                             final log = logs[i];
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              child: Padding(
+                            final bool needsOutput = (log['output_qty'] == null || log['output_qty'] == 0);
+                            
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: GlassContainer(
+                                useGradientBorder: true,
+                                borderRadius: 16,
                                 padding: const EdgeInsets.all(16),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(log['process_name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                    const SizedBox(height: 8),
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        _infoChip('Input', '${log['input_qty']}', Colors.blue),
-                                        _infoChip('Output', '${log['output_qty']}', Colors.green),
-                                        _infoChip('Waste', '${log['wastage_qty']}', Colors.red),
+                                        Text(log['process_name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                        if (needsOutput)
+                                          ElevatedButton(
+                                            onPressed: () => _showUpdateOutputModal(log),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: const Color(0xFF5B3DF5),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                                              minimumSize: const Size(0, 32),
+                                            ),
+                                            child: const Text('Add Output', style: TextStyle(color: Colors.white, fontSize: 12)),
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        _infoChip('Input Qty', '${log['input_qty']}', Colors.blue),
+                                        _infoChip('Output Qty', needsOutput ? 'Pending' : '${log['output_qty']}', needsOutput ? Colors.grey : Colors.green),
+                                        _infoChip('Wastage', needsOutput ? '-' : '${log['wastage_qty']}', needsOutput ? Colors.grey : Colors.red),
                                       ],
                                     ),
                                   ],
@@ -375,52 +455,80 @@ class ProductionPageState extends State<ProductionPage> {
                             );
                           },
                         ),
-                ),
-              ],
             ),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildWastageReportScreen() {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: popSubScreen,
-        ),
-        title: const Text('Wastage Report', style: TextStyle(color: Colors.black)),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _wastageReport.isEmpty
-              ? const Center(child: Text('No wastage data available.'))
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16).copyWith(bottom: 100),
-                  itemCount: _wastageReport.length,
-                  itemBuilder: (ctx, i) {
-                    final report = _wastageReport[i];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(report['process_name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                            const Divider(),
-                            Text('Total Input: ${report['total_input']}'),
-                            Text('Total Output: ${report['total_output']}'),
-                            Text('Total Wastage: ${report['total_wastage']}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                          ],
+      body: SafeArea(
+        child: Column(
+          children: [
+            ErpHeaderBar(
+              title: 'Wastage Report',
+              onBackTap: popSubScreen,
+            ),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _wastageReport.isEmpty
+                      ? const Center(child: Text('No wastage data available.'))
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(20).copyWith(bottom: 100),
+                          itemCount: _wastageReport.length,
+                          itemBuilder: (ctx, i) {
+                            final report = _wastageReport[i];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: GlassContainer(
+                                useGradientBorder: true,
+                                borderRadius: 16,
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(report['process_name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                                      child: Divider(color: Colors.black12),
+                                    ),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text('Total Input:', style: TextStyle(color: Colors.grey.shade700)),
+                                        Text('${report['total_input']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text('Total Output:', style: TextStyle(color: Colors.grey.shade700)),
+                                        Text('${report['total_output']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text('Total Wastage:', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                                        Text('${report['total_wastage']}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16)),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                      ),
-                    );
-                  },
-                ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

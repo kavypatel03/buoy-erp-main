@@ -7,6 +7,7 @@ class ErpHeaderBar extends StatelessWidget {
   final bool isNotificationActive;
   final VoidCallback? onNotificationPressed;
   final VoidCallback? onBackTap;
+  final Widget? trailing;
 
   const ErpHeaderBar({
     super.key,
@@ -14,6 +15,7 @@ class ErpHeaderBar extends StatelessWidget {
     this.isNotificationActive = false,
     this.onNotificationPressed,
     this.onBackTap,
+    this.trailing,
   });
 
   @override
@@ -55,8 +57,8 @@ class ErpHeaderBar extends StatelessWidget {
             ),
           ),
 
-          // Right: Notification Bell in soft elevated glass circle (matching nav screenshot 1:1)
-          GestureDetector(
+          // Right: Custom trailing widget OR Notification Bell
+          trailing ?? GestureDetector(
             onTap: () {
               if (onNotificationPressed != null) {
                 onNotificationPressed!();

@@ -764,6 +764,72 @@ class EmployeePageState extends State<EmployeePage> {
                   ErpHeaderBar(
                     title: 'Employee Details',
                     onBackTap: _onBackToList,
+                    trailing: GlassContainer(
+                      width: 48,
+                      height: 48,
+                      isCircle: true,
+                      blur: 14,
+                      opacity: 0.95,
+                      child: PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF0F172A)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        onSelected: (value) async {
+                          if (value == 'edit') {
+                            setState(() => _currentSubIndex = 3);
+                          } else if (value == 'delete') {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text('Delete Employee?'),
+                                content: Text('Are you sure you want to permanently delete ${emp.name}? This action cannot be undone.'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                                  ElevatedButton(
+                                    onPressed: () => Navigator.pop(ctx, true), 
+                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                                    child: const Text('Delete', style: TextStyle(color: Colors.white))
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (confirm == true) {
+                              setLocalState(() => isProcessing = true);
+                              final res = await EmployeeService.deleteEmployee(emp.id);
+                              setLocalState(() => isProcessing = false);
+                              if (res['success']) {
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Employee deleted successfully')));
+                                await _fetchEmployees();
+                                _onBackToList();
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete: ${res['error']}')));
+                              }
+                            }
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(
+                            value: 'edit',
+                            child: Row(
+                              children: [
+                                Icon(Icons.edit_rounded, color: Color(0xFF5B3DF5), size: 20),
+                                SizedBox(width: 8),
+                                Text('Edit Employee'),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                Icon(Icons.delete_rounded, color: Colors.redAccent, size: 20),
+                                SizedBox(width: 8),
+                                Text('Delete Employee', style: TextStyle(color: Colors.redAccent)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
 
                   const SizedBox(height: 16),

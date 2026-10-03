@@ -160,3 +160,27 @@ exports.getWastageReport = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// 6. Update process log output
+exports.updateProcessLog = async (req, res) => {
+  try {
+    const { logId } = req.params;
+    const { output_qty } = req.body;
+
+    if (output_qty === undefined) {
+      return res.status(400).json({ error: 'Output quantity is required' });
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('production_logs')
+      .update({ output_qty })
+      .eq('id', logId)
+      .select();
+
+    if (error) throw error;
+    res.status(200).json(data[0]);
+  } catch (error) {
+    console.error('Error updating process log:', error);
+    res.status(500).json({ error: error.message });
+  }
+};

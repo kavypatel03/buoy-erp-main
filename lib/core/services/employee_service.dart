@@ -71,6 +71,27 @@ class EmployeeService {
     }
   }
 
+  static Future<Map<String, dynamic>> deleteEmployee(String employeeId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      
+      if (token == null) return {'success': false, 'error': 'Not authenticated'};
+
+      final response = await http.delete(
+        Uri.parse('$baseUrl/$employeeId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
   static Future<Map<String, dynamic>> paySalary(String employeeId, double amount, String method) async {
     try {
       final prefs = await SharedPreferences.getInstance();

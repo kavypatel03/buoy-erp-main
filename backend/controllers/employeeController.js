@@ -223,3 +223,21 @@ exports.clockOut = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// Delete an employee
+exports.deleteEmployee = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const { error } = await supabaseAdmin
+      .from('employees')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    res.status(200).json({ success: true, message: 'Employee deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting employee:', error);
+    res.status(500).json({ error: error.message });
+  }
+};

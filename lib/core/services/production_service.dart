@@ -56,6 +56,23 @@ class ProductionService {
     }
   }
 
+  static Future<Map<String, dynamic>> updateProcessLog(String logId, double outputQty) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      if (token == null) return {'success': false, 'error': 'Not authenticated'};
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/logs/$logId'),
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+        body: jsonEncode({'output_qty': outputQty}),
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
   static Future<Map<String, dynamic>> getWastageReport() async {
     try {
       final prefs = await SharedPreferences.getInstance();
