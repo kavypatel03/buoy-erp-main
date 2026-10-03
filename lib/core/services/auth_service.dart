@@ -57,13 +57,16 @@ class AuthService {
 
   static Future<bool> getRegistrationStatus() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/registration-status'));
+      final response = await http
+          .get(Uri.parse('$baseUrl/registration-status'))
+          .timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return data['enabled'] ?? true;
       }
       return true;
     } catch (e) {
+      // On timeout or any network error, default to enabled so the page isn't stuck
       return true;
     }
   }

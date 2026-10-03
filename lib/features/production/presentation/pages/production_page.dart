@@ -245,7 +245,7 @@ class ProductionPageState extends State<ProductionPage> {
                       const DropdownMenuItem(value: null, child: Text('None')),
                       ..._inventoryItems.map((item) => DropdownMenuItem(
                             value: item['id'] as String,
-                            child: Text('${item['name']} (Stock: ${item['quantity']})'),
+                            child: Text('${item['title'] ?? item['name'] ?? 'Unknown'} (${item['stock_quantity'] ?? item['quantity'] ?? '0'} ${item['unit'] ?? ''})'),
                           ))
                     ],
                     onChanged: (val) => setModalState(() => _selectedItemId = val),

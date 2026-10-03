@@ -32,11 +32,13 @@ ALTER TABLE production_orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE production_logs ENABLE ROW LEVEL SECURITY;
 
 -- Production Orders Policies
+DROP POLICY IF EXISTS "Users can manage their own production orders" ON production_orders;
 CREATE POLICY "Users can manage their own production orders" 
 ON production_orders FOR ALL 
 USING (auth.uid() = owner_id);
 
 -- Production Logs Policies
+DROP POLICY IF EXISTS "Users can manage their own production logs" ON production_logs;
 CREATE POLICY "Users can manage their own production logs" 
 ON production_logs FOR ALL 
 USING (auth.uid() = owner_id);
@@ -48,7 +50,7 @@ RETURNS TRIGGER AS $$
 BEGIN
   IF NEW.input_item_id IS NOT NULL AND NEW.input_qty > 0 THEN
     UPDATE items
-    SET quantity = quantity - NEW.input_qty
+    SET stock_quantity = stock_quantity - NEW.input_qty
     WHERE id = NEW.input_item_id;
   END IF;
   RETURN NEW;

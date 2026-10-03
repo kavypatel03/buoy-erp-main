@@ -22,12 +22,16 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _obscureConfirmPassword = true;
   bool _agreeToTerms = true;
   bool _isLoading = false;
-  bool _isRegistrationEnabled = true;
+  bool _isRegistrationEnabled = true; // optimistic default
+  bool _isCheckingStatus = true;
 
   @override
   void initState() {
     super.initState();
-    _checkRegistrationStatus();
+    // Run after first frame so the form is never blocked by network
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkRegistrationStatus();
+    });
   }
 
   Future<void> _checkRegistrationStatus() async {
@@ -35,6 +39,7 @@ class _RegisterPageState extends State<RegisterPage> {
     if (mounted) {
       setState(() {
         _isRegistrationEnabled = isEnabled;
+        _isCheckingStatus = false;
       });
     }
   }
@@ -277,10 +282,16 @@ class _RegisterPageState extends State<RegisterPage> {
 
                 const SizedBox(height: 28),
 
-                // Register Button
+                // Register Button — always shown, disabled when admin has disabled registration
                 CustomButton(
-                  text: _isLoading ? 'Registering...' : 'Register',
-                  onPressed: (_isLoading || !_isRegistrationEnabled) ? null : _register,
+                  text: _isLoading
+                      ? 'Registering...'
+                      : _isCheckingStatus
+                          ? 'Register'
+                          : _isRegistrationEnabled
+                              ? 'Register'
+                              : 'Register (Disabled by Admin)',
+                  onPressed: (_isLoading || _isCheckingStatus || !_isRegistrationEnabled) ? null : _register,
                 ),
 
                 const SizedBox(height: 20),

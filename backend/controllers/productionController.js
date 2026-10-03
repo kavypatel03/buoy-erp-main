@@ -98,17 +98,17 @@ exports.addProcessLog = async (req, res) => {
     if (input_item_id) {
       const { data: itemData, error: itemError } = await supabaseAdmin
         .from('items')
-        .select('name, quantity, min_qty')
+        .select('title, stock_quantity, min_quantity')
         .eq('id', input_item_id)
         .single();
       
       if (!itemError && itemData) {
-        if (itemData.quantity <= itemData.min_qty) {
+        if (itemData.stock_quantity <= itemData.min_quantity) {
           // Trigger a low stock notification
           await supabaseAdmin.from('notifications').insert([{
             owner_id: userId,
             title: 'Low Stock Alert',
-            message: `Stock for ${itemData.name} has fallen to ${itemData.quantity} (Minimum: ${itemData.min_qty}). Please restock!`,
+            message: `Stock for ${itemData.title} has fallen to ${itemData.stock_quantity} (Minimum: ${itemData.min_quantity}). Please restock!`,
             is_read: false
           }]);
         }
