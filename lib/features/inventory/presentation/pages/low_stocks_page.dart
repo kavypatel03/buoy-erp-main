@@ -496,8 +496,30 @@ class LowStocksPageState extends State<LowStocksPage> {
                         style: const TextStyle(
                           fontSize: 13,
                           color: Color(0xFF64748B),
-                          height: 1.5,
                         ),
+                      ),
+
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: CustomButton(
+                              text: 'Restock',
+                              onPressed: () {
+                                _showRestockDialog(item);
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: CustomButton(
+                              text: 'Edit Item',
+                              onPressed: () {
+                                _showEditItemDialog(item);
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -507,6 +529,149 @@ class LowStocksPageState extends State<LowStocksPage> {
           ),
         ),
       ),
+  }
+
+  void _showRestockDialog(InventoryItem item) {
+    final qtyCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          title: const Text('Restock Item'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Enter quantity to add to ${item.title}:'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: qtyCtrl,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  hintText: 'Quantity',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+            TextButton(
+              onPressed: () async {
+                final qty = int.tryParse(qtyCtrl.text);
+                if (qty == null || qty <= 0) return;
+                
+                final currentQty = int.tryParse(item.stockQuantity) ?? 0;
+                final newQty = currentQty + qty;
+
+                final res = await InventoryService.updateItem(item.id, {
+                  'stock_quantity': newQty.toString(),
+                  'metric': newQty.toString(),
+                });
+
+                if (res['success']) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Restocked Successfully!')));
+                  Navigator.pop(context);
+                  _fetchItems();
+                  setState(() {
+                    _selectedItem = null;
+                    _currentScreen = 0;
+                  });
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: ${res['error']}')));
+                }
+              },
+              child: const Text('Restock', style: TextStyle(color: Color(0xFF5B3DF5), fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showEditItemDialog(InventoryItem item) {
+    final nameCtrl = TextEditingController(text: item.title);
+    final subtitleCtrl = TextEditingController(text: item.subtitle);
+    final stockCtrl = TextEditingController(text: item.stockQuantity);
+    final minQtyCtrl = TextEditingController(text: item.minQuantity);
+    final descCtrl = TextEditingController(text: item.description);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          title: const Text('Edit Item'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(labelText: 'Item Name'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: subtitleCtrl,
+                  decoration: const InputDecoration(labelText: 'Subtitle'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: stockCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Stock Quantity'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: minQtyCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Min Quantity'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: descCtrl,
+                  decoration: const InputDecoration(labelText: 'Description'),
+                  maxLines: 2,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+            TextButton(
+              onPressed: () async {
+                final res = await InventoryService.updateItem(item.id, {
+                  'title': nameCtrl.text,
+                  'subtitle': subtitleCtrl.text,
+                  'stock_quantity': stockCtrl.text,
+                  'min_quantity': minQtyCtrl.text,
+                  'metric': stockCtrl.text,
+                  'description': descCtrl.text,
+                });
+
+                if (res['success']) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Updated Successfully!')));
+                  Navigator.pop(context);
+                  _fetchItems();
+                  setState(() {
+                    _selectedItem = null;
+                    _currentScreen = 0;
+                  });
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: ${res['error']}')));
+                }
+              },
+              child: const Text('Save', style: TextStyle(color: Color(0xFF5B3DF5), fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
     );
   }
 

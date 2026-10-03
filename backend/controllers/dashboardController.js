@@ -46,10 +46,11 @@ exports.getSummary = async (req, res) => {
         .select('id', { count: 'exact', head: true })
         .eq('owner_id', userId),
 
-      // Employees currently clocked in
+      // Employees currently clocked in (must belong to this user)
       supabaseAdmin
         .from('attendance')
-        .select('id', { count: 'exact', head: true })
+        .select('id, employees!inner(owner_id)', { count: 'exact', head: true })
+        .eq('employees.owner_id', userId)
         .is('clock_out', null),
     ]);
 

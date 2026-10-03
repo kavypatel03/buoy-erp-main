@@ -87,7 +87,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
           _lastBackPressTime = now;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Press back again to exit Bouy'),
+              content: Text('Press back again to exit Buoy!'),
               duration: Duration(seconds: 2),
               behavior: SnackBarBehavior.floating,
               margin: EdgeInsets.only(bottom: 90, left: 20, right: 20),

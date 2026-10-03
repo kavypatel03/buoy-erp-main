@@ -60,4 +60,32 @@ class InventoryService {
       return {'success': false, 'error': e.toString()};
     }
   }
+
+  static Future<Map<String, dynamic>> updateItem(String id, Map<String, dynamic> itemData) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      
+      if (token == null) return {'success': false, 'error': 'Not authenticated'};
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/$id'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(itemData),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {'success': true, 'data': data};
+      } else {
+        final errorData = jsonDecode(response.body);
+        return {'success': false, 'error': errorData['error'] ?? 'Failed to update item'};
+      }
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
 }
