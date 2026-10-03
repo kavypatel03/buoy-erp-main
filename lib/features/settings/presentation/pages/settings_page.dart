@@ -245,7 +245,9 @@ class SettingsPageState extends State<SettingsPage> {
     Color iconColor = const Color(0xFF64748B),
     bool hideChevron = false,
   }) {
-    return ListTile(
+    return Material(
+      type: MaterialType.transparency,
+      child: ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       leading: Icon(icon, color: iconColor, size: 22),
       title: Text(
@@ -260,6 +262,7 @@ class SettingsPageState extends State<SettingsPage> {
           ? null
           : const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8), size: 22),
       onTap: onTap,
+      ),
     );
   }
 

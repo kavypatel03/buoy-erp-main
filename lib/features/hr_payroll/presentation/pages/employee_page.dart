@@ -369,7 +369,9 @@ class EmployeePageState extends State<EmployeePage> {
         builder: (ctx) => SafeArea(
           child: Wrap(
             children: [
-              ListTile(
+              Material(
+                type: MaterialType.transparency,
+                child: ListTile(
                 leading: const Icon(Icons.photo_library),
                 title: const Text('Photo Library'),
                 onTap: () {
@@ -377,13 +379,17 @@ class EmployeePageState extends State<EmployeePage> {
                   pickImage(ImageSource.gallery);
                 },
               ),
-              ListTile(
+              ),
+              Material(
+                type: MaterialType.transparency,
+                child: ListTile(
                 leading: const Icon(Icons.photo_camera),
                 title: const Text('Camera'),
                 onTap: () {
                   Navigator.of(context).pop();
                   pickImage(ImageSource.camera);
                 },
+              ),
               ),
             ],
           ),
@@ -566,7 +572,9 @@ class EmployeePageState extends State<EmployeePage> {
         builder: (ctx) => SafeArea(
           child: Wrap(
             children: [
-              ListTile(
+              Material(
+                type: MaterialType.transparency,
+                child: ListTile(
                 leading: const Icon(Icons.photo_library),
                 title: const Text('Photo Library'),
                 onTap: () {
@@ -574,7 +582,9 @@ class EmployeePageState extends State<EmployeePage> {
                   pickImage(ImageSource.gallery);
                 },
               ),
-              ListTile(
+              Material(
+                type: MaterialType.transparency,
+                child: ListTile(
                 leading: const Icon(Icons.photo_camera),
                 title: const Text('Camera'),
                 onTap: () {

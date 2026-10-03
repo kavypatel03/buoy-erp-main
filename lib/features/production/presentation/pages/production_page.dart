@@ -360,7 +360,9 @@ class ProductionPageState extends State<ProductionPage> {
                                 useGradientBorder: true,
                                 borderRadius: 20,
                                 padding: const EdgeInsets.all(16),
-                                child: ListTile(
+                                child: Material(
+                                  type: MaterialType.transparency,
+                                  child: ListTile(
                                   contentPadding: EdgeInsets.zero,
                                   title: Text(order['product_name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                   subtitle: Padding(
@@ -381,6 +383,7 @@ class ProductionPageState extends State<ProductionPage> {
                                       _currentSubIndex = 1;
                                     });
                                   },
+                                ),
                                 ),
                               ),
                             );
