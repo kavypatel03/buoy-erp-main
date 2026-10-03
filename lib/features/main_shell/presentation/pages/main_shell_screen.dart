@@ -5,6 +5,7 @@ import '../../../../core/widgets/erp_bottom_nav_bar.dart';
 import '../../../dashboard/presentation/pages/dashboard_page.dart';
 import '../../../hr_payroll/presentation/pages/employee_page.dart';
 import '../../../inventory/presentation/pages/low_stocks_page.dart';
+import '../../../production/presentation/pages/production_page.dart';
 import '../../../settings/presentation/pages/settings_page.dart';
 
 class MainShellScreen extends StatefulWidget {
@@ -26,6 +27,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
   final GlobalKey<LowStocksPageState> _inventoryKey = GlobalKey<LowStocksPageState>();
   final GlobalKey<EmployeePageState> _employeeKey = GlobalKey<EmployeePageState>();
+  final GlobalKey<ProductionPageState> _productionKey = GlobalKey<ProductionPageState>();
   final GlobalKey<SettingsPageState> _settingsKey = GlobalKey<SettingsPageState>();
 
   @override
@@ -52,9 +54,13 @@ class _MainShellScreenState extends State<MainShellScreen> {
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
 
-        // Step 1: Check if the active tab has a sub-page open (e.g. My Profile, Item Details, Add Employee)
-        if (_currentIndex == 3 && _settingsKey.currentState?.hasSubScreen == true) {
+        // Step 1: Check if the active tab has a sub-page open
+        if (_currentIndex == 4 && _settingsKey.currentState?.hasSubScreen == true) {
           _settingsKey.currentState?.popSubScreen();
+          return;
+        }
+        if (_currentIndex == 3 && _productionKey.currentState?.hasSubScreen == true) {
+          _productionKey.currentState?.popSubScreen();
           return;
         }
         if (_currentIndex == 2 && _employeeKey.currentState?.hasSubScreen == true) {
@@ -108,6 +114,9 @@ class _MainShellScreenState extends State<MainShellScreen> {
                   ),
                   RepaintBoundary(
                     child: EmployeePage(key: _employeeKey),
+                  ),
+                  RepaintBoundary(
+                    child: ProductionPage(key: _productionKey),
                   ),
                   RepaintBoundary(
                     child: SettingsPage(key: _settingsKey),

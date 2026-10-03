@@ -7,6 +7,7 @@ import '../../../../core/widgets/erp_header_bar.dart';
 import '../../../../core/widgets/erp_input_field.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/services/employee_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class EmployeeModel {
   final String id;
@@ -20,6 +21,8 @@ class EmployeeModel {
   final String address;
   final String attendanceHours;
   final String payableSalary;
+  final String upiId;
+  final List<dynamic> salaryPayments;
   final Color avatarBgColor;
   final String? profilePicUrl;
 
@@ -35,6 +38,8 @@ class EmployeeModel {
     required this.address,
     required this.attendanceHours,
     required this.payableSalary,
+    required this.upiId,
+    required this.salaryPayments,
     required this.avatarBgColor,
     this.profilePicUrl,
   });
@@ -53,7 +58,9 @@ class EmployeeModel {
       work: json['role'] ?? 'Worker',
       address: json['address'] ?? '',
       attendanceHours: json['total_hours']?.toString() ?? '0',
-      payableSalary: json['total_salary']?.toString() ?? '0',
+      payableSalary: json['payable_salary']?.toString() ?? '0',
+      upiId: json['upi_id'] ?? '',
+      salaryPayments: json['salary_payments'] ?? [],
       avatarBgColor: const Color(0xFFFCD34D),
       profilePicUrl: json['profile_pic_url'],
     );
@@ -344,6 +351,7 @@ class EmployeePageState extends State<EmployeePage> {
     final phoneCtrl = TextEditingController();
     final workCtrl = TextEditingController();
     final addressCtrl = TextEditingController();
+    final upiCtrl = TextEditingController();
     bool isSaving = false;
 
     Future<void> pickImage(ImageSource source) async {
@@ -468,6 +476,12 @@ class EmployeePageState extends State<EmployeePage> {
                             hintText: 'Enter full address of Employee',
                             controller: addressCtrl,
                           ),
+                          const SizedBox(height: 14),
+                          ErpInputField(
+                            label: 'Employee UPI ID',
+                            hintText: 'Enter UPI ID (optional)',
+                            controller: upiCtrl,
+                          ),
                           const SizedBox(height: 24),
 
                           isSaving ? const CircularProgressIndicator() : CustomButton(
@@ -493,6 +507,7 @@ class EmployeePageState extends State<EmployeePage> {
                                 'phone': phoneCtrl.text,
                                 'role': workCtrl.text,
                                 'address': addressCtrl.text,
+                                'upi_id': upiCtrl.text,
                                 'profile_pic_url': base64Image ?? '',
                               });
 
@@ -504,6 +519,213 @@ class EmployeePageState extends State<EmployeePage> {
                                 );
                                 _fetchEmployees();
                                 _onBackToList();
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Failed: ${res['error']}')),
+                                );
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+    );
+  }
+
+  Widget _buildEditEmployeeScreen() {
+    if (_selectedEmployee == null) return Container();
+    final emp = _selectedEmployee!;
+
+    final nameCtrl = TextEditingController(text: emp.name);
+    final salaryCtrl = TextEditingController(text: emp.hourlySalary);
+    final phoneCtrl = TextEditingController(text: emp.phone);
+    final workCtrl = TextEditingController(text: emp.role);
+    final addressCtrl = TextEditingController(text: emp.address);
+    final upiCtrl = TextEditingController(text: emp.upiId);
+    bool isSaving = false;
+
+    Future<void> pickImage(ImageSource source) async {
+      final pickedFile = await _picker.pickImage(source: source, imageQuality: 50);
+      if (pickedFile != null) {
+        setState(() {
+          _selectedImage = File(pickedFile.path);
+        });
+      }
+    }
+
+    void showImageSourceSelector() {
+      showModalBottomSheet(
+        context: context,
+        builder: (ctx) => SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Photo Library'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  pickImage(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera),
+                title: const Text('Camera'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  pickImage(ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return StatefulBuilder(
+      builder: (context, setLocalState) {
+        return Scaffold(
+          backgroundColor: Colors.white,
+          body: SafeArea(
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              padding: const EdgeInsets.only(bottom: 85.0),
+              child: Column(
+                children: [
+                  ErpHeaderBar(
+                    title: 'Edit Employee',
+                    onBackTap: () => setState(() => _currentSubIndex = 2),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: GlassContainer(
+                      useGradientBorder: true,
+                      borderRadius: 26,
+                      padding: const EdgeInsets.all(22),
+                      child: Column(
+                        children: [
+                          GestureDetector(
+                            onTap: showImageSourceSelector,
+                            child: Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF1F5F9),
+                                shape: BoxShape.circle,
+                                image: _selectedImage != null
+                                    ? DecorationImage(
+                                        image: FileImage(_selectedImage!),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : (emp.profilePicUrl != null && emp.profilePicUrl!.isNotEmpty
+                                        ? DecorationImage(
+                                            image: MemoryImage(base64Decode(emp.profilePicUrl!)),
+                                            fit: BoxFit.cover,
+                                          )
+                                        : null),
+                              ),
+                              child: (_selectedImage == null && (emp.profilePicUrl == null || emp.profilePicUrl!.isEmpty))
+                                  ? const Icon(
+                                      Icons.camera_alt,
+                                      color: Color(0xFF64748B),
+                                      size: 32,
+                                    )
+                                  : null,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text("Tap to change photo", style: TextStyle(fontSize: 12, color: Colors.grey)),
+
+                          const SizedBox(height: 20),
+
+                          ErpInputField(
+                            label: 'Employee Name',
+                            hintText: 'Enter Name of Employee',
+                            controller: nameCtrl,
+                          ),
+                          const SizedBox(height: 14),
+                          ErpInputField(
+                            label: 'Employee Salary (Hourly)',
+                            hintText: 'Enter hourly salary',
+                            controller: salaryCtrl,
+                            keyboardType: TextInputType.number,
+                          ),
+                          const SizedBox(height: 14),
+                          ErpInputField(
+                            label: 'Employee Mo. Number',
+                            hintText: 'Enter Mobile Number',
+                            controller: phoneCtrl,
+                            keyboardType: TextInputType.phone,
+                          ),
+                          const SizedBox(height: 14),
+                          ErpInputField(
+                            label: 'Employee Role / Work',
+                            hintText: 'Employee work in factory',
+                            controller: workCtrl,
+                          ),
+                          const SizedBox(height: 14),
+                          ErpInputField(
+                            label: 'Employee Address',
+                            hintText: 'Enter full address of Employee',
+                            controller: addressCtrl,
+                          ),
+                          const SizedBox(height: 14),
+                          ErpInputField(
+                            label: 'Employee UPI ID',
+                            hintText: 'Enter UPI ID (optional)',
+                            controller: upiCtrl,
+                          ),
+                          const SizedBox(height: 24),
+
+                          isSaving ? const CircularProgressIndicator() : CustomButton(
+                            text: 'Save Changes',
+                            onPressed: () async {
+                              if (nameCtrl.text.isEmpty || salaryCtrl.text.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Name and Salary are required')),
+                                );
+                                return;
+                              }
+
+                              setLocalState(() => isSaving = true);
+                              String? base64Image = emp.profilePicUrl;
+                              if (_selectedImage != null) {
+                                final bytes = await _selectedImage!.readAsBytes();
+                                base64Image = base64Encode(bytes);
+                              }
+
+                              final res = await EmployeeService.editEmployee(emp.id, {
+                                'name': nameCtrl.text,
+                                'hourly_salary': double.tryParse(salaryCtrl.text) ?? 0,
+                                'phone': phoneCtrl.text,
+                                'role': workCtrl.text,
+                                'address': addressCtrl.text,
+                                'upi_id': upiCtrl.text,
+                                'profile_pic_url': base64Image ?? '',
+                              });
+
+                              setLocalState(() => isSaving = false);
+
+                              if (res['success']) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Employee Updated Successfully!')),
+                                );
+                                await _fetchEmployees();
+                                // find updated employee
+                                final updated = _employees.firstWhere((e) => e.id == emp.id);
+                                setState(() {
+                                  _selectedEmployee = updated;
+                                  _currentSubIndex = 2; // back to details
+                                });
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text('Failed: ${res['error']}')),
@@ -640,59 +862,187 @@ class EmployeePageState extends State<EmployeePage> {
                           if (isProcessing)
                             const CircularProgressIndicator()
                           else
-                            Row(
+                            Column(
                               children: [
-                                Expanded(
-                                  child: ElevatedButton(
-                                    onPressed: emp.isIn ? null : () async {
-                                      setLocalState(() => isProcessing = true);
-                                      final res = await EmployeeService.clockIn(emp.id);
-                                      setLocalState(() => isProcessing = false);
-                                      if (res['success']) {
-                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Clocked in successfully')));
-                                        _fetchEmployees();
-                                        _onBackToList();
-                                      } else {
-                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['error'])));
-                                      }
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.green,
-                                      padding: const EdgeInsets.symmetric(vertical: 14),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: ElevatedButton(
+                                        onPressed: emp.isIn ? null : () async {
+                                          TimeOfDay? customTime = await showTimePicker(
+                                            context: context,
+                                            initialTime: TimeOfDay.now(),
+                                            helpText: 'Select Clock In Time (Cancel for Now)',
+                                          );
+                                          
+                                          DateTime? finalTime;
+                                          if (customTime != null) {
+                                            final now = DateTime.now();
+                                            finalTime = DateTime(now.year, now.month, now.day, customTime.hour, customTime.minute);
+                                          }
+
+                                          setLocalState(() => isProcessing = true);
+                                          final res = await EmployeeService.clockIn(emp.id, time: finalTime);
+                                          setLocalState(() => isProcessing = false);
+                                          if (res['success']) {
+                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Clocked in ${finalTime != null ? 'at custom time' : 'successfully'}')));
+                                            _fetchEmployees();
+                                            _onBackToList();
+                                          } else {
+                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['error'])));
+                                          }
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.green,
+                                          padding: const EdgeInsets.symmetric(vertical: 14),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                                        ),
+                                        child: const Text('Clock In', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                      ),
                                     ),
-                                    child: const Text('Clock In', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: ElevatedButton(
-                                    onPressed: !emp.isIn ? null : () async {
-                                      setLocalState(() => isProcessing = true);
-                                      final res = await EmployeeService.clockOut(emp.id);
-                                      setLocalState(() => isProcessing = false);
-                                      if (res['success']) {
-                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Clocked out successfully')));
-                                        _fetchEmployees();
-                                        _onBackToList();
-                                      } else {
-                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['error'])));
-                                      }
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.redAccent,
-                                      padding: const EdgeInsets.symmetric(vertical: 14),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: ElevatedButton(
+                                        onPressed: !emp.isIn ? null : () async {
+                                          TimeOfDay? customTime = await showTimePicker(
+                                            context: context,
+                                            initialTime: TimeOfDay.now(),
+                                            helpText: 'Select Clock Out Time (Cancel for Now)',
+                                          );
+                                          
+                                          DateTime? finalTime;
+                                          if (customTime != null) {
+                                            final now = DateTime.now();
+                                            finalTime = DateTime(now.year, now.month, now.day, customTime.hour, customTime.minute);
+                                          }
+
+                                          setLocalState(() => isProcessing = true);
+                                          final res = await EmployeeService.clockOut(emp.id, time: finalTime);
+                                          setLocalState(() => isProcessing = false);
+                                          if (res['success']) {
+                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Clocked out ${finalTime != null ? 'at custom time' : 'successfully'}')));
+                                            _fetchEmployees();
+                                            _onBackToList();
+                                          } else {
+                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['error'])));
+                                          }
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.redAccent,
+                                          padding: const EdgeInsets.symmetric(vertical: 14),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                                        ),
+                                        child: const Text('Clock Out', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                      ),
                                     ),
-                                    child: const Text('Clock Out', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                  ),
+                                  ],
                                 ),
+                                const SizedBox(height: 16),
+                                if (double.tryParse(emp.payableSalary) != null && double.parse(emp.payableSalary) > 0)
+                                  Row(
+                                    children: [
+                                      if (emp.upiId.isNotEmpty)
+                                        Expanded(
+                                          child: ElevatedButton.icon(
+                                            onPressed: () => _handlePayment(emp, 'UPI', setLocalState, (val) => setLocalState(() => isProcessing = val)),
+                                            icon: const Icon(Icons.qr_code, color: Colors.white, size: 18),
+                                            label: const Text('Pay via UPI', style: TextStyle(color: Colors.white)),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: const Color(0xFF5B3DF5),
+                                              padding: const EdgeInsets.symmetric(vertical: 12),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                                            ),
+                                          ),
+                                        ),
+                                      if (emp.upiId.isNotEmpty) const SizedBox(width: 8),
+                                      Expanded(
+                                        child: ElevatedButton.icon(
+                                          onPressed: () => _handlePayment(emp, 'Cash', setLocalState, (val) => setLocalState(() => isProcessing = val)),
+                                          icon: const Icon(Icons.money, color: Colors.white, size: 18),
+                                          label: const Text('Pay via Cash', style: TextStyle(color: Colors.white)),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.orange,
+                                            padding: const EdgeInsets.symmetric(vertical: 12),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                               ],
                             ),
                         ],
                       ),
                     ),
                   ),
+
+                  if (emp.salaryPayments.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text("Payment History", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: emp.salaryPayments.length,
+                      itemBuilder: (ctx, i) {
+                        final payment = emp.salaryPayments[i];
+                        return Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.04),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${payment['amount']} INR',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF00B039)),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    payment['paid_at'].toString().split('T')[0],
+                                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                  ),
+                                ],
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: payment['payment_method'] == 'UPI' ? const Color(0xFF5B3DF5).withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  payment['payment_method'],
+                                  style: TextStyle(
+                                    color: payment['payment_method'] == 'UPI' ? const Color(0xFF5B3DF5) : Colors.orange,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -700,6 +1050,60 @@ class EmployeePageState extends State<EmployeePage> {
         );
       }
     );
+  }
+
+  Future<void> _handlePayment(EmployeeModel emp, String method, StateSetter setLocalState, void Function(bool) setProcessing) async {
+    double amount = double.parse(emp.payableSalary);
+
+    if (method == 'UPI') {
+      final url = 'upi://pay?pa=${emp.upiId}&pn=${Uri.encodeComponent(emp.name)}&am=$amount&cu=INR';
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No UPI app found on this device.')));
+        }
+      }
+    }
+
+    if (!mounted) return;
+    
+    // Show confirmation dialog before logging in DB
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Confirm $method Payment'),
+        content: Text('Did you successfully pay $amount INR to ${emp.name} via $method?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true), 
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF5B3DF5)),
+            child: const Text('Yes, Paid', style: TextStyle(color: Colors.white))
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      setProcessing(true);
+      final res = await EmployeeService.paySalary(emp.id, amount, method);
+      setProcessing(false);
+
+      if (res['success']) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payment logged successfully!')));
+        await _fetchEmployees();
+        // find updated employee
+        final updated = _employees.firstWhere((e) => e.id == emp.id);
+        setState(() {
+          _selectedEmployee = updated;
+          _currentSubIndex = 2; // refresh details
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to log payment: ${res['error']}')));
+      }
+    }
   }
 
   Widget _buildDetailRow(
@@ -737,12 +1141,6 @@ class EmployeePageState extends State<EmployeePage> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildEditEmployeeScreen() {
-    return Scaffold(
-      body: Center(child: Text("Edit feature coming soon")),
     );
   }
 }

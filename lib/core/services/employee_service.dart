@@ -49,7 +49,29 @@ class EmployeeService {
     }
   }
 
-  static Future<Map<String, dynamic>> clockIn(String employeeId) async {
+  static Future<Map<String, dynamic>> editEmployee(String employeeId, Map<String, dynamic> employeeData) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      
+      if (token == null) return {'success': false, 'error': 'Not authenticated'};
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/$employeeId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(employeeData),
+      );
+
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  static Future<Map<String, dynamic>> paySalary(String employeeId, double amount, String method) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
@@ -57,11 +79,15 @@ class EmployeeService {
       if (token == null) return {'success': false, 'error': 'Not authenticated'};
 
       final response = await http.post(
-        Uri.parse('$baseUrl/$employeeId/clock-in'),
+        Uri.parse('$baseUrl/$employeeId/pay-salary'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
+        body: jsonEncode({
+          'amount': amount,
+          'payment_method': method
+        }),
       );
 
       return _handleResponse(response, isSuccessCode: (code) => code == 200 || code == 201);
@@ -70,12 +96,38 @@ class EmployeeService {
     }
   }
 
-  static Future<Map<String, dynamic>> clockOut(String employeeId) async {
+  static Future<Map<String, dynamic>> clockIn(String employeeId, {DateTime? time}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
       
       if (token == null) return {'success': false, 'error': 'Not authenticated'};
+
+      final body = time != null ? jsonEncode({'time': time.toIso8601String()}) : null;
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/$employeeId/clock-in'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: body,
+      );
+
+      return _handleResponse(response, isSuccessCode: (code) => code == 200 || code == 201);
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  static Future<Map<String, dynamic>> clockOut(String employeeId, {DateTime? time}) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      
+      if (token == null) return {'success': false, 'error': 'Not authenticated'};
+
+      final body = time != null ? jsonEncode({'time': time.toIso8601String()}) : null;
 
       final response = await http.post(
         Uri.parse('$baseUrl/$employeeId/clock-out'),
@@ -83,6 +135,7 @@ class EmployeeService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
+        body: body,
       );
 
       return _handleResponse(response, isSuccessCode: (code) => code == 200 || code == 201);

@@ -64,6 +64,13 @@ class ErpBottomNavBar extends StatelessWidget {
                 _buildNavItem(
                   context,
                   index: 3,
+                  icon: Icons.factory_outlined,
+                  activeIcon: Icons.factory_rounded,
+                  label: 'Factory',
+                ),
+                _buildNavItem(
+                  context,
+                  index: 4,
                   icon: Icons.settings_outlined,
                   activeIcon: Icons.settings_rounded,
                   label: 'Settings',
