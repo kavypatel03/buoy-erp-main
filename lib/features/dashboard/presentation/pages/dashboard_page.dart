@@ -561,12 +561,11 @@ class _GridCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return GlassContainer(
       onTap: onTap,
-      child: GlassContainer(
-        useGradientBorder: true,
-        borderRadius: 22,
-        padding: const EdgeInsets.all(18),
+      useGradientBorder: true,
+      borderRadius: 22,
+      padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -607,8 +606,7 @@ class _GridCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 }
 
