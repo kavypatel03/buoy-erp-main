@@ -6,6 +6,7 @@ import 'help_support_page.dart';
 import 'my_profile_page.dart';
 import '../../../../core/services/profile_service.dart';
 import '../../../../core/services/auth_service.dart';
+import '../../../../app/app.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -291,13 +292,12 @@ class SettingsPageState extends State<SettingsPage> {
               const Icon(Icons.wb_sunny_outlined, size: 18, color: Color(0xFFF59E0B)),
               const SizedBox(width: 6),
               Switch(
-                value: _isDarkMode,
+                value: themeNotifier.value == ThemeMode.dark,
                 activeThumbColor: Colors.white,
                 activeTrackColor: const Color(0xFF5B3DF5),
                 onChanged: (val) {
-                  setState(() {
-                    _isDarkMode = val;
-                  });
+                  themeNotifier.value = val ? ThemeMode.dark : ThemeMode.light;
+                  setState(() {});
                 },
               ),
               const SizedBox(width: 6),

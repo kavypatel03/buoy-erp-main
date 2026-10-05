@@ -12,10 +12,16 @@ import '../../../../core/services/dashboard_service.dart';
 
 class DashboardPage extends StatefulWidget {
   final VoidCallback? onNavigateToLowStocks;
+  final VoidCallback? onNavigateToInventory;
+  final VoidCallback? onNavigateToProduction;
+  final VoidCallback? onNavigateToEmployees;
 
   const DashboardPage({
     super.key,
     this.onNavigateToLowStocks,
+    this.onNavigateToInventory,
+    this.onNavigateToProduction,
+    this.onNavigateToEmployees,
   });
 
   @override
@@ -243,6 +249,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             icon: Icons.inventory_2_rounded,
                             iconColor: const Color(0xFF5B3DF5),
                             iconBg: const Color(0x1F5B3DF5),
+                            onTap: widget.onNavigateToInventory,
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -254,6 +261,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             icon: Icons.settings_suggest_rounded,
                             iconColor: const Color(0xFFFF8C00),
                             iconBg: const Color(0x1FFF8C00),
+                            onTap: widget.onNavigateToProduction,
                           ),
                         ),
                       ],
@@ -269,6 +277,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             icon: Icons.people_rounded,
                             iconColor: const Color(0xFF00B039),
                             iconBg: const Color(0x1F00B039),
+                            onTap: widget.onNavigateToEmployees,
                           ),
                         ),
                         const SizedBox(width: 16),

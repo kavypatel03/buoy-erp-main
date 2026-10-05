@@ -107,7 +107,12 @@ class _MainShellScreenState extends State<MainShellScreen> {
                 index: _currentIndex,
                 children: [
                   RepaintBoundary(
-                    child: DashboardPage(onNavigateToLowStocks: () => _onTabTapped(1)),
+                    child: DashboardPage(
+                      onNavigateToLowStocks: () => _onTabTapped(1),
+                      onNavigateToInventory: () => _onTabTapped(1),
+                      onNavigateToEmployees: () => _onTabTapped(2),
+                      onNavigateToProduction: () => _onTabTapped(3),
+                    ),
                   ),
                   RepaintBoundary(
                     child: LowStocksPage(key: _inventoryKey),
