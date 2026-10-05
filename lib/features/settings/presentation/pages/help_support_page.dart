@@ -13,7 +13,7 @@ class HelpSupportPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const ClampingScrollPhysics(),
@@ -39,13 +39,13 @@ class HelpSupportPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       // Common Issues
-                      const Text(
+                      Text(
                         'Common Issues',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 14),
@@ -58,13 +58,13 @@ class HelpSupportPage extends StatelessWidget {
                       const SizedBox(height: 24),
 
                       // Contact Support Guides
-                      const Text(
+                      Text(
                         'Contact Support',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 14),
@@ -75,22 +75,22 @@ class HelpSupportPage extends StatelessWidget {
                       const SizedBox(height: 24),
 
                       // Contact Details
-                      const Text(
+                      Text(
                         'Contact Support',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 16),
 
-                      _buildContactRow(Icons.email_outlined, 'kavypatel5323@gmail.com'),
+                      _buildContactRow(context, Icons.email_outlined, 'kavypatel5323@gmail.com'),
                       const SizedBox(height: 12),
-                      _buildContactRow(Icons.phone_in_talk_outlined, '+91-98799-74411, +91-94260-24009'),
+                      _buildContactRow(context, Icons.phone_in_talk_outlined, '+91-98799-74411, +91-94260-24009'),
                       const SizedBox(height: 12),
-                      _buildContactRow(Icons.access_time_rounded, 'Mon-Sat, 9:00 AM - 6:00 PM'),
+                      _buildContactRow(context, Icons.access_time_rounded, 'Mon-Sat, 9:00 AM - 6:00 PM'),
                     ],
                   ),
                 ),
@@ -107,7 +107,7 @@ class HelpSupportPage extends StatelessWidget {
       alignment: Alignment.centerLeft,
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12.5,
           fontWeight: FontWeight.w400,
           color: Color(0xFF64748B),
@@ -117,7 +117,7 @@ class HelpSupportPage extends StatelessWidget {
     );
   }
 
-  Widget _buildContactRow(IconData icon, String detail) {
+  Widget _buildContactRow(BuildContext context, IconData icon, String detail) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -125,10 +125,10 @@ class HelpSupportPage extends StatelessWidget {
         const SizedBox(width: 10),
         Text(
           detail,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12.5,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF0F172A),
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ],

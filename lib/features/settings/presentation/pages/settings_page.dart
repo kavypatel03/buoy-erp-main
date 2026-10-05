@@ -18,7 +18,6 @@ class SettingsPage extends StatefulWidget {
 
 class SettingsPageState extends State<SettingsPage> {
   int _currentSubIndex = 0; // 0: Main Settings, 1: My Profile, 2: Change Password, 3: Help & Support
-  bool _isDarkMode = false;
   String _firstName = 'Admin user';
   String _email = 'admin@factory.com';
   String _occupation = 'Administrator';
@@ -91,7 +90,7 @@ class SettingsPageState extends State<SettingsPage> {
 
   Widget _buildMainSettingsList(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const ClampingScrollPhysics(),
@@ -146,7 +145,7 @@ class SettingsPageState extends State<SettingsPage> {
                         children: [
                           Text(
                             _firstName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -155,7 +154,7 @@ class SettingsPageState extends State<SettingsPage> {
                           const SizedBox(height: 2),
                           Text(
                             _email,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
                               color: Colors.white70,
                             ),
@@ -163,7 +162,7 @@ class SettingsPageState extends State<SettingsPage> {
                           const SizedBox(height: 2),
                           Text(
                             _occupation,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
                               color: Colors.white60,
                               fontWeight: FontWeight.w500,
@@ -243,7 +242,7 @@ class SettingsPageState extends State<SettingsPage> {
     required IconData icon,
     required String title,
     required VoidCallback onTap,
-    Color textColor = const Color(0xFF0F172A),
+    Color? textColor,
     Color iconColor = const Color(0xFF64748B),
     bool hideChevron = false,
   }) {
@@ -257,7 +256,7 @@ class SettingsPageState extends State<SettingsPage> {
         style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: textColor,
+          color: textColor ?? Theme.of(context).colorScheme.onSurface,
         ),
       ),
       trailing: hideChevron
@@ -275,15 +274,15 @@ class SettingsPageState extends State<SettingsPage> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
-            children: const [
-              Icon(Icons.tune_rounded, color: Color(0xFF64748B), size: 22),
-              SizedBox(width: 14),
+            children: [
+              const Icon(Icons.tune_rounded, color: Color(0xFF64748B), size: 22),
+              const SizedBox(width: 14),
               Text(
                 'Theme Setting',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF0F172A),
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ],

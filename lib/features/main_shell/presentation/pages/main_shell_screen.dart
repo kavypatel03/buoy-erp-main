@@ -98,7 +98,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
           child: Stack(
             children: [

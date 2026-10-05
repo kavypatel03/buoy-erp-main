@@ -41,11 +41,9 @@ class LiquidGlassToggle extends StatelessWidget {
                     ? const Color(0xFF5B3DF5).withValues(alpha: 0.5) 
                     : Colors.white.withValues(alpha: 0.25),
                 borderRadius: BorderRadius.circular(15),
-                border: Border(
-                  top: BorderSide(color: Colors.white.withValues(alpha: 0.6), width: 1.0),
-                  left: BorderSide(color: Colors.white.withValues(alpha: 0.6), width: 1.0),
-                  right: BorderSide(color: Colors.white.withValues(alpha: 0.1), width: 1.0),
-                  bottom: BorderSide(color: Colors.white.withValues(alpha: 0.1), width: 1.0),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.45),
+                  width: 1.0,
                 ),
               ),
               child: AnimatedAlign(

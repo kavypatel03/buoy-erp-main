@@ -103,7 +103,7 @@ class ProductionPageState extends State<ProductionPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Start New Production', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              Text('Start New Production', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               TextField(
                 controller: _orderNameCtrl,
@@ -131,7 +131,7 @@ class ProductionPageState extends State<ProductionPage> {
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Create Order', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: Text('Create Order', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(height: 16),
             ],
@@ -159,7 +159,7 @@ class ProductionPageState extends State<ProductionPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Add Output (Log Process Complete)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text('Add Output (Log Process Complete)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               TextField(
                 controller: _outputQtyCtrl,
@@ -197,7 +197,7 @@ class ProductionPageState extends State<ProductionPage> {
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Complete Process', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: Text('Complete Process', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(height: 16),
             ],
@@ -231,7 +231,7 @@ class ProductionPageState extends State<ProductionPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('Log Process Step', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  Text('Log Process Step', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 16),
                   TextField(
                     controller: _processNameCtrl,
@@ -299,7 +299,7 @@ class ProductionPageState extends State<ProductionPage> {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text('Save Log', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: Text('Save Log', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
@@ -322,7 +322,7 @@ class ProductionPageState extends State<ProductionPage> {
 
   Widget _buildOrdersListScreen() {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -364,19 +364,19 @@ class ProductionPageState extends State<ProductionPage> {
                                   type: MaterialType.transparency,
                                   child: ListTile(
                                   contentPadding: EdgeInsets.zero,
-                                  title: Text(order['product_name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                  title: Text(order['product_name'], style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                   subtitle: Padding(
                                     padding: const EdgeInsets.only(top: 8.0),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text('Status: ${order['status']}', style: const TextStyle(color: Color(0xFF5B3DF5), fontWeight: FontWeight.w600)),
+                                        Text('Status: ${order['status']}', style: TextStyle(color: Color(0xFF5B3DF5), fontWeight: FontWeight.w600)),
                                         const SizedBox(height: 4),
-                                        Text('Started: ${order['start_date'].toString().split('T')[0]}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                        Text('Started: ${order['start_date'].toString().split('T')[0]}', style: TextStyle(fontSize: 12, color: Colors.grey)),
                                       ],
                                     ),
                                   ),
-                                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 18, color: Color(0xFF0F172A)),
+                                  trailing: Icon(Icons.arrow_forward_ios_rounded, size: 18, color: Theme.of(context).colorScheme.onSurface),
                                   onTap: () {
                                     setState(() {
                                       _selectedOrder = order;
@@ -399,7 +399,7 @@ class ProductionPageState extends State<ProductionPage> {
   Widget _buildOrderDetailsScreen() {
     final logs = (_selectedOrder['production_logs'] as List?) ?? [];
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -456,7 +456,7 @@ class ProductionPageState extends State<ProductionPage> {
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Text(log['process_name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                        Text(log['process_name'], style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                         if (needsOutput)
                                           ElevatedButton(
                                             onPressed: () => _showUpdateOutputModal(log),
@@ -466,7 +466,7 @@ class ProductionPageState extends State<ProductionPage> {
                                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
                                               minimumSize: const Size(0, 32),
                                             ),
-                                            child: const Text('Add Output', style: TextStyle(color: Colors.white, fontSize: 12)),
+                                            child: Text('Add Output', style: TextStyle(color: Colors.white, fontSize: 12)),
                                           ),
                                       ],
                                     ),
@@ -494,7 +494,7 @@ class ProductionPageState extends State<ProductionPage> {
 
   Widget _buildWastageReportScreen() {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -521,7 +521,7 @@ class ProductionPageState extends State<ProductionPage> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(report['process_name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                    Text(report['process_name'], style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                     const Padding(
                                       padding: EdgeInsets.symmetric(vertical: 8.0),
                                       child: Divider(color: Colors.black12),
@@ -530,7 +530,7 @@ class ProductionPageState extends State<ProductionPage> {
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text('Total Input:', style: TextStyle(color: Colors.grey.shade700)),
-                                        Text('${report['total_input']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                        Text('${report['total_input']}', style: TextStyle(fontWeight: FontWeight.bold)),
                                       ],
                                     ),
                                     const SizedBox(height: 6),
@@ -538,15 +538,15 @@ class ProductionPageState extends State<ProductionPage> {
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text('Total Output:', style: TextStyle(color: Colors.grey.shade700)),
-                                        Text('${report['total_output']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                        Text('${report['total_output']}', style: TextStyle(fontWeight: FontWeight.bold)),
                                       ],
                                     ),
                                     const SizedBox(height: 6),
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        const Text('Total Wastage:', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                                        Text('${report['total_wastage']}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16)),
+                                        Text('Total Wastage:', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                                        Text('${report['total_wastage']}', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16)),
                                       ],
                                     ),
                                   ],
@@ -565,7 +565,7 @@ class ProductionPageState extends State<ProductionPage> {
   Widget _infoChip(String label, String value, Color color) {
     return Column(
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey)),
         Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
       ],
     );

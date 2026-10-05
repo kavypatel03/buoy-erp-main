@@ -100,7 +100,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const ClampingScrollPhysics(),
@@ -128,10 +128,10 @@ class _RegisterPageState extends State<RegisterPage> {
                       ],
                     ),
                     child: IconButton(
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.arrow_back_ios_new_rounded,
                         size: 18,
-                        color: Color(0xFF0F172A),
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                       onPressed: () => Navigator.pop(context),
                     ),
@@ -141,18 +141,18 @@ class _RegisterPageState extends State<RegisterPage> {
                 const SizedBox(height: 24),
 
                 // Title
-                const Text(
+                Text(
                   'Register',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF0F172A),
+                    color: Theme.of(context).colorScheme.onSurface,
                     letterSpacing: -0.5,
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Welcome to ERP\nPlease register yourself',
                   textAlign: TextAlign.center,
                   style: TextStyle(
@@ -174,7 +174,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       border: Border.all(color: const Color(0xFFFCA5A5)),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Registration is currently disabled by the administrator.',
                       textAlign: TextAlign.center,
                       style: TextStyle(

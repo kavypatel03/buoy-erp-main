@@ -76,7 +76,7 @@ class _NotificationPageState extends State<NotificationPage> {
     return PopScope(
       canPop: true,
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
           child: Column(
             children: [
@@ -95,7 +95,7 @@ class _NotificationPageState extends State<NotificationPage> {
                     child: TextButton.icon(
                       onPressed: _clearAllNotifications,
                       icon: const Icon(Icons.clear_all_rounded, size: 18, color: Color(0xFFFF334B)),
-                      label: const Text(
+                      label: Text(
                         'Clear All',
                         style: TextStyle(
                           color: Color(0xFFFF334B),
@@ -121,7 +121,7 @@ class _NotificationPageState extends State<NotificationPage> {
                 child: _isLoading 
                   ? const Center(child: CircularProgressIndicator(color: Color(0xFF5B3DF5)))
                   : _error.isNotEmpty 
-                  ? Center(child: Text(_error, style: const TextStyle(color: Colors.red)))
+                  ? Center(child: Text(_error, style: TextStyle(color: Colors.red)))
                   : _notifications.isEmpty 
                   ? const Center(child: Text('No notifications yet', style: TextStyle(color: Colors.grey)))
                   : ListView.builder(
@@ -193,13 +193,13 @@ class _NotificationPageState extends State<NotificationPage> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: isRead ? FontWeight.w600 : FontWeight.bold,
-                  color: const Color(0xFF0F172A),
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 message,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   color: Color(0xFF64748B),
                 ),
@@ -209,7 +209,7 @@ class _NotificationPageState extends State<NotificationPage> {
                   padding: const EdgeInsets.only(top: 8.0),
                   child: Text(
                     formattedDate,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 10,
                       color: Color(0xFF94A3B8),
                     ),

@@ -130,10 +130,10 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         color: const Color(0xFF5B3DF5),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         onRefresh: _handleRefresh,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -209,12 +209,12 @@ class _DashboardPageState extends State<DashboardPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Live Overview',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF0F172A),
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     if (_summaryLoading)
@@ -385,14 +385,14 @@ class _GreetingBannerState extends State<_GreetingBanner> {
           children: [
             Text(
               '${_greeting()} $_firstName 👋',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               "Here's what's happening today",
               style: TextStyle(
                 fontSize: 12.5,
@@ -438,17 +438,17 @@ class _SmartInventoryCard extends StatelessWidget {
                   child: const Icon(Icons.inventory_2_rounded, color: Colors.white, size: 15),
                 ),
                 const SizedBox(height: 6),
-                const Text(
+                Text(
                   'Smart Inventory\nManagement',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
+                    color: Theme.of(context).colorScheme.onSurface,
                     height: 1.15,
                   ),
                 ),
                 const SizedBox(height: 3),
-                const Text(
+                Text(
                   'Track, Manage and optimize your inventory real-time.',
                   style: TextStyle(fontSize: 10, color: Color(0xFF64748B)),
                   maxLines: 2,
@@ -516,9 +516,9 @@ class _CarouselCard extends StatelessWidget {
                   child: Icon(icon, color: Colors.white, size: 15),
                 ),
                 const SizedBox(height: 6),
-                Text(title, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                 const SizedBox(height: 3),
-                Text(subtitle, style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B))),
+                Text(subtitle, style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B))),
                 const SizedBox(height: 6),
                 Row(
                   children: [
@@ -579,7 +579,7 @@ class _GridCard extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
             ),
             const SizedBox(height: 4),
             AnimatedSwitcher(
@@ -590,7 +590,7 @@ class _GridCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
-                  color: isAlert ? const Color(0xFFFF334B) : const Color(0xFF0F172A),
+                  color: isAlert ? const Color(0xFFFF334B) : Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ),
@@ -648,17 +648,17 @@ class _GridCardWide extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+                Text(title, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
                 const SizedBox(height: 4),
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 400),
                   child: Text(
                     value,
                     key: ValueKey(value),
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   ),
                 ),
-                Text(unit, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                Text(unit, style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
               ],
             ),
           ),

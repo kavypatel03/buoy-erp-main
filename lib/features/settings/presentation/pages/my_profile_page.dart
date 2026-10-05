@@ -112,7 +112,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const ClampingScrollPhysics(),
@@ -142,13 +142,13 @@ class _MyProfilePageState extends State<MyProfilePage> {
                     : Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                      const Text(
+                      Text(
                         'Edit Profile',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
 
@@ -191,7 +191,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
                           const SizedBox(height: 8),
                           GestureDetector(
                             onTap: _pickImage,
-                            child: const Text(
+                            child: Text(
                               'Upload Image',
                               style: TextStyle(
                                 fontSize: 13,
@@ -208,12 +208,12 @@ class _MyProfilePageState extends State<MyProfilePage> {
                       // Full Name Section (No Truncation Fix)
                       Align(
                         alignment: Alignment.centerLeft,
-                        child: const Text(
+                        child: Text(
                           'Full Name',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF1E293B),
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                       ),
@@ -221,9 +221,16 @@ class _MyProfilePageState extends State<MyProfilePage> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? const Color(0xFF1E293B)
+                              : const Color(0xFFF8FAFC),
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFFF1F5F9), width: 1),
+                          border: Border.all(
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? const Color(0xFF334155)
+                                : const Color(0xFFF1F5F9),
+                            width: 1,
+                          ),
                         ),
                         child: Row(
                           children: [
@@ -293,14 +300,14 @@ class _MyProfilePageState extends State<MyProfilePage> {
     return TextField(
       controller: controller,
       textAlign: TextAlign.center,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 11,
-        color: Color(0xFF0F172A),
+        color: Theme.of(context).colorScheme.onSurface,
         fontWeight: FontWeight.w600,
       ),
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: const TextStyle(
+        hintStyle: TextStyle(
           fontSize: 11,
           color: Color(0xFF94A3B8),
           fontWeight: FontWeight.w500,

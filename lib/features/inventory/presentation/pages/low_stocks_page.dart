@@ -168,7 +168,7 @@ class LowStocksPageState extends State<LowStocksPage> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const ClampingScrollPhysics(),
@@ -259,16 +259,16 @@ class LowStocksPageState extends State<LowStocksPage> {
                                         children: [
                                           Text(
                                             item.title,
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.bold,
-                                              color: Color(0xFF0F172A),
+                                              color: Theme.of(context).colorScheme.onSurface,
                                             ),
                                           ),
                                           const SizedBox(height: 2),
                                           Text(
                                             item.subtitle,
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 11.5,
                                               color: Color(0xFF64748B),
                                             ),
@@ -330,11 +330,18 @@ class LowStocksPageState extends State<LowStocksPage> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF5B3DF5) : Colors.white.withValues(alpha: 0.9),
+          color: isSelected
+              ? const Color(0xFF5B3DF5)
+              : Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
           borderRadius: BorderRadius.circular(22),
           border: isSelected
               ? null
-              : Border.all(color: Colors.white.withValues(alpha: 0.8), width: 1),
+              : Border.all(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF334155)
+                      : Colors.white.withValues(alpha: 0.8),
+                  width: 1,
+                ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
@@ -356,7 +363,9 @@ class LowStocksPageState extends State<LowStocksPage> {
           style: TextStyle(
             fontSize: 12.5,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-            color: isSelected ? Colors.white : const Color(0xFF475569),
+            color: isSelected
+                ? Colors.white
+                : Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ),
@@ -371,7 +380,7 @@ class LowStocksPageState extends State<LowStocksPage> {
     if (item == null) return const SizedBox();
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const ClampingScrollPhysics(),
@@ -423,7 +432,7 @@ class LowStocksPageState extends State<LowStocksPage> {
                                     const SizedBox(height: 8),
                                     Text(
                                       item.title,
-                                      style: const TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w600),
+                                      style: TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w600),
                                     ),
                                   ],
                                 ),
@@ -440,10 +449,10 @@ class LowStocksPageState extends State<LowStocksPage> {
                         children: [
                           Text(
                             item.title,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF0F172A),
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           Container(
@@ -452,7 +461,7 @@ class LowStocksPageState extends State<LowStocksPage> {
                               color: const Color(0xFFFEF3C7),
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: const Text(
+                            child: Text(
                               'In Stock',
                               style: TextStyle(
                                 fontSize: 12,
@@ -482,18 +491,18 @@ class LowStocksPageState extends State<LowStocksPage> {
                       const SizedBox(height: 24),
 
                       // Description
-                      const Text(
+                      Text(
                         'Description',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         item.description,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           color: Color(0xFF64748B),
                         ),
@@ -538,8 +547,8 @@ class LowStocksPageState extends State<LowStocksPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Colors.white,
-          title: const Text('Restock Item'),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          title: Text('Restock Item'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -558,7 +567,7 @@ class LowStocksPageState extends State<LowStocksPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+              child: Text('Cancel', style: TextStyle(color: Colors.grey)),
             ),
             TextButton(
               onPressed: () async {
@@ -587,7 +596,7 @@ class LowStocksPageState extends State<LowStocksPage> {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: ${res['error']}')));
                 }
               },
-              child: const Text('Restock', style: TextStyle(color: Color(0xFF5B3DF5), fontWeight: FontWeight.bold)),
+              child: Text('Restock', style: TextStyle(color: Color(0xFF5B3DF5), fontWeight: FontWeight.bold)),
             ),
           ],
         );
@@ -606,8 +615,8 @@ class LowStocksPageState extends State<LowStocksPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Colors.white,
-          title: const Text('Edit Item'),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          title: Text('Edit Item'),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -645,7 +654,7 @@ class LowStocksPageState extends State<LowStocksPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+              child: Text('Cancel', style: TextStyle(color: Colors.grey)),
             ),
             TextButton(
               onPressed: () async {
@@ -672,7 +681,7 @@ class LowStocksPageState extends State<LowStocksPage> {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: ${res['error']}')));
                 }
               },
-              child: const Text('Save', style: TextStyle(color: Color(0xFF5B3DF5), fontWeight: FontWeight.bold)),
+              child: Text('Save', style: TextStyle(color: Color(0xFF5B3DF5), fontWeight: FontWeight.bold)),
             ),
           ],
         );
@@ -686,7 +695,7 @@ class LowStocksPageState extends State<LowStocksPage> {
       children: [
         Text(
           key,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12.5,
             color: Color(0xFF64748B),
             fontWeight: FontWeight.w500,
@@ -694,10 +703,10 @@ class LowStocksPageState extends State<LowStocksPage> {
         ),
         Text(
           val,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12.5,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF0F172A),
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ],
@@ -734,7 +743,7 @@ class LowStocksPageState extends State<LowStocksPage> {
         }
 
         return Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: SafeArea(
             child: SingleChildScrollView(
           physics: const ClampingScrollPhysics(),
@@ -757,7 +766,7 @@ class LowStocksPageState extends State<LowStocksPage> {
                   child: Column(
                     children: [
                       // Upload Item Image Preview
-                      const Text(
+                      Text(
                         'Item Image',
                         style: TextStyle(
                           fontSize: 12.5,
@@ -793,7 +802,7 @@ class LowStocksPageState extends State<LowStocksPage> {
                       const SizedBox(height: 6),
                       GestureDetector(
                         onTap: pickImage,
-                        child: const Text(
+                        child: Text(
                           'Upload Image',
                           style: TextStyle(
                             fontSize: 12.5,
@@ -943,7 +952,7 @@ class LowStocksPageState extends State<LowStocksPage> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
             color: Color(0xFF1E293B),
@@ -965,7 +974,7 @@ class LowStocksPageState extends State<LowStocksPage> {
               items: items.map((String val) {
                 return DropdownMenuItem<String>(
                   value: val,
-                  child: Text(val, style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B))),
+                  child: Text(val, style: TextStyle(fontSize: 13, color: Color(0xFF1E293B))),
                 );
               }).toList(),
               onChanged: onChanged,

@@ -72,7 +72,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const ClampingScrollPhysics(),
@@ -100,10 +100,10 @@ class _LoginPageState extends State<LoginPage> {
                       ],
                     ),
                     child: IconButton(
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.arrow_back_ios_new_rounded,
                         size: 18,
-                        color: Color(0xFF0F172A),
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                       onPressed: () => Navigator.pop(context),
                     ),
@@ -122,17 +122,17 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 24),
 
                 // Title
-                const Text(
+                Text(
                   'Login',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF0F172A),
+                    color: Theme.of(context).colorScheme.onSurface,
                     letterSpacing: -0.5,
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Welcome back! Please login to your account',
                   textAlign: TextAlign.center,
                   style: TextStyle(
@@ -201,7 +201,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        const Text(
+                        Text(
                           'Remember me',
                           style: TextStyle(
                             fontSize: 13,
@@ -215,7 +215,7 @@ class _LoginPageState extends State<LoginPage> {
                       onTap: () {
                         // Forgot Password action
                       },
-                      child: const Text(
+                      child: Text(
                         'Forgot Password ?',
                         style: TextStyle(
                           fontSize: 13,
@@ -238,7 +238,7 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 24),
 
                 // Or login with
-                const Text(
+                Text(
                   'Or login with',
                   style: TextStyle(
                     fontSize: 13,

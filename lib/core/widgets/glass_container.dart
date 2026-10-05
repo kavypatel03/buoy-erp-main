@@ -85,6 +85,12 @@ class _GlassContainerState extends State<GlassContainer> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final defaultBgColor = isDarkMode ? Colors.black : Colors.white;
+    final defaultBorderColor = isDarkMode 
+        ? Colors.white.withValues(alpha: 0.15) 
+        : Colors.white.withValues(alpha: 0.45);
+        
     final effectiveRadius = widget.isCircle
         ? (widget.width != null ? widget.width! / 2 : 50.0)
         : widget.borderRadius;
@@ -99,13 +105,13 @@ class _GlassContainerState extends State<GlassContainer> with SingleTickerProvid
         shape: widget.isCircle ? BoxShape.circle : BoxShape.rectangle,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.08),
             blurRadius: 32,
             spreadRadius: 0,
             offset: const Offset(0, 12),
           ),
           BoxShadow(
-            color: const Color(0xFF5B3DF5).withValues(alpha: 0.04),
+            color: const Color(0xFF5B3DF5).withValues(alpha: isDarkMode ? 0.08 : 0.04),
             blurRadius: 24,
             spreadRadius: 2,
             offset: const Offset(0, 4),
@@ -121,15 +127,13 @@ class _GlassContainerState extends State<GlassContainer> with SingleTickerProvid
           child: Container(
             padding: widget.padding,
             decoration: BoxDecoration(
-              color: (widget.backgroundColor ?? Colors.white).withValues(alpha: widget.opacity),
+              color: (widget.backgroundColor ?? defaultBgColor).withValues(alpha: widget.opacity),
               shape: widget.isCircle ? BoxShape.circle : BoxShape.rectangle,
               borderRadius: widget.isCircle ? null : BorderRadius.circular(effectiveRadius),
               border: widget.border ??
-                  Border(
-                    top: BorderSide(color: Colors.white.withValues(alpha: 0.7), width: 1.2),
-                    left: BorderSide(color: Colors.white.withValues(alpha: 0.7), width: 1.2),
-                    right: BorderSide(color: Colors.white.withValues(alpha: 0.2), width: 1.2),
-                    bottom: BorderSide(color: Colors.white.withValues(alpha: 0.2), width: 1.2),
+                  Border.all(
+                    color: defaultBorderColor,
+                    width: 1.2,
                   ),
             ),
             child: widget.child,

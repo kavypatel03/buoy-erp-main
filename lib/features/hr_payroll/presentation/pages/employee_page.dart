@@ -162,7 +162,7 @@ class EmployeePageState extends State<EmployeePage> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: _isLoading 
           ? const Center(child: CircularProgressIndicator())
@@ -247,16 +247,16 @@ class EmployeePageState extends State<EmployeePage> {
                                         children: [
                                           Text(
                                             emp.name,
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.bold,
-                                              color: Color(0xFF0F172A),
+                                              color: Theme.of(context).colorScheme.onSurface,
                                             ),
                                           ),
                                           const SizedBox(height: 2),
                                           Text(
                                             emp.phone,
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 11.5,
                                               color: Color(0xFF64748B),
                                             ),
@@ -373,7 +373,7 @@ class EmployeePageState extends State<EmployeePage> {
                 type: MaterialType.transparency,
                 child: ListTile(
                 leading: const Icon(Icons.photo_library),
-                title: const Text('Photo Library'),
+                title: Text('Photo Library'),
                 onTap: () {
                   Navigator.of(context).pop();
                   pickImage(ImageSource.gallery);
@@ -384,7 +384,7 @@ class EmployeePageState extends State<EmployeePage> {
                 type: MaterialType.transparency,
                 child: ListTile(
                 leading: const Icon(Icons.photo_camera),
-                title: const Text('Camera'),
+                title: Text('Camera'),
                 onTap: () {
                   Navigator.of(context).pop();
                   pickImage(ImageSource.camera);
@@ -400,7 +400,7 @@ class EmployeePageState extends State<EmployeePage> {
     return StatefulBuilder(
       builder: (context, setLocalState) {
         return Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: SafeArea(
             child: SingleChildScrollView(
               physics: const ClampingScrollPhysics(),
@@ -447,7 +447,7 @@ class EmployeePageState extends State<EmployeePage> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          const Text("Tap to upload photo", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          Text("Tap to upload photo", style: TextStyle(fontSize: 12, color: Colors.grey)),
 
                           const SizedBox(height: 20),
 
@@ -576,7 +576,7 @@ class EmployeePageState extends State<EmployeePage> {
                 type: MaterialType.transparency,
                 child: ListTile(
                   leading: const Icon(Icons.photo_library),
-                  title: const Text('Photo Library'),
+                  title: Text('Photo Library'),
                   onTap: () {
                     Navigator.of(context).pop();
                     pickImage(ImageSource.gallery);
@@ -587,7 +587,7 @@ class EmployeePageState extends State<EmployeePage> {
                 type: MaterialType.transparency,
                 child: ListTile(
                   leading: const Icon(Icons.photo_camera),
-                  title: const Text('Camera'),
+                  title: Text('Camera'),
                   onTap: () {
                     Navigator.of(context).pop();
                     pickImage(ImageSource.camera);
@@ -603,7 +603,7 @@ class EmployeePageState extends State<EmployeePage> {
     return StatefulBuilder(
       builder: (context, setLocalState) {
         return Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: SafeArea(
             child: SingleChildScrollView(
               physics: const ClampingScrollPhysics(),
@@ -655,7 +655,7 @@ class EmployeePageState extends State<EmployeePage> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          const Text("Tap to change photo", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          Text("Tap to change photo", style: TextStyle(fontSize: 12, color: Colors.grey)),
 
                           const SizedBox(height: 20),
 
@@ -766,7 +766,7 @@ class EmployeePageState extends State<EmployeePage> {
     return StatefulBuilder(
       builder: (context, setLocalState) {
         return Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: SafeArea(
             child: SingleChildScrollView(
               physics: const ClampingScrollPhysics(),
@@ -783,7 +783,7 @@ class EmployeePageState extends State<EmployeePage> {
                       blur: 14,
                       opacity: 0.95,
                       child: PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF0F172A)),
+                        icon: Icon(Icons.more_vert_rounded, color: Theme.of(context).colorScheme.onSurface),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         onSelected: (value) async {
                           if (value == 'edit') {
@@ -792,14 +792,14 @@ class EmployeePageState extends State<EmployeePage> {
                             final confirm = await showDialog<bool>(
                               context: context,
                               builder: (ctx) => AlertDialog(
-                                title: const Text('Delete Employee?'),
+                                title: Text('Delete Employee?'),
                                 content: Text('Are you sure you want to permanently delete ${emp.name}? This action cannot be undone.'),
                                 actions: [
-                                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel')),
                                   ElevatedButton(
                                     onPressed: () => Navigator.pop(ctx, true), 
                                     style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-                                    child: const Text('Delete', style: TextStyle(color: Colors.white))
+                                    child: Text('Delete', style: TextStyle(color: Colors.white))
                                   ),
                                 ],
                               ),
@@ -879,16 +879,16 @@ class EmployeePageState extends State<EmployeePage> {
                           const SizedBox(height: 12),
                           Text(
                             emp.name,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF0F172A),
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             emp.role,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
                               color: Color(0xFF64748B),
                             ),
@@ -975,7 +975,7 @@ class EmployeePageState extends State<EmployeePage> {
                                           padding: const EdgeInsets.symmetric(vertical: 14),
                                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                                         ),
-                                        child: const Text('Clock In', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                        child: Text('Clock In', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                                       ),
                                     ),
                                     const SizedBox(width: 12),
@@ -1010,7 +1010,7 @@ class EmployeePageState extends State<EmployeePage> {
                                           padding: const EdgeInsets.symmetric(vertical: 14),
                                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                                         ),
-                                        child: const Text('Clock Out', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                        child: Text('Clock Out', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                                       ),
                                     ),
                                   ],
@@ -1024,7 +1024,7 @@ class EmployeePageState extends State<EmployeePage> {
                                           child: ElevatedButton.icon(
                                             onPressed: () => _handlePayment(emp, 'UPI', setLocalState, (val) => setLocalState(() => isProcessing = val)),
                                             icon: const Icon(Icons.qr_code, color: Colors.white, size: 18),
-                                            label: const Text('Pay via UPI', style: TextStyle(color: Colors.white)),
+                                            label: Text('Pay via UPI', style: TextStyle(color: Colors.white)),
                                             style: ElevatedButton.styleFrom(
                                               backgroundColor: const Color(0xFF5B3DF5),
                                               padding: const EdgeInsets.symmetric(vertical: 12),
@@ -1037,7 +1037,7 @@ class EmployeePageState extends State<EmployeePage> {
                                         child: ElevatedButton.icon(
                                           onPressed: () => _handlePayment(emp, 'Cash', setLocalState, (val) => setLocalState(() => isProcessing = val)),
                                           icon: const Icon(Icons.money, color: Colors.white, size: 18),
-                                          label: const Text('Pay via Cash', style: TextStyle(color: Colors.white)),
+                                          label: Text('Pay via Cash', style: TextStyle(color: Colors.white)),
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: Colors.orange,
                                             padding: const EdgeInsets.symmetric(vertical: 12),
@@ -1092,12 +1092,12 @@ class EmployeePageState extends State<EmployeePage> {
                                 children: [
                                   Text(
                                     '${payment['amount']} INR',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF00B039)),
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF00B039)),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     payment['paid_at'].toString().split('T')[0],
-                                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                    style: TextStyle(fontSize: 12, color: Colors.grey),
                                   ),
                                 ],
                               ),
@@ -1154,11 +1154,11 @@ class EmployeePageState extends State<EmployeePage> {
         title: Text('Confirm $method Payment'),
         content: Text('Did you successfully pay $amount INR to ${emp.name} via $method?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel')),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true), 
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF5B3DF5)),
-            child: const Text('Yes, Paid', style: TextStyle(color: Colors.white))
+            child: Text('Yes, Paid', style: TextStyle(color: Colors.white))
           ),
         ],
       ),
@@ -1187,7 +1187,7 @@ class EmployeePageState extends State<EmployeePage> {
   Widget _buildDetailRow(
     String key,
     String value, {
-    Color valueColor = const Color(0xFF0F172A),
+    Color? valueColor,
     bool isBoldValue = false,
     double fontSize = 13,
   }) {
@@ -1199,7 +1199,7 @@ class EmployeePageState extends State<EmployeePage> {
           flex: 5,
           child: Text(
             key,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12.5,
               color: Color(0xFF64748B),
               fontWeight: FontWeight.w500,

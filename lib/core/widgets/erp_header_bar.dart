@@ -31,9 +31,9 @@ class ErpHeaderBar extends StatelessWidget {
             child: Row(
               children: [
                 if (onBackTap != null)
-                  const Padding(
-                    padding: EdgeInsets.only(right: 8.0),
-                    child: Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Color(0xFF0F172A)),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Theme.of(context).colorScheme.onSurface),
                   ),
                 const BuoyLogoWidget(size: 48),
               ],
@@ -48,10 +48,10 @@ class ErpHeaderBar extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF0F172A),
+                color: Theme.of(context).colorScheme.onSurface,
                 letterSpacing: -0.2,
               ),
             ),
@@ -78,10 +78,10 @@ class ErpHeaderBar extends StatelessWidget {
               border: isNotificationActive
                   ? Border.all(color: const Color(0xFF5B3DF5), width: 1.5)
                   : null,
-              child: const Center(
+              child: Center(
                 child: Icon(
                   Icons.notifications_none_rounded,
-                  color: Color(0xFF0F172A),
+                  color: Theme.of(context).colorScheme.onSurface,
                   size: 22,
                 ),
               ),
