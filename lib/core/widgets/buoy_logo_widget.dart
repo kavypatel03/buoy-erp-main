@@ -85,8 +85,8 @@ class BuoyLogoWidget extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            Text('b', style: TextStyle(fontFamily: 'Arial', fontSize: fontSize * 0.6, fontWeight: FontWeight.w900, color: const Color(0xFF2563EB), height: 0.85)),
-            Transform.rotate(angle: 0.12, child: Text('u', style: TextStyle(fontFamily: 'Arial', fontSize: fontSize * 0.55, fontWeight: FontWeight.w900, color: const Color(0xFFEF4444), height: 0.85))),
+            Text('b', style: TextStyle(fontSize: fontSize * 0.6, fontWeight: FontWeight.w900, color: const Color(0xFF2563EB), height: 0.85)),
+            Transform.rotate(angle: 0.12, child: Text('u', style: TextStyle(fontSize: fontSize * 0.55, fontWeight: FontWeight.w900, color: const Color(0xFFEF4444), height: 0.85))),
           ],
         ),
         Row(
@@ -94,9 +94,9 @@ class BuoyLogoWidget extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            Text('o', style: TextStyle(fontFamily: 'Arial', fontSize: fontSize * 0.6, fontWeight: FontWeight.w900, color: const Color(0xFFF59E0B), height: 0.85)),
-            Transform.rotate(angle: -0.1, child: Text('y', style: TextStyle(fontFamily: 'Arial', fontSize: fontSize * 0.65, fontWeight: FontWeight.w900, color: const Color(0xFFEC4899), height: 0.85))),
-            Text('!', style: TextStyle(fontFamily: 'Arial', fontSize: fontSize * 0.7, fontWeight: FontWeight.w900, color: const Color(0xFF10B981), height: 0.85)),
+            Text('o', style: TextStyle(fontSize: fontSize * 0.6, fontWeight: FontWeight.w900, color: const Color(0xFFF59E0B), height: 0.85)),
+            Transform.rotate(angle: -0.1, child: Text('y', style: TextStyle(fontSize: fontSize * 0.65, fontWeight: FontWeight.w900, color: const Color(0xFFEC4899), height: 0.85))),
+            Text('!', style: TextStyle(fontSize: fontSize * 0.7, fontWeight: FontWeight.w900, color: const Color(0xFF10B981), height: 0.85)),
           ],
         ),
       ],

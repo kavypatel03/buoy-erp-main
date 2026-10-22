@@ -12,7 +12,6 @@ class AppTheme {
         primary: AppColors.primary,
         surface: AppColors.surface,
       ),
-      fontFamily: '.SF Pro Display', // iOS 26 System Font
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
@@ -67,7 +66,6 @@ class AppTheme {
         primary: AppColors.primary,
         surface: const Color(0xFF1E1E1E),
       ),
-      fontFamily: '.SF Pro Display', // iOS 26 System Font
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
