@@ -1,10 +1,18 @@
-const supabase = require('../config/supabase');
+const { createClient } = require('@supabase/supabase-js');
+require('dotenv').config();
+
+// Create admin client bypassing RLS using SERVICE_ROLE_KEY
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_PUBLISHABLE_KEY,
+  { auth: { autoRefreshToken: false, persistSession: false } }
+);
 
 // Get all items
 const getItems = async (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from('items') // Change 'items' to your actual Supabase table name
+    const { data, error } = await supabaseAdmin
+      .from('items')
       .select('*');
 
     if (error) throw error;
@@ -18,7 +26,7 @@ const getItems = async (req, res) => {
 const getItemById = async (req, res) => {
   try {
     const { id } = req.params;
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('items')
       .select('*')
       .eq('id', id)
@@ -32,13 +40,6 @@ const getItemById = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
-const { createClient } = require('@supabase/supabase-js');
-const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY,
-  { auth: { persistSession: false } }
-);
 
 // Create new item
 const createItem = async (req, res) => {
@@ -75,7 +76,7 @@ const createItem = async (req, res) => {
       delete newItem.image_base64; // Don't insert base64 into the DB
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('items')
       .insert([newItem])
       .select();
@@ -93,7 +94,7 @@ const updateItem = async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
     
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('items')
       .update(updates)
       .eq('id', id)
@@ -111,7 +112,7 @@ const deleteItem = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('items')
       .delete()
       .eq('id', id)
