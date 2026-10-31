@@ -1,8 +1,5 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-
-import 'dart:ui';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class ErpBottomNavBar extends StatefulWidget {
@@ -251,5 +248,4 @@ class _ErpBottomNavBarState extends State<ErpBottomNavBar> with SingleTickerProv
       ),
     );
   }
-}
 }
