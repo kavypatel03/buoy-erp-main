@@ -1,5 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+
+import 'dart:ui';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class ErpBottomNavBar extends StatefulWidget {
@@ -18,7 +21,7 @@ class ErpBottomNavBar extends StatefulWidget {
   State<ErpBottomNavBar> createState() => _ErpBottomNavBarState();
 }
 
-class _ErpBottomNavBarState extends State<ErpBottomNavBar> {
+class _ErpBottomNavBarState extends State<ErpBottomNavBar> with SingleTickerProviderStateMixin {
   bool _isDragging = false;
   double? _dragPositionX;
   int _lastHapticIndex = -1;
@@ -80,18 +83,18 @@ class _ErpBottomNavBarState extends State<ErpBottomNavBar> {
           child: Container(
             decoration: BoxDecoration(
               color: isDarkMode
-                  ? Colors.black.withValues(alpha: 0.45)
-                  : Colors.white.withValues(alpha: 0.50),
+                  ? Colors.black.withValues(alpha: 0.4)
+                  : Colors.white.withValues(alpha: 0.45),
               borderRadius: BorderRadius.circular(40),
               border: Border.all(
                 color: isDarkMode
-                    ? Colors.white.withValues(alpha: 0.15)
-                    : Colors.white.withValues(alpha: 0.65),
+                    ? Colors.white.withValues(alpha: 0.12)
+                    : Colors.white.withValues(alpha: 0.6),
                 width: 1.2,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: isDarkMode ? 0.25 : 0.08),
+                  color: Colors.black.withValues(alpha: isDarkMode ? 0.25 : 0.06),
                   blurRadius: 16,
                   spreadRadius: 1,
                   offset: const Offset(0, 4),
@@ -104,101 +107,87 @@ class _ErpBottomNavBarState extends State<ErpBottomNavBar> {
                 final itemWidth = maxWidth / 5;
                 const circleSize = 58.0;
 
-                Widget buildContent(double currentPageValue) {
-                  final double targetLeft;
-                  if (_isDragging && _dragPositionX != null) {
-                    targetLeft = (_dragPositionX! - (circleSize / 2)).clamp(0.0, maxWidth - circleSize);
-                  } else {
-                    targetLeft = (currentPageValue * itemWidth) + (itemWidth / 2) - (circleSize / 2);
-                  }
+                // Position calculation: either from live touch drag or selected tab index
+                final double targetLeft;
+                if (_isDragging && _dragPositionX != null) {
+                  targetLeft = (_dragPositionX! - (circleSize / 2)).clamp(0.0, maxWidth - circleSize);
+                } else {
+                  targetLeft = (widget.currentIndex * itemWidth) + (itemWidth / 2) - (circleSize / 2);
+                }
 
-                  return GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onHorizontalDragStart: (details) => _handleDragStart(details, maxWidth),
-                    onHorizontalDragUpdate: (details) => _handleDragUpdate(details, maxWidth),
-                    onHorizontalDragEnd: (details) => _handleDragEnd(details, maxWidth),
-                    child: Stack(
-                      children: [
-                        // Liquid Glass Sliding Blob
-                        Positioned(
-                          top: (constraints.maxHeight - circleSize) / 2,
-                          left: targetLeft.clamp(0.0, maxWidth - circleSize),
-                          width: circleSize,
-                          height: circleSize,
-                          child: AnimatedScale(
-                            duration: const Duration(milliseconds: 150),
-                            scale: _isDragging ? 1.15 : 1.0,
-                            curve: Curves.easeInOut,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: isDarkMode
-                                      ? [
-                                          Colors.white.withValues(alpha: 0.28),
-                                          Colors.white.withValues(alpha: 0.12),
-                                        ]
-                                      : [
-                                          Colors.white.withValues(alpha: 0.90),
-                                          Colors.white.withValues(alpha: 0.55),
-                                        ],
-                                ),
-                                border: Border.all(
-                                  color: isDarkMode
-                                      ? Colors.white.withValues(alpha: 0.35)
-                                      : Colors.white.withValues(alpha: 0.90),
-                                  width: 1.5,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFF5B3DF5).withValues(alpha: 0.24),
-                                    blurRadius: 14,
-                                    spreadRadius: 1,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.08),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
+                return GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onHorizontalDragStart: (details) => _handleDragStart(details, maxWidth),
+                  onHorizontalDragUpdate: (details) => _handleDragUpdate(details, maxWidth),
+                  onHorizontalDragEnd: (details) => _handleDragEnd(details, maxWidth),
+                  child: Stack(
+                    children: [
+                      // Liquid Glass Sliding Blob
+                      AnimatedPositioned(
+                        duration: _isDragging ? const Duration(milliseconds: 40) : const Duration(milliseconds: 320),
+                        curve: _isDragging ? Curves.linear : Curves.easeOutBack,
+                        top: (constraints.maxHeight - circleSize) / 2,
+                        left: targetLeft,
+                        width: circleSize,
+                        height: circleSize,
+                        child: AnimatedScale(
+                          duration: const Duration(milliseconds: 150),
+                          scale: _isDragging ? 1.15 : 1.0,
+                          curve: Curves.easeInOut,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: isDarkMode
+                                    ? [
+                                        Colors.white.withValues(alpha: 0.25),
+                                        Colors.white.withValues(alpha: 0.10),
+                                      ]
+                                    : [
+                                        Colors.white.withValues(alpha: 0.85),
+                                        Colors.white.withValues(alpha: 0.50),
+                                      ],
                               ),
+                              border: Border.all(
+                                color: isDarkMode
+                                    ? Colors.white.withValues(alpha: 0.3)
+                                    : Colors.white.withValues(alpha: 0.85),
+                                width: 1.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF5B3DF5).withValues(alpha: 0.22),
+                                  blurRadius: 14,
+                                  spreadRadius: 1,
+                                  offset: const Offset(0, 4),
+                                ),
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.08),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
                           ),
                         ),
+                      ),
 
-                        // Navigation Icons Row
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _buildNavItem(0, Icons.home_outlined, Icons.home_rounded, 'Home', itemWidth, currentPageValue),
-                            _buildNavItem(1, Icons.inventory_2_outlined, Icons.inventory_2_rounded, 'Inventory', itemWidth, currentPageValue),
-                            _buildNavItem(2, Icons.person_outline_rounded, Icons.person_rounded, 'Employee', itemWidth, currentPageValue),
-                            _buildNavItem(3, Icons.factory_outlined, Icons.factory_rounded, 'Factory', itemWidth, currentPageValue),
-                            _buildNavItem(4, Icons.settings_outlined, Icons.settings_rounded, 'Settings', itemWidth, currentPageValue),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                if (widget.pageController != null) {
-                  return AnimatedBuilder(
-                    animation: widget.pageController!,
-                    builder: (context, child) {
-                      double pageVal = widget.currentIndex.toDouble();
-                      if (widget.pageController!.hasClients && widget.pageController!.page != null) {
-                        pageVal = widget.pageController!.page!;
-                      }
-                      return buildContent(pageVal);
-                    },
-                  );
-                } else {
-                  return buildContent(widget.currentIndex.toDouble());
-                }
+                      // Navigation Icons Row
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildNavItem(0, Icons.home_outlined, Icons.home_rounded, 'Home', itemWidth),
+                          _buildNavItem(1, Icons.inventory_2_outlined, Icons.inventory_2_rounded, 'Inventory', itemWidth),
+                          _buildNavItem(2, Icons.person_outline_rounded, Icons.person_rounded, 'Employee', itemWidth),
+                          _buildNavItem(3, Icons.factory_outlined, Icons.factory_rounded, 'Factory', itemWidth),
+                          _buildNavItem(4, Icons.settings_outlined, Icons.settings_rounded, 'Settings', itemWidth),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
               },
             ),
           ),
@@ -213,13 +202,13 @@ class _ErpBottomNavBarState extends State<ErpBottomNavBar> {
     IconData activeIcon,
     String label,
     double itemWidth,
-    double currentPageValue,
   ) {
+    // If currently dragging, visually highlight the tab closest to the finger
     final int activeIndex;
     if (_isDragging && _dragPositionX != null) {
       activeIndex = (_dragPositionX! / itemWidth).floor().clamp(0, 4);
     } else {
-      activeIndex = currentPageValue.round().clamp(0, 4);
+      activeIndex = widget.currentIndex;
     }
 
     final isSelected = activeIndex == index;
@@ -262,4 +251,5 @@ class _ErpBottomNavBarState extends State<ErpBottomNavBar> {
       ),
     );
   }
+}
 }

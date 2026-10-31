@@ -218,38 +218,34 @@ class _MyProfilePageState extends State<MyProfilePage> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
-                        clipBehavior: Clip.antiAlias,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                          decoration: BoxDecoration(
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? const Color(0xFF1E293B)
+                              : const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
                             color: Theme.of(context).brightness == Brightness.dark
-                                ? const Color(0xFF1E293B)
-                                : const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: Theme.of(context).brightness == Brightness.dark
-                                  ? const Color(0xFF334155)
-                                  : const Color(0xFFF1F5F9),
-                              width: 1,
+                                ? const Color(0xFF334155)
+                                : const Color(0xFFF1F5F9),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _buildNoTruncateField(_firstNameController, 'First Name'),
                             ),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: _buildNoTruncateField(_firstNameController, 'First Name'),
-                              ),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: _buildNoTruncateField(_middleNameController, 'Middle Name'),
-                              ),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: _buildNoTruncateField(_surnameController, 'Surname'),
-                              ),
-                            ],
-                          ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: _buildNoTruncateField(_middleNameController, 'Middle Name'),
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: _buildNoTruncateField(_surnameController, 'Surname'),
+                            ),
+                          ],
                         ),
                       ),
 
@@ -310,8 +306,6 @@ class _MyProfilePageState extends State<MyProfilePage> {
         fontWeight: FontWeight.w600,
       ),
       decoration: InputDecoration(
-        filled: false,
-        fillColor: Colors.transparent,
         hintText: hintText,
         hintStyle: TextStyle(
           fontSize: 11,

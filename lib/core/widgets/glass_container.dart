@@ -1,6 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
+import 'dart:ui';
+import 'package:flutter/material.dart';
+
 /// High-performance iOS Liquid Glass container.
 /// Optimized for 90Hz/120Hz smooth scrolling by using lightweight blur/fills
 /// and on-demand animation controllers.
@@ -29,8 +32,8 @@ class GlassContainer extends StatefulWidget {
     this.margin,
     this.width,
     this.height,
-    this.blur = 10,
-    this.opacity = 0.55,
+    this.blur = 10, // Optimized lightweight blur
+    this.opacity = 0.55, // Translucent frosted fill
     this.backgroundColor,
     this.isCircle = false,
     this.border,
@@ -177,4 +180,5 @@ class _GlassContainerState extends State<GlassContainer> with SingleTickerProvid
 
     return container;
   }
+}
 }
