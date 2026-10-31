@@ -136,7 +136,7 @@ class _DashboardPageState extends State<DashboardPage> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         onRefresh: _handleRefresh,
         child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
           padding: const EdgeInsets.only(bottom: 85.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

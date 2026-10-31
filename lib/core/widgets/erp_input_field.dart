@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class ErpInputField extends StatelessWidget {
@@ -24,6 +23,7 @@ class ErpInputField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final borderRadius = BorderRadius.circular(16);
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,47 +37,57 @@ class ErpInputField extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDarkMode ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-              width: 1.2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.02),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+        ClipRRect(
+          borderRadius: borderRadius,
+          clipBehavior: Clip.antiAlias,
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+              borderRadius: borderRadius,
+              border: Border.all(
+                color: isDarkMode ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                width: 1.2,
               ),
-            ],
-          ),
-          child: TextFormField(
-            controller: controller,
-            obscureText: obscureText,
-            keyboardType: keyboardType,
-            maxLines: maxLines,
-            style: TextStyle(
-              fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurface,
-              fontWeight: FontWeight.w500,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.02),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            decoration: InputDecoration(
-              hintText: hintText,
-              hintStyle: const TextStyle(
+            child: TextFormField(
+              controller: controller,
+              obscureText: obscureText,
+              keyboardType: keyboardType,
+              maxLines: maxLines,
+              style: TextStyle(
                 fontSize: 14,
-                color: Color(0xFF94A3B8),
-                fontWeight: FontWeight.w400,
+                color: Theme.of(context).colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
               ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
+              decoration: InputDecoration(
+                isDense: true,
+                filled: false,
+                fillColor: Colors.transparent,
+                hintText: hintText,
+                hintStyle: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF94A3B8),
+                  fontWeight: FontWeight.w400,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                suffixIcon: suffixIcon,
               ),
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              suffixIcon: suffixIcon,
             ),
           ),
         ),

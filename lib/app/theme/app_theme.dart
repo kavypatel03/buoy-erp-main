@@ -29,20 +29,20 @@ class AppTheme {
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: Colors.black.withValues(alpha: 0.05), // iOS typical light gray fill
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        filled: false,
+        fillColor: Colors.transparent,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18), // Deeply rounded inputs
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
       ),
       cardTheme: CardThemeData(
@@ -83,20 +83,20 @@ class AppTheme {
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.1), // iOS typical dark mode fill
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        filled: false,
+        fillColor: Colors.transparent,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0xFF334155), width: 1.2),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0xFF334155), width: 1.2),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
       ),
       cardTheme: CardThemeData(

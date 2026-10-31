@@ -9,11 +9,13 @@ class AuthService {
 
   static Future<Map<String, dynamic>> login(String email, String password) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': password}),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/login'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'email': email, 'password': password}),
+          )
+          .timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(response.body);
 
@@ -33,11 +35,13 @@ class AuthService {
 
   static Future<Map<String, dynamic>> register(String email, String password) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': password}),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/register'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'email': email, 'password': password}),
+          )
+          .timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(response.body);
 

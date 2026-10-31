@@ -93,7 +93,7 @@ class SettingsPageState extends State<SettingsPage> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
           padding: const EdgeInsets.only(bottom: 85.0),
           child: Column(
             children: [

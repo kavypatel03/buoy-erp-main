@@ -22,6 +22,7 @@ class MainShellScreen extends StatefulWidget {
 
 class _MainShellScreenState extends State<MainShellScreen> {
   late int _currentIndex;
+  late final PageController _pageController;
   final List<int> _tabHistory = [0];
   DateTime? _lastBackPressTime;
 
@@ -34,9 +35,16 @@ class _MainShellScreenState extends State<MainShellScreen> {
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: _currentIndex);
     if (_currentIndex != 0) {
       _tabHistory.add(_currentIndex);
     }
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   void _onTabTapped(int index) {
@@ -45,6 +53,29 @@ class _MainShellScreenState extends State<MainShellScreen> {
       _currentIndex = index;
       _tabHistory.add(index);
     });
+    if (_pageController.hasClients) {
+      _pageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+
+  void _onPageChanged(int index) {
+    if (index == _currentIndex) return;
+    setState(() {
+      _currentIndex = index;
+      _tabHistory.add(index);
+    });
+  }
+
+  bool get _isSubScreenActive {
+    if (_currentIndex == 1 && _inventoryKey.currentState?.hasSubScreen == true) return true;
+    if (_currentIndex == 2 && _employeeKey.currentState?.hasSubScreen == true) return true;
+    if (_currentIndex == 3 && _productionKey.currentState?.hasSubScreen == true) return true;
+    if (_currentIndex == 4 && _settingsKey.currentState?.hasSubScreen == true) return true;
+    return false;
   }
 
   @override
@@ -78,6 +109,9 @@ class _MainShellScreenState extends State<MainShellScreen> {
             _tabHistory.removeLast();
             _currentIndex = _tabHistory.last;
           });
+          if (_pageController.hasClients) {
+            _pageController.jumpToPage(_currentIndex);
+          }
           return;
         }
 
@@ -102,9 +136,13 @@ class _MainShellScreenState extends State<MainShellScreen> {
         body: SafeArea(
           child: Stack(
             children: [
-              // Persistent Page Content Body with GlobalKeys for nested navigation checking
-              IndexedStack(
-                index: _currentIndex,
+              // Slidable iPhone-style PageView with Bouncing Physics
+              PageView(
+                controller: _pageController,
+                physics: _isSubScreenActive
+                    ? const NeverScrollableScrollPhysics()
+                    : const BouncingScrollPhysics(),
+                onPageChanged: _onPageChanged,
                 children: [
                   RepaintBoundary(
                     child: DashboardPage(
@@ -192,6 +230,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
                 child: ErpBottomNavBar(
                   currentIndex: _currentIndex,
                   onTap: _onTabTapped,
+                  pageController: _pageController,
                 ),
               ),
             ],

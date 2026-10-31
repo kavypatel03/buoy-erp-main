@@ -1,8 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-/// Reusable iOS Liquid Glass container with intense frosted blur,
-/// translucent fill, directional rim lighting (borders), and iOS-style touch effects.
+/// High-performance iOS Liquid Glass container.
+/// Optimized for 90Hz/120Hz smooth scrolling by using lightweight blur/fills
+/// and on-demand animation controllers.
 class GlassContainer extends StatefulWidget {
   final Widget child;
   final double borderRadius;
@@ -18,23 +19,25 @@ class GlassContainer extends StatefulWidget {
   final bool useGradientBorder;
   final AlignmentGeometry? alignment;
   final VoidCallback? onTap;
+  final bool enableBlur;
 
   const GlassContainer({
     super.key,
     required this.child,
-    this.borderRadius = 22,
+    this.borderRadius = 20,
     this.padding,
     this.margin,
     this.width,
     this.height,
-    this.blur = 32, // Intense blur for liquid glass
-    this.opacity = 0.45, // Translucent fill
+    this.blur = 10,
+    this.opacity = 0.55,
     this.backgroundColor,
     this.isCircle = false,
     this.border,
     this.useGradientBorder = false,
     this.alignment,
     this.onTap,
+    this.enableBlur = true,
   });
 
   @override
@@ -42,58 +45,93 @@ class GlassContainer extends StatefulWidget {
 }
 
 class _GlassContainerState extends State<GlassContainer> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _opacityAnimation;
+  AnimationController? _controller;
+  Animation<double>? _scaleAnimation;
+  Animation<double>? _opacityAnimation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 120),
-      reverseDuration: const Duration(milliseconds: 120),
-    );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.96).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-    _opacityAnimation = Tween<double>(begin: 1.0, end: 0.8).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    if (widget.onTap != null) {
+      _controller = AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 100),
+        reverseDuration: const Duration(milliseconds: 100),
+      );
+      _scaleAnimation = Tween<double>(begin: 1.0, end: 0.97).animate(
+        CurvedAnimation(parent: _controller!, curve: Curves.easeInOut),
+      );
+      _opacityAnimation = Tween<double>(begin: 1.0, end: 0.85).animate(
+        CurvedAnimation(parent: _controller!, curve: Curves.easeInOut),
+      );
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
   void _handleTapDown(TapDownDetails details) {
-    if (widget.onTap != null) _controller.forward();
+    if (widget.onTap != null) _controller?.forward();
   }
 
   void _handleTapUp(TapUpDetails details) {
     if (widget.onTap != null) {
-      _controller.reverse();
+      _controller?.reverse();
       widget.onTap!();
     }
   }
 
   void _handleTapCancel() {
-    if (widget.onTap != null) _controller.reverse();
+    if (widget.onTap != null) _controller?.reverse();
   }
 
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final defaultBgColor = isDarkMode ? Colors.black : Colors.white;
+    final defaultBgColor = isDarkMode ? const Color(0xFF1E293B) : Colors.white;
     final defaultBorderColor = isDarkMode 
-        ? Colors.white.withValues(alpha: 0.15) 
-        : Colors.white.withValues(alpha: 0.45);
+        ? Colors.white.withValues(alpha: 0.12) 
+        : Colors.white.withValues(alpha: 0.6);
         
     final effectiveRadius = widget.isCircle
         ? (widget.width != null ? widget.width! / 2 : 50.0)
         : widget.borderRadius;
+
+    final shapeBorderRadius = widget.isCircle ? null : BorderRadius.circular(effectiveRadius);
+
+    Widget content = Container(
+      padding: widget.padding,
+      decoration: BoxDecoration(
+        color: (widget.backgroundColor ?? defaultBgColor).withValues(alpha: widget.opacity),
+        shape: widget.isCircle ? BoxShape.circle : BoxShape.rectangle,
+        borderRadius: shapeBorderRadius,
+        border: widget.border ??
+            Border.all(
+              color: defaultBorderColor,
+              width: 1.0,
+            ),
+      ),
+      child: widget.child,
+    );
+
+    // Apply BackdropFilter only when blur is enabled and > 0 for maximum 90/120fps efficiency
+    if (widget.enableBlur && widget.blur > 0) {
+      content = ClipRRect(
+        borderRadius: BorderRadius.circular(effectiveRadius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: widget.blur, sigmaY: widget.blur),
+          child: content,
+        ),
+      );
+    } else {
+      content = ClipRRect(
+        borderRadius: BorderRadius.circular(effectiveRadius),
+        child: content,
+      );
+    }
 
     Widget container = Container(
       width: widget.width,
@@ -101,60 +139,33 @@ class _GlassContainerState extends State<GlassContainer> with SingleTickerProvid
       margin: widget.margin,
       alignment: widget.alignment,
       decoration: BoxDecoration(
-        borderRadius: widget.isCircle ? null : BorderRadius.circular(effectiveRadius),
+        borderRadius: shapeBorderRadius,
         shape: widget.isCircle ? BoxShape.circle : BoxShape.rectangle,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.08),
-            blurRadius: 32,
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.04),
+            blurRadius: 12,
             spreadRadius: 0,
-            offset: const Offset(0, 12),
-          ),
-          BoxShadow(
-            color: const Color(0xFF5B3DF5).withValues(alpha: isDarkMode ? 0.08 : 0.04),
-            blurRadius: 24,
-            spreadRadius: 2,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: widget.isCircle
-            ? BorderRadius.circular(effectiveRadius)
-            : BorderRadius.circular(effectiveRadius),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: widget.blur, sigmaY: widget.blur),
-          child: Container(
-            padding: widget.padding,
-            decoration: BoxDecoration(
-              color: (widget.backgroundColor ?? defaultBgColor).withValues(alpha: widget.opacity),
-              shape: widget.isCircle ? BoxShape.circle : BoxShape.rectangle,
-              borderRadius: widget.isCircle ? null : BorderRadius.circular(effectiveRadius),
-              border: widget.border ??
-                  Border.all(
-                    color: defaultBorderColor,
-                    width: 1.2,
-                  ),
-            ),
-            child: widget.child,
-          ),
-        ),
-      ),
+      child: content,
     );
 
-    if (widget.onTap != null) {
-      container = GestureDetector(
+    if (widget.onTap != null && _controller != null && _scaleAnimation != null && _opacityAnimation != null) {
+      return GestureDetector(
         onTapDown: _handleTapDown,
         onTapUp: _handleTapUp,
         onTapCancel: _handleTapCancel,
         behavior: HitTestBehavior.opaque,
         child: AnimatedBuilder(
-          animation: _controller,
+          animation: _controller!,
           builder: (context, child) {
             return Transform.scale(
-              scale: _scaleAnimation.value,
+              scale: _scaleAnimation!.value,
               child: Opacity(
-                opacity: _opacityAnimation.value,
+                opacity: _opacityAnimation!.value,
                 child: child,
               ),
             );

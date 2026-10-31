@@ -171,7 +171,7 @@ class LowStocksPageState extends State<LowStocksPage> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
           padding: const EdgeInsets.only(bottom: 85.0),
           child: Column(
             children: [
@@ -383,7 +383,7 @@ class LowStocksPageState extends State<LowStocksPage> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
           padding: const EdgeInsets.only(bottom: 85.0),
           child: Column(
             children: [
@@ -746,7 +746,7 @@ class LowStocksPageState extends State<LowStocksPage> {
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: SafeArea(
             child: SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
           padding: const EdgeInsets.only(bottom: 85.0),
           child: Column(
             children: [
@@ -959,25 +959,29 @@ class LowStocksPageState extends State<LowStocksPage> {
           ),
         ),
         const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              isExpanded: true,
-              value: value,
-              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),
-              items: items.map((String val) {
-                return DropdownMenuItem<String>(
-                  value: val,
-                  child: Text(val, style: TextStyle(fontSize: 13, color: Color(0xFF1E293B))),
-                );
-              }).toList(),
-              onChanged: onChanged,
+        ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          clipBehavior: Clip.antiAlias,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                isExpanded: true,
+                value: value,
+                icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),
+                items: items.map((String val) {
+                  return DropdownMenuItem<String>(
+                    value: val,
+                    child: Text(val, style: TextStyle(fontSize: 13, color: Color(0xFF1E293B))),
+                  );
+                }).toList(),
+                onChanged: onChanged,
+              ),
             ),
           ),
         ),

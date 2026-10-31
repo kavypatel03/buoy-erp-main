@@ -10,22 +10,27 @@ class LocalNotificationService {
   static Future<void> initialize() async {
     if (_initialized) return;
 
-    const initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/launcher_icon');
-        
-    const initializationSettingsIOS = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
+    try {
+      const initializationSettingsAndroid =
+          AndroidInitializationSettings('@mipmap/launcher_icon');
+          
+      const initializationSettingsIOS = DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
 
-    const initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
-    );
+      const initializationSettings = InitializationSettings(
+        android: initializationSettingsAndroid,
+        iOS: initializationSettingsIOS,
+      );
 
-    await _notificationsPlugin.initialize(settings: initializationSettings);
-    _initialized = true;
+      await _notificationsPlugin.initialize(settings: initializationSettings);
+      _initialized = true;
+    } catch (e, stack) {
+      print("LocalNotificationService initialize error: $e");
+      print(stack);
+    }
   }
 
   static Future<void> requestPermission() async {

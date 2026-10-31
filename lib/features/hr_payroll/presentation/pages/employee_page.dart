@@ -167,7 +167,7 @@ class EmployeePageState extends State<EmployeePage> {
         child: _isLoading 
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
           padding: const EdgeInsets.only(bottom: 85.0),
           child: Column(
             children: [
@@ -403,7 +403,7 @@ class EmployeePageState extends State<EmployeePage> {
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: SafeArea(
             child: SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
+              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
               padding: const EdgeInsets.only(bottom: 85.0),
               child: Column(
                 children: [
@@ -606,7 +606,7 @@ class EmployeePageState extends State<EmployeePage> {
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: SafeArea(
             child: SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
+              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
               padding: const EdgeInsets.only(bottom: 85.0),
               child: Column(
                 children: [
@@ -769,7 +769,7 @@ class EmployeePageState extends State<EmployeePage> {
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: SafeArea(
             child: SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
+              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
               padding: const EdgeInsets.only(bottom: 85.0),
               child: Column(
                 children: [
