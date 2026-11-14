@@ -109,3 +109,4 @@ SELECT p.name AS product, t.step_number, t.process_name, t.expected_tolerance_pc
 FROM public.production_products p
 JOIN public.production_process_templates t ON p.id = t.product_id
 ORDER BY p.name, t.step_number;
+

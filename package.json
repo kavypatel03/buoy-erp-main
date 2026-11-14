@@ -1,12 +1,20 @@
 {
   "name": "buoy-erp",
   "version": "1.0.0",
-  "description": "Buoy ERP - Flutter Web Application",
+  "description": "Buoy ERP - Flutter Web Application & API",
   "private": true,
   "scripts": {
     "serve": "node serve_web.js"
   },
   "dependencies": {
-    "@vercel/analytics": "^1.4.1"
+    "@supabase/supabase-js": "^2.117.2",
+    "@vercel/analytics": "^1.4.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.5",
+    "ejs": "^6.0.1",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "firebase-admin": "^14.5.0"
   }
 }

@@ -9,7 +9,7 @@ if (!supabaseUrl || !supabaseKey) {
   console.warn('Missing Supabase environment variables. Please check your .env file.');
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey, {
+const supabase = createClient(supabaseUrl || 'https://placeholder.supabase.co', supabaseKey || 'placeholder-key', {
   auth: {
     persistSession: false,
     autoRefreshToken: false,

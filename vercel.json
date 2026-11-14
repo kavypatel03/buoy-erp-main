@@ -1,8 +1,16 @@
 {
   "buildCommand": "bash vercel-build.sh",
   "outputDirectory": "build/web",
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "backend/views/**"
+    }
+  },
   "rewrites": [
     { "source": "/download/(.*)", "destination": "/download/$1" },
+    { "source": "/api/(.*)", "destination": "/api/index.js" },
+    { "source": "/admin", "destination": "/api/index.js" },
+    { "source": "/admin/(.*)", "destination": "/api/index.js" },
     { "source": "/((?!_vercel).*)", "destination": "/index.html" }
   ]
 }

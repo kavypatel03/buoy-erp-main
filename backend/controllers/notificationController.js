@@ -5,8 +5,8 @@ const supabaseConfig = require('../config/supabase');
 // or we can just use the admin client from adminController if needed.
 // Actually, let's create a direct admin client here so we don't hit RLS issues
 const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY,
+  process.env.SUPABASE_URL || 'https://placeholder.supabase.co',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || 'placeholder-key',
   { auth: { persistSession: false } }
 );
 

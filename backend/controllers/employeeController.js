@@ -3,8 +3,8 @@ const { createClient } = require('@supabase/supabase-js');
 
 // Create admin client bypassing RLS using SERVICE_ROLE_KEY
 const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  process.env.SUPABASE_URL || 'https://placeholder.supabase.co',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || 'placeholder-key',
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
