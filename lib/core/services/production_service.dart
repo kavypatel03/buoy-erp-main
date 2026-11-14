@@ -6,6 +6,37 @@ import '../config/api_config.dart';
 class ProductionService {
   static String get baseUrl => '${ApiConfig.baseUrl}/production';
 
+  static String get exportExcelUrl => '$baseUrl/wastage-report/export/excel';
+  static String get exportPdfUrl => '$baseUrl/wastage-report/export/pdf';
+
+  static Future<String> getExportExcelUrlWithAuth() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token') ?? '';
+    return '$exportExcelUrl?token=$token';
+  }
+
+  static Future<String> getExportPdfUrlWithAuth() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token') ?? '';
+    return '$exportPdfUrl?token=$token';
+  }
+
+  static Future<Map<String, dynamic>> getProductTypes() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      if (token == null) return {'success': false, 'error': 'Not authenticated'};
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/product-types'),
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+      );
+      return _handleResponse(response);
+    } catch (e) {
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
   static Future<Map<String, dynamic>> getOrders() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -22,7 +53,7 @@ class ProductionService {
     }
   }
 
-  static Future<Map<String, dynamic>> createOrder(String productName) async {
+  static Future<Map<String, dynamic>> createOrder(String productName, {String? productId, String? batchCode}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
@@ -31,7 +62,11 @@ class ProductionService {
       final response = await http.post(
         Uri.parse('$baseUrl/orders'),
         headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
-        body: jsonEncode({'product_name': productName}),
+        body: jsonEncode({
+          'product_name': productName,
+          if (productId != null) 'product_id': productId,
+          if (batchCode != null) 'batch_code': batchCode
+        }),
       );
       return _handleResponse(response, isSuccessCode: (code) => code == 200 || code == 201);
     } catch (e) {
@@ -89,14 +124,21 @@ class ProductionService {
     }
   }
 
-  static Future<Map<String, dynamic>> getWastageReport() async {
+  static Future<Map<String, dynamic>> getWastageReport({String? startDate, String? endDate, String? horizon}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
       if (token == null) return {'success': false, 'error': 'Not authenticated'};
 
+      final queryParams = <String, String>{};
+      if (startDate != null) queryParams['start_date'] = startDate;
+      if (endDate != null) queryParams['end_date'] = endDate;
+      if (horizon != null) queryParams['horizon'] = horizon;
+
+      final uri = Uri.parse('$baseUrl/wastage-report').replace(queryParameters: queryParams.isEmpty ? null : queryParams);
+
       final response = await http.get(
-        Uri.parse('$baseUrl/wastage-report'),
+        uri,
         headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
       );
       return _handleResponse(response);

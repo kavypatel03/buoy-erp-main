@@ -6,6 +6,7 @@ import '../../../../core/services/inventory_service.dart';
 import '../../../../core/widgets/erp_header_bar.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/erp_input_field.dart';
+import '../../../../core/utils/download_helper.dart';
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
 
@@ -40,8 +41,11 @@ class ProductionPageState extends State<ProductionPage>
     with SingleTickerProviderStateMixin {
   bool _isLoading = true;
   List<dynamic> _orders = [];
-  List<dynamic> _wastageReport = [];
+  dynamic _wastageReport; // Map with ML summary & horizons, or fallback List
   List<dynamic> _inventoryItems = [];
+  List<dynamic> _productTypes = [];
+  dynamic _selectedProductType;
+  String _selectedHorizon = 'by_production';
 
   // 0 = Orders, 1 = Order Details, 2 = Wastage Report
   int _currentSubIndex = 0;
@@ -51,6 +55,7 @@ class ProductionPageState extends State<ProductionPage>
 
   // Form controllers
   final _orderNameCtrl = TextEditingController();
+  final _batchCodeCtrl = TextEditingController();
   final _processNameCtrl = TextEditingController();
   final _inputQtyCtrl = TextEditingController();
   final _outputQtyCtrl = TextEditingController();
@@ -64,12 +69,14 @@ class ProductionPageState extends State<ProductionPage>
     _tabController = TabController(length: 2, vsync: this);
     _fetchOrders();
     _fetchInventory();
+    _fetchProductTypes();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     _orderNameCtrl.dispose();
+    _batchCodeCtrl.dispose();
     _processNameCtrl.dispose();
     _inputQtyCtrl.dispose();
     _outputQtyCtrl.dispose();
@@ -80,6 +87,18 @@ class ProductionPageState extends State<ProductionPage>
     final res = await InventoryService.getItems();
     if (res['success'] && mounted) {
       setState(() => _inventoryItems = res['data']);
+    }
+  }
+
+  Future<void> _fetchProductTypes() async {
+    final res = await ProductionService.getProductTypes();
+    if (res['success'] && mounted) {
+      setState(() {
+        _productTypes = res['data'] ?? [];
+        if (_productTypes.isNotEmpty && _selectedProductType == null) {
+          _selectedProductType = _productTypes[0];
+        }
+      });
     }
   }
 
@@ -96,7 +115,7 @@ class ProductionPageState extends State<ProductionPage>
 
   Future<void> _fetchWastageReport() async {
     if (mounted) setState(() => _isLoading = true);
-    final res = await ProductionService.getWastageReport();
+    final res = await ProductionService.getWastageReport(horizon: _selectedHorizon);
     if (mounted) {
       setState(() {
         if (res['success']) _wastageReport = res['data'];
@@ -118,75 +137,226 @@ class ProductionPageState extends State<ProductionPage>
   // ─── Modals ─────────────────────────────────────────────────────────────────
 
   void _showAddOrderModal() {
-    _orderNameCtrl.clear();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    _batchCodeCtrl.text = 'Batch #${_orders.length + 1}';
+    if (_productTypes.isNotEmpty && _selectedProductType == null) {
+      _selectedProductType = _productTypes[0];
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _ThemedSheet(
-        isDark: isDark,
-        child: Padding(
-          padding: EdgeInsets.only(
-            left: 24, right: 24, top: 24,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _SheetHandle(),
-              const SizedBox(height: 16),
-              Row(
+      builder: (ctx) => StatefulBuilder(builder: (context, setModal) {
+        final steps = (_selectedProductType?['steps'] as List?) ?? [];
+
+        return _ThemedSheet(
+          isDark: isDark,
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 24, right: 24, top: 24,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(
-                    width: 40, height: 40,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.precision_manufacturing_rounded,
-                        color: AppColors.primary, size: 20),
+                  _SheetHandle(),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Container(
+                        width: 40, height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.precision_manufacturing_rounded,
+                            color: AppColors.primary, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Text('Start Production Batch',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: Theme.of(ctx).colorScheme.onSurface,
+                          )),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Text('New Production Order',
+                  const SizedBox(height: 20),
+
+                  // Product Type Selection Dropdown (Admin-Managed)
+                  Text('Select Product Type',
                       style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: Theme.of(ctx).colorScheme.onSurface,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                       )),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.darkCard : Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isDark ? AppColors.darkCardBorder : const Color(0xFFE2E8F0),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<dynamic>(
+                        value: _selectedProductType,
+                        isExpanded: true,
+                        dropdownColor: isDark ? AppColors.darkCard : Colors.white,
+                        items: _productTypes.map((prod) {
+                          return DropdownMenuItem<dynamic>(
+                            value: prod,
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 12, height: 12,
+                                  decoration: BoxDecoration(
+                                    color: _parseColor(prod['color']),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    prod['name']?.toString() ?? 'Product',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                      color: isDark ? AppColors.darkTextPrimary : const Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    '${(prod['steps'] as List?)?.length ?? 0} Steps',
+                                    style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: AppColors.primary),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          setModal(() {
+                            _selectedProductType = val;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Pre-defined Steps Sequence Preview
+                  if (steps.isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: isDark ? 0.08 : 0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.route_rounded, size: 15, color: AppColors.primary),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Pre-defined Recipe (${steps.length} Stages):',
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: steps.map<Widget>((s) {
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: isDark ? AppColors.darkSurface : Colors.white,
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: isDark ? AppColors.darkCardBorder : const Color(0xFFCBD5E1)),
+                                ),
+                                child: Text(
+                                  '${s['step_number'] ?? ''}. ${s['process_name'] ?? s['name']}',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                    color: isDark ? AppColors.darkTextPrimary : const Color(0xFF334155),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+
+                  // Batch code / identifier
+                  ErpInputField(
+                    controller: _batchCodeCtrl,
+                    label: 'Batch Code / Lot Number',
+                    hintText: 'e.g. Batch #102',
+                    prefixIcon: Icons.tag_rounded,
+                  ),
+                  const SizedBox(height: 20),
+
+                  _PrimaryButton(
+                    label: 'Start Production Order',
+                    icon: Icons.play_circle_outline_rounded,
+                    onPressed: () async {
+                      final prodName = _selectedProductType?['name'] ?? 'Production Item';
+                      final batch = _batchCodeCtrl.text.trim();
+                      final fullName = batch.isNotEmpty ? '$prodName — $batch' : prodName;
+
+                      Navigator.pop(ctx);
+                      setState(() => _isLoading = true);
+                      final res = await ProductionService.createOrder(
+                        fullName,
+                        productId: _selectedProductType?['id'],
+                        batchCode: batch,
+                      );
+                      if (res['success']) {
+                        _fetchOrders();
+                      } else {
+                        setState(() => _isLoading = false);
+                        if (mounted) _showError(res['error'] ?? 'Failed');
+                      }
+                    },
+                  ),
                 ],
               ),
-              const SizedBox(height: 20),
-              ErpInputField(
-                controller: _orderNameCtrl,
-                label: 'Product Name',
-                hintText: 'e.g. Apsara Pencil — Batch #12',
-                prefixIcon: Icons.inventory_2_outlined,
-              ),
-              const SizedBox(height: 20),
-              _PrimaryButton(
-                label: 'Start Production Order',
-                icon: Icons.play_circle_outline_rounded,
-                onPressed: () async {
-                  if (_orderNameCtrl.text.trim().isEmpty) return;
-                  Navigator.pop(ctx);
-                  setState(() => _isLoading = true);
-                  final res = await ProductionService.createOrder(
-                      _orderNameCtrl.text.trim());
-                  if (res['success']) {
-                    _fetchOrders();
-                  } else {
-                    setState(() => _isLoading = false);
-                    if (mounted) _showError(res['error'] ?? 'Failed');
-                  }
-                },
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      }),
     );
+  }
+
+  static Color _parseColor(dynamic c) {
+    if (c == null) return AppColors.primary;
+    final str = c.toString().replaceAll('#', '');
+    try {
+      if (str.length == 6) return Color(int.parse('FF$str', radix: 16));
+      if (str.length == 8) return Color(int.parse(str, radix: 16));
+    } catch (_) {}
+    return AppColors.primary;
   }
 
   void _showAddLogModal() {
@@ -195,6 +365,28 @@ class ProductionPageState extends State<ProductionPage>
     _outputQtyCtrl.clear();
     _selectedItemId = null;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Determine matching product recipe and pre-select the NEXT planned stage
+    final orderTitle = _selectedOrder?['product_name']?.toString() ?? '';
+    dynamic matchedProd;
+    for (final p in _productTypes) {
+      final pName = p['name']?.toString().toLowerCase() ?? '';
+      if (orderTitle.toLowerCase().contains(pName) || pName.contains(orderTitle.toLowerCase())) {
+        matchedProd = p;
+        break;
+      }
+    }
+    if (matchedProd == null && _productTypes.isNotEmpty) {
+      matchedProd = _productTypes[0];
+    }
+
+    final steps = (matchedProd?['steps'] as List?) ?? [];
+    final existingLogs = (_selectedOrder?['production_logs'] as List?) ?? [];
+    final nextStepIdx = existingLogs.length < steps.length ? existingLogs.length : (steps.isNotEmpty ? steps.length - 1 : 0);
+
+    if (steps.isNotEmpty) {
+      _processNameCtrl.text = steps[nextStepIdx]['process_name'] ?? steps[nextStepIdx]['name'] ?? 'Step 1';
+    }
 
     showModalBottomSheet(
       context: context,
@@ -227,19 +419,96 @@ class ProductionPageState extends State<ProductionPage>
                             color: AppColors.warning, size: 20),
                       ),
                       const SizedBox(width: 12),
-                      Text('Log Process Step',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          )),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Log Process Stage',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                )),
+                            if (steps.isNotEmpty)
+                              Text(
+                                'Step ${nextStepIdx + 1} of ${steps.length} for ${matchedProd?['name']}',
+                                style: const TextStyle(fontSize: 11.5, color: AppColors.primary, fontWeight: FontWeight.w600),
+                              ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
+
+                  // Auto-suggested stage selector chip bar
+                  if (steps.isNotEmpty) ...[
+                    Text('Pre-defined Recipe Stages (Click to Select):',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                        )),
+                    const SizedBox(height: 6),
+                    SizedBox(
+                      height: 38,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: steps.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 6),
+                        itemBuilder: (context, idx) {
+                          final s = steps[idx];
+                          final stepName = s['process_name'] ?? s['name'] ?? 'Step ${idx + 1}';
+                          final isSelected = _processNameCtrl.text == stepName;
+                          return InkWell(
+                            onTap: () {
+                              setModal(() {
+                                _processNameCtrl.text = stepName;
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: isSelected ? AppColors.primary : (isDark ? AppColors.darkSurface : const Color(0xFFF1F5F9)),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: isSelected ? AppColors.primary : (isDark ? AppColors.darkCardBorder : const Color(0xFFCBD5E1)),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    '${idx + 1}. $stepName',
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                      color: isSelected ? Colors.white : (isDark ? AppColors.darkTextPrimary : const Color(0xFF334155)),
+                                    ),
+                                  ),
+                                  if (s['expected_tolerance_pct'] != null)
+                                    Text(
+                                      ' (${s['expected_tolerance_pct']}%)',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: isSelected ? Colors.white.withValues(alpha: 0.8) : AppColors.textSecondary,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+
                   ErpInputField(
                     controller: _processNameCtrl,
                     label: 'Process Name',
-                    hintText: 'e.g. Paper Cutting, Assembly, Packing',
+                    hintText: 'e.g. Paper Cutting, Rolling, Packaging',
                     prefixIcon: Icons.settings_suggest_outlined,
                   ),
                   const SizedBox(height: 14),
@@ -268,27 +537,45 @@ class ProductionPageState extends State<ProductionPage>
                   ),
                   const SizedBox(height: 14),
 
-                  ErpInputField(
-                    controller: _inputQtyCtrl,
-                    keyboardType: TextInputType.number,
-                    label: 'Input Quantity',
-                    hintText: 'Units consumed in this step',
-                    prefixIcon: Icons.input_rounded,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ErpInputField(
+                          controller: _inputQtyCtrl,
+                          keyboardType: TextInputType.number,
+                          label: 'Input Quantity',
+                          hintText: 'Units in',
+                          prefixIcon: Icons.input_rounded,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ErpInputField(
+                          controller: _outputQtyCtrl,
+                          keyboardType: TextInputType.number,
+                          label: 'Output Quantity',
+                          hintText: 'Units out',
+                          prefixIcon: Icons.output_rounded,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 20),
 
                   _PrimaryButton(
-                    label: 'Save Process Log',
+                    label: 'Save Process Stage Log',
                     icon: Icons.save_alt_rounded,
                     onPressed: () async {
                       if (_processNameCtrl.text.trim().isEmpty) return;
                       Navigator.pop(ctx);
                       setState(() => _isLoading = true);
+                      final inQ = double.tryParse(_inputQtyCtrl.text) ?? 0;
+                      final outQ = double.tryParse(_outputQtyCtrl.text) ?? 0;
                       final logData = {
                         'process_name': _processNameCtrl.text.trim(),
                         'input_item_id': _selectedItemId,
-                        'input_qty': double.tryParse(_inputQtyCtrl.text) ?? 0,
-                        'output_qty': 0,
+                        'input_qty': inQ,
+                        'output_qty': outQ,
                       };
                       final res = await ProductionService.addProcessLog(
                           _selectedOrder['id'], logData);
@@ -680,84 +967,256 @@ class ProductionPageState extends State<ProductionPage>
     );
   }
 
-  // ─── Wastage Report ──────────────────────────────────────────────────────────
+  // ─── Wastage Report (ML & Statistical Monitoring) ───────────────────────────
 
   Widget _buildWastageReport() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final totalWastage = _wastageReport.fold<double>(0, (sum, r) {
-      return sum + (double.tryParse(r['total_wastage']?.toString() ?? '0') ?? 0);
-    });
+
+    // Check if _wastageReport is the new ML analytics map or legacy list
+    Map<String, dynamic> summary = {};
+    List<dynamic> byProduction = [];
+    List<dynamic> byProcess = [];
+    List<dynamic> daily = [];
+    List<dynamic> weekly = [];
+    List<dynamic> monthly = [];
+    List<dynamic> yearly = [];
+    List<dynamic> anomalies = [];
+
+    if (_wastageReport is Map) {
+      final map = _wastageReport as Map;
+      summary = (map['summary'] as Map?)?.cast<String, dynamic>() ?? {};
+      byProduction = (map['by_production'] as List?) ?? [];
+      byProcess = (map['by_process'] as List?) ?? [];
+      daily = (map['daily'] as List?) ?? [];
+      weekly = (map['weekly'] as List?) ?? [];
+      monthly = (map['monthly'] as List?) ?? [];
+      yearly = (map['yearly'] as List?) ?? [];
+      anomalies = (map['anomalies'] as List?) ?? [];
+    } else if (_wastageReport is List) {
+      byProcess = _wastageReport as List;
+      final totalIn = byProcess.fold<double>(0, (s, r) => s + (double.tryParse(r['total_input']?.toString() ?? '0') ?? 0));
+      final totalOut = byProcess.fold<double>(0, (s, r) => s + (double.tryParse(r['total_output']?.toString() ?? '0') ?? 0));
+      final totalW = byProcess.fold<double>(0, (s, r) => s + (double.tryParse(r['total_wastage']?.toString() ?? '0') ?? 0));
+      summary = {
+        'total_input': totalIn,
+        'total_output': totalOut,
+        'total_wastage': totalW,
+        'overall_yield_pct': totalIn > 0 ? (totalOut / totalIn * 100) : 0,
+        'overall_wastage_pct': totalIn > 0 ? (totalW / totalIn * 100) : 0,
+        'efficiency_grade': 'B',
+        'anomaly_count': 0,
+      };
+    }
+
+    final overallYield = double.tryParse(summary['overall_yield_pct']?.toString() ?? '0') ?? 0;
+    final overallWaste = double.tryParse(summary['overall_wastage_pct']?.toString() ?? '0') ?? 0;
+    final grade = summary['efficiency_grade']?.toString() ?? '—';
+    final anomalyCount = int.tryParse(summary['anomaly_count']?.toString() ?? '0') ?? 0;
+
+    // Pick active list according to selected horizon
+    List<dynamic> currentList = [];
+    switch (_selectedHorizon) {
+      case 'by_production':
+        currentList = byProduction;
+        break;
+      case 'daily':
+        currentList = daily;
+        break;
+      case 'weekly':
+        currentList = weekly;
+        break;
+      case 'monthly':
+        currentList = monthly;
+        break;
+      case 'yearly':
+        currentList = yearly;
+        break;
+      case 'by_process':
+      default:
+        currentList = byProcess;
+        break;
+    }
+
+    final hasData = summary.isNotEmpty && (currentList.isNotEmpty || anomalies.isNotEmpty || (double.tryParse(summary['total_input']?.toString() ?? '0') ?? 0) > 0);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
-            ErpHeaderBar(title: 'Wastage Report', onBackTap: popSubScreen),
+            ErpHeaderBar(
+              title: 'ML Wastage Analytics',
+              onBackTap: popSubScreen,
+              trailing: Row(
+                children: [
+                  _IconBtn(
+                    icon: Icons.table_view_rounded,
+                    color: AppColors.success,
+                    tooltip: 'Export Excel / CSV',
+                    onTap: () async {
+                      final url = await ProductionService.getExportExcelUrlWithAuth();
+                      downloadFileFromUrl(url, filename: 'buoy-factory-wastage-report.csv');
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Downloading Wastage Report (Excel / CSV)...'),
+                            backgroundColor: AppColors.success,
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 6),
+                  _IconBtn(
+                    icon: Icons.picture_as_pdf_rounded,
+                    color: AppColors.error,
+                    tooltip: 'Export Executive PDF',
+                    onTap: () async {
+                      final url = await ProductionService.getExportPdfUrlWithAuth();
+                      downloadFileFromUrl(url, filename: 'buoy-factory-wastage-report.html');
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Opening Executive Wastage Report for Print / PDF...'),
+                            backgroundColor: AppColors.primary,
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 6),
+                  _IconBtn(
+                    icon: Icons.refresh_rounded,
+                    tooltip: 'Refresh',
+                    onTap: _fetchWastageReport,
+                  ),
+                ],
+              ),
+            ),
 
-            if (!_isLoading && _wastageReport.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                child: GlassContainer(
-                  borderRadius: 16,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            if (_isLoading)
+              const Expanded(
+                child: Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                ),
+              )
+            else if (!hasData)
+              const Expanded(
+                child: _EmptyState(
+                  icon: Icons.analytics_outlined,
+                  title: 'No Production Data Recorded',
+                  subtitle: 'Log production batches and stages to activate the ML Wastage Engine',
+                ),
+              )
+            else
+              Expanded(
+                child: RefreshIndicator(
+                  color: AppColors.primary,
+                  onRefresh: _fetchWastageReport,
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 100),
+                    physics: const BouncingScrollPhysics(
+                      parent: AlwaysScrollableScrollPhysics(),
+                    ),
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      // 1. Executive ML Scorecard
+                      _MlScorecard(
+                        overallYield: overallYield,
+                        overallWaste: overallWaste,
+                        grade: grade,
+                        anomalyCount: anomalyCount,
+                        totalInput: double.tryParse(summary['total_input']?.toString() ?? '0') ?? 0,
+                        totalOutput: double.tryParse(summary['total_output']?.toString() ?? '0') ?? 0,
+                        totalWastage: double.tryParse(summary['total_wastage']?.toString() ?? '0') ?? 0,
+                        isDark: isDark,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // 2. Horizon Switcher Bar
+                      _HorizonBar(
+                        selected: _selectedHorizon,
+                        onSelect: (h) => setState(() => _selectedHorizon = h),
+                        isDark: isDark,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // 3. ML Anomaly Alert Section (if anomalies detected)
+                      if (anomalies.isNotEmpty) ...[
+                        _AnomalyBanner(
+                          anomalies: anomalies,
+                          isDark: isDark,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
+                      // 4. Section Heading
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Total Wastage Across All Processes',
-                              style: TextStyle(
-                                  fontSize: 11.5, color: AppColors.textSecondary)),
-                          const SizedBox(height: 2),
                           Text(
-                            totalWastage.toStringAsFixed(2),
+                            _horizonTitle(_selectedHorizon),
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          Text(
+                            '${currentList.length} records',
                             style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.error),
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ],
                       ),
-                      Container(
-                        width: 44, height: 44,
-                        decoration: BoxDecoration(
-                          color: AppColors.error.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: const Icon(Icons.warning_amber_rounded,
-                            color: AppColors.error, size: 22),
-                      ),
+                      const SizedBox(height: 12),
+
+                      // 5. Data cards list
+                      if (currentList.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 32),
+                          child: Center(
+                            child: Text(
+                              'No records found for this aggregation horizon.',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        )
+                      else if (_selectedHorizon == 'by_production')
+                        ...currentList.map((batch) => _BatchWastageCard(batch: batch, isDark: isDark))
+                      else if (_selectedHorizon == 'by_process')
+                        ...currentList.map((proc) => _WastageCard(report: proc, isDark: isDark))
+                      else
+                        ...currentList.map((period) => _PeriodWastageCard(
+                              period: period,
+                              horizonKey: _selectedHorizon == 'daily' ? 'date' : (_selectedHorizon == 'weekly' ? 'week' : (_selectedHorizon == 'monthly' ? 'month' : 'year')),
+                              isDark: isDark,
+                            )),
                     ],
                   ),
                 ),
               ),
-
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                  : _wastageReport.isEmpty
-                      ? const _EmptyState(
-                          icon: Icons.bar_chart_outlined,
-                          title: 'No Wastage Data',
-                          subtitle: 'Complete process steps to generate report',
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(20, 4, 20, 100),
-                          physics: const BouncingScrollPhysics(
-                              parent: AlwaysScrollableScrollPhysics()),
-                          itemCount: _wastageReport.length,
-                          itemBuilder: (_, i) => RepaintBoundary(
-                            child: _WastageCard(
-                                report: _wastageReport[i], isDark: isDark),
-                          ),
-                        ),
-            ),
           ],
         ),
       ),
     );
+  }
+
+  String _horizonTitle(String horizon) {
+    switch (horizon) {
+      case 'by_production': return 'Batch-by-Batch Production Analysis';
+      case 'daily': return 'Day-by-Day Wastage History';
+      case 'weekly': return 'Weekly Production Yields';
+      case 'monthly': return 'Monthly Aggregated Wastage';
+      case 'yearly': return 'Yearly Efficiency Comparison';
+      case 'by_process': return 'Stage & Process Tolerances';
+      default: return 'Production Analytics';
+    }
   }
 
   // ─── Confirm Dialog ──────────────────────────────────────────────────────────
@@ -1051,6 +1510,746 @@ class _ProcessLogCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _MlScorecard extends StatelessWidget {
+  final double overallYield;
+  final double overallWaste;
+  final String grade;
+  final int anomalyCount;
+  final double totalInput;
+  final double totalOutput;
+  final double totalWastage;
+  final bool isDark;
+
+  const _MlScorecard({
+    required this.overallYield,
+    required this.overallWaste,
+    required this.grade,
+    required this.anomalyCount,
+    required this.totalInput,
+    required this.totalOutput,
+    required this.totalWastage,
+    required this.isDark,
+  });
+
+  Color _gradeColor(String g) {
+    switch (g.toUpperCase()) {
+      case 'A+':
+      case 'A': return AppColors.success;
+      case 'B': return const Color(0xFF3B82F6);
+      case 'C': return AppColors.warning;
+      case 'D': return AppColors.error;
+      default: return AppColors.textSecondary;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final gradeColor = _gradeColor(grade);
+
+    return GlassContainer(
+      borderRadius: 20,
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top Row: Model indicator & Anomaly Pill
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.auto_awesome_rounded, color: AppColors.primary, size: 16),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'ML Wastage Predictor',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? AppColors.darkTextPrimary : const Color(0xFF1E293B),
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: anomalyCount > 0
+                      ? AppColors.error.withValues(alpha: 0.12)
+                      : AppColors.success.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: (anomalyCount > 0 ? AppColors.error : AppColors.success).withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      anomalyCount > 0 ? Icons.warning_amber_rounded : Icons.check_circle_rounded,
+                      size: 13,
+                      color: anomalyCount > 0 ? AppColors.error : AppColors.success,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      anomalyCount > 0 ? '$anomalyCount ML Outliers' : 'Nominal Tolerances',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: anomalyCount > 0 ? AppColors.error : AppColors.success,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Middle Row: Grade + Yield Rate Big display
+          Row(
+            children: [
+              // Efficiency Grade Box
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      gradeColor.withValues(alpha: 0.25),
+                      gradeColor.withValues(alpha: 0.08),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: gradeColor.withValues(alpha: 0.4), width: 1.5),
+                ),
+                alignment: Alignment.center,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      grade,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        color: gradeColor,
+                        height: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'GRADE',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+
+              // Overall Yield & Wastage text
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${overallYield.toStringAsFixed(1)}% Factory Yield',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Average Wastage Rate: ${overallWaste.toStringAsFixed(1)}%',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.error,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    // Dual colored bar
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: (overallYield * 10).round().clamp(1, 1000),
+                            child: Container(height: 6, color: AppColors.success),
+                          ),
+                          Expanded(
+                            flex: (overallWaste * 10).round().clamp(1, 1000),
+                            child: Container(height: 6, color: AppColors.error),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 14),
+
+          // Stats grid (3 columns)
+          Row(
+            children: [
+              _StatMini('Total In', totalInput.toStringAsFixed(1), AppColors.info, isDark),
+              const SizedBox(width: 8),
+              _StatMini('Total Out', totalOutput.toStringAsFixed(1), AppColors.success, isDark),
+              const SizedBox(width: 8),
+              _StatMini('Total Waste', totalWastage.toStringAsFixed(1), AppColors.error, isDark),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HorizonBar extends StatelessWidget {
+  final String selected;
+  final ValueChanged<String> onSelect;
+  final bool isDark;
+
+  const _HorizonBar({
+    required this.selected,
+    required this.onSelect,
+    required this.isDark,
+  });
+
+  static const _horizons = [
+    {'id': 'by_production', 'label': 'By Batch'},
+    {'id': 'daily', 'label': 'Day by Day'},
+    {'id': 'weekly', 'label': 'Weekly'},
+    {'id': 'monthly', 'label': 'Monthly'},
+    {'id': 'yearly', 'label': 'Yearly'},
+    {'id': 'by_process', 'label': 'By Process'},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 38,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: _horizons.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, idx) {
+          final item = _horizons[idx];
+          final isSelected = selected == item['id'];
+
+          return InkWell(
+            onTap: () => onSelect(item['id']!),
+            borderRadius: BorderRadius.circular(10),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.primary
+                    : (isDark ? AppColors.darkCard : Colors.white),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.primary
+                      : (isDark ? AppColors.darkCardBorder : const Color(0xFFE2E8F0)),
+                ),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.3),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Center(
+                child: Text(
+                  item['label']!,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                    color: isSelected
+                        ? Colors.white
+                        : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _AnomalyBanner extends StatelessWidget {
+  final List<dynamic> anomalies;
+  final bool isDark;
+
+  const _AnomalyBanner({required this.anomalies, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.error.withValues(alpha: isDark ? 0.12 : 0.06),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.crisis_alert_rounded, color: AppColors.error, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ML Gaussian Anomalies Detected (${anomalies.length})',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.error,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Processes exceeding standard Gaussian statistical tolerance thresholds (Z-Score > 2.0σ)',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...anomalies.take(3).map((a) {
+            final zScore = a['z_score']?.toString() ?? '2.0';
+            final wastePct = a['wastage_pct']?.toString() ?? '0';
+            final proc = a['process_name'] ?? 'Process';
+            final prod = a['product_name'] ?? 'Production';
+            final severity = a['severity'] ?? 'High';
+
+            return Container(
+              margin: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkCard : Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$proc ($prod)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        Text(
+                          'Wastage Rate: $wastePct%  •  Deviance: Z = +$zScoreσ',
+                          style: const TextStyle(fontSize: 11, color: AppColors.error, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      severity,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.error,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+class _BatchWastageCard extends StatefulWidget {
+  final dynamic batch;
+  final bool isDark;
+
+  const _BatchWastageCard({required this.batch, required this.isDark});
+
+  @override
+  State<_BatchWastageCard> createState() => _BatchWastageCardState();
+}
+
+class _BatchWastageCardState extends State<_BatchWastageCard> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final b = widget.batch;
+    final totalIn = double.tryParse(b['total_input']?.toString() ?? '0') ?? 0;
+    final totalOut = double.tryParse(b['total_output']?.toString() ?? '0') ?? 0;
+    final totalWaste = double.tryParse(b['total_wastage']?.toString() ?? '0') ?? 0;
+    final yieldPct = double.tryParse(b['yield_pct']?.toString() ?? '0') ?? 0;
+    final prodName = b['product_name'] ?? 'Production Batch';
+    final bottleneck = b['bottleneck_step']?.toString();
+    final steps = (b['steps'] as List?) ?? [];
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: widget.isDark ? AppColors.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: widget.isDark ? AppColors.darkCardBorder : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            prodName,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Order #${b['order_id']?.toString().substring(0, b['order_id'].toString().length > 8 ? 8 : b['order_id'].toString().length) ?? ''}  •  ${b['status'] ?? 'In Progress'}',
+                            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: yieldPct >= 90
+                            ? AppColors.success.withValues(alpha: 0.1)
+                            : AppColors.warning.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '${yieldPct.toStringAsFixed(1)}% yield',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: yieldPct >= 90 ? AppColors.success : AppColors.warning,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                // Bottleneck Callout
+                if (bottleneck != null && bottleneck.isNotEmpty && bottleneck != 'None') ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.warning.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.warning.withValues(alpha: 0.25)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.trending_down_rounded, color: AppColors.warning, size: 14),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'ML Bottleneck Stage: $bottleneck',
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.warning,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    _LogStat('Input', totalIn.toStringAsFixed(1), AppColors.info, widget.isDark),
+                    const SizedBox(width: 8),
+                    _LogStat('Output', totalOut.toStringAsFixed(1), AppColors.success, widget.isDark),
+                    const SizedBox(width: 8),
+                    _LogStat('Waste', totalWaste.toStringAsFixed(1), AppColors.error, widget.isDark),
+                  ],
+                ),
+
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: (yieldPct / 100).clamp(0, 1),
+                    backgroundColor: AppColors.error.withValues(alpha: 0.2),
+                    valueColor: const AlwaysStoppedAnimation(AppColors.success),
+                    minHeight: 5,
+                  ),
+                ),
+
+                if (steps.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  InkWell(
+                    onTap: () => setState(() => _expanded = !_expanded),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            _expanded ? 'Hide ${steps.length} Stages' : 'View ${steps.length} Stages Breakdown',
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          Icon(
+                            _expanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                            size: 16,
+                            color: AppColors.primary,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          if (_expanded && steps.isNotEmpty)
+            Container(
+              decoration: BoxDecoration(
+                color: widget.isDark ? AppColors.darkSurface : const Color(0xFFF8FAFC),
+                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(18)),
+                border: Border(
+                  top: BorderSide(
+                    color: widget.isDark ? AppColors.darkCardBorder : const Color(0xFFE2E8F0),
+                  ),
+                ),
+              ),
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: steps.map<Widget>((s) {
+                  final sIn = s['input_qty'] ?? 0;
+                  final sOut = s['output_qty'] ?? 0;
+                  final sWaste = s['wastage_qty'] ?? 0;
+                  final sYield = s['yield_pct'] ?? 0;
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            s['process_name'] ?? 'Stage',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          'In: $sIn  Out: $sOut  Waste: $sWaste ($sYield% yield)',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: widget.isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PeriodWastageCard extends StatelessWidget {
+  final dynamic period;
+  final String horizonKey;
+  final bool isDark;
+
+  const _PeriodWastageCard({
+    required this.period,
+    required this.horizonKey,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final label = period[horizonKey]?.toString() ?? 'Period';
+    final totalIn = double.tryParse(period['total_input']?.toString() ?? '0') ?? 0;
+    final totalOut = double.tryParse(period['total_output']?.toString() ?? '0') ?? 0;
+    final totalWaste = double.tryParse(period['total_wastage']?.toString() ?? '0') ?? 0;
+    final yieldPct = double.tryParse(period['yield_pct']?.toString() ?? '0') ?? 0;
+    final wastePct = double.tryParse(period['wastage_pct']?.toString() ?? '0') ?? 0;
+    final count = period['log_count'] ?? 1;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? AppColors.darkCardBorder : const Color(0xFFE2E8F0),
+        ),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.calendar_today_rounded, size: 14, color: AppColors.primary),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: yieldPct >= 90
+                      ? AppColors.success.withValues(alpha: 0.1)
+                      : AppColors.warning.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${yieldPct.toStringAsFixed(1)}% yield',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: yieldPct >= 90 ? AppColors.success : AppColors.warning,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _LogStat('Input', totalIn.toStringAsFixed(1), AppColors.info, isDark),
+              const SizedBox(width: 8),
+              _LogStat('Output', totalOut.toStringAsFixed(1), AppColors.success, isDark),
+              const SizedBox(width: 8),
+              _LogStat('Waste', totalWaste.toStringAsFixed(1), AppColors.error, isDark),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: (yieldPct * 10).round().clamp(1, 1000),
+                  child: Container(height: 5, color: AppColors.success),
+                ),
+                Expanded(
+                  flex: (wastePct * 10).round().clamp(1, 1000),
+                  child: Container(height: 5, color: AppColors.error),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '$count production logs analyzed in this period',
+            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+          ),
+        ],
       ),
     );
   }

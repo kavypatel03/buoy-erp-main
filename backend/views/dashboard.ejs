@@ -2,221 +2,444 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Admin Dashboard - Buoy ERP</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buoy ERP - Factory Admin Console</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body { 
-      font-family: 'Inter', sans-serif; 
-      background: #f8fafc; 
-      margin: 0; 
-      padding: 2rem; 
-      color: #0f172a; 
-    }
-    .container { max-width: 1000px; margin: 0 auto; }
-    
-    .header { 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center; 
-      margin-bottom: 2.5rem;
-      background: white;
-      padding: 1rem 1.5rem;
-      border-radius: 20px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.02), 0 4px 6px rgba(0,0,0,0.01);
-      border: 1px solid #f1f5f9;
+    :root {
+      --primary: #2563EB;
+      --primary-dark: #1D4ED8;
+      --primary-light: #EFF6FF;
+      --bg: #0B0F19;
+      --surface: #111827;
+      --surface-card: #1F2937;
+      --border: #374151;
+      --text-main: #F9FAFB;
+      --text-muted: #9CA3AF;
+      --success: #10B981;
+      --danger: #EF4444;
+      --warning: #F59E0B;
     }
 
-    .header-left {
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      margin: 0;
+      padding: 1.5rem;
+      min-height: 100vh;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; }
+
+    /* Top Header */
+    .top-bar {
       display: flex;
+      justify-content: space-between;
       align-items: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 1rem 1.5rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
       gap: 1rem;
     }
 
-    .logo-container {
-      width: 48px;
-      height: 48px;
-      background: white;
+    .brand-area { display: flex; align-items: center; gap: 0.9rem; }
+    .brand-logo {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, #2563EB, #06B6D4);
       border-radius: 12px;
-      border: 1.2px solid #F1F5F9;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.06), -2px -2px 8px rgba(255,255,255,0.9);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      line-height: 0.85;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 20px; color: white;
+      box-shadow: 0 4px 14px rgba(37,99,235,0.4);
     }
-    .logo-row { display: flex; align-items: baseline; }
-    .logo-char { font-family: Arial, sans-serif; font-weight: 900; font-size: 14px; }
-    .char-b { color: #2563EB; font-size: 14px; }
-    .char-u { color: #EF4444; font-size: 13px; transform: rotate(6.8deg); }
-    .char-o { color: #F59E0B; font-size: 14px; }
-    .char-y { color: #EC4899; font-size: 15px; transform: rotate(-5.7deg); }
-    .char-exc { color: #10B981; font-size: 16px; }
+    .brand-text h1 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -0.3px; }
+    .brand-text span { font-size: 11px; color: #60A5FA; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    h1 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
-    h2 { margin-top: 0; font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 1.25rem; }
-    
-    .card { 
-      background: white; 
-      padding: 1.75rem; 
-      border-radius: 20px; 
-      box-shadow: 0 10px 25px rgba(0,0,0,0.02), 0 4px 6px rgba(0,0,0,0.01); 
-      border: 1px solid #f1f5f9;
-      margin-bottom: 1.5rem; 
+    /* Stats Ribbon */
+    .stats-ribbon {
+      display: flex; gap: 0.75rem; flex-wrap: wrap;
     }
+    .stat-pill {
+      background: var(--surface-card);
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.8rem;
+      border-radius: 10px;
+      font-size: 12px;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .stat-pill strong { color: var(--text-main); }
+    .stat-pill span { color: var(--text-muted); }
 
-    table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 0.5rem; }
-    th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #f1f5f9; }
-    th { background: #f8fafc; font-weight: 600; color: #475569; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
-    th:first-child { border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
-    th:last-child { border-top-right-radius: 8px; border-bottom-right-radius: 8px; }
-    td { font-size: 14px; }
-    
-    button { 
-      padding: 0.65rem 1.25rem; 
-      background: #5b3df5; 
-      color: white; 
-      border: none; 
-      border-radius: 8px; 
-      cursor: pointer; 
-      font-weight: 600; 
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      transition: opacity 0.2s;
-    }
-    button:hover { opacity: 0.9; }
-    
-    input[type="text"], input[type="email"], input[type="password"], select { 
-      padding: 0.65rem 1rem; 
-      border: 1.5px solid #e2e8f0; 
-      border-radius: 8px; 
-      margin-right: 0.5rem; 
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    input:focus, select:focus { border-color: #5b3df5; }
-    
-    .error-banner { background: #fee2e2; color: #991b1b; padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; font-weight: 600; border: 1px solid #fecaca; }
-    .flex-form { display: flex; gap: 0.5rem; align-items: center; }
-
-    .logout-btn {
-      color: #ef4444;
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 14px;
+    .btn-logout {
+      background: rgba(239, 68, 68, 0.12);
+      color: #F87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
       padding: 0.5rem 1rem;
-      border-radius: 8px;
-      background: #fef2f2;
-      transition: background 0.2s;
+      border-radius: 10px;
+      text-decoration: none;
+      font-size: 13px; font-weight: 600;
+      transition: all 0.2s;
     }
-    .logout-btn:hover { background: #fee2e2; }
+    .btn-logout:hover { background: rgba(239, 68, 68, 0.25); }
 
-    label { font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; }
-    input[type="radio"] { accent-color: #5b3df5; width: 16px; height: 16px; margin: 0; }
+    /* Alerts */
+    .alert {
+      padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem;
+      font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 0.6rem;
+    }
+    .alert-success { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34D399; }
+    .alert-error { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #F87171; }
+
+    /* Navigation Tabs */
+    .nav-tabs {
+      display: flex; gap: 0.5rem; margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      background: transparent; border: none; color: var(--text-muted);
+      padding: 0.65rem 1.2rem; border-radius: 10px; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    }
+    .tab-btn.active {
+      background: var(--primary); color: white;
+      box-shadow: 0 4px 12px rgba(37,99,235,0.3);
+    }
+    .tab-btn:hover:not(.active) { background: var(--surface-card); color: var(--text-main); }
+
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* Cards & Grids */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .card h2 {
+      margin: 0 0 1.25rem 0; font-size: 17px; font-weight: 700;
+      display: flex; align-items: center; gap: 0.6rem; color: var(--text-main);
+    }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    @media (max-width: 850px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* Forms */
+    .form-group { margin-bottom: 1.1rem; }
+    label { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem; }
+    input[type="text"], input[type="email"], input[type="password"], textarea, select {
+      width: 100%; padding: 0.75rem 1rem;
+      background: var(--surface-card);
+      border: 1.2px solid var(--border);
+      border-radius: 10px;
+      color: var(--text-main);
+      font-family: inherit; font-size: 14px;
+      outline: none; transition: border 0.2s;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--primary); }
+
+    button.btn-primary {
+      background: var(--primary); color: white; border: none;
+      padding: 0.75rem 1.5rem; border-radius: 10px;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      box-shadow: 0 4px 12px rgba(37,99,235,0.3); transition: opacity 0.2s;
+    }
+    button.btn-primary:hover { opacity: 0.9; }
+
+    button.btn-danger {
+      background: var(--danger); color: white; border: none;
+      padding: 0.75rem 1.5rem; border-radius: 10px;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      box-shadow: 0 4px 12px rgba(239,68,68,0.3); transition: opacity 0.2s;
+    }
+    button.btn-danger:hover { opacity: 0.9; }
+
+    /* Products Grid */
+    .product-card {
+      background: var(--surface-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .product-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;
+    }
+    .product-title {
+      font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .color-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+    .steps-timeline {
+      display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.75rem;
+    }
+    .step-pill {
+      background: rgba(37,99,235,0.15); border: 1px solid rgba(37,99,235,0.3);
+      color: #93C5FD; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 11.5px; font-weight: 600;
+    }
+
+    /* Tables */
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    th { background: var(--surface-card); color: var(--text-muted); text-align: left; padding: 0.85rem 1rem; font-weight: 600; border-bottom: 1px solid var(--border); }
+    td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      <div class="header-left">
-        <div class="logo-container">
-          <div class="logo-row">
-            <span class="logo-char char-b">b</span>
-            <span class="logo-char char-u">u</span>
-          </div>
-          <div class="logo-row">
-            <span class="logo-char char-o">o</span>
-            <span class="logo-char char-y">y</span>
-            <span class="logo-char char-exc">!</span>
-          </div>
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="brand-area">
+        <div class="brand-logo">B</div>
+        <div class="brand-text">
+          <h1>BUOY ERP CONSOLE</h1>
+          <span>Factory Central Administration</span>
         </div>
-        <h1>Admin Dashboard</h1>
       </div>
-      <a href="/admin/logout" class="logout-btn">Logout</a>
+
+      <div class="stats-ribbon">
+        <div class="stat-pill"><span>Items:</span> <strong><%= stats.items %></strong></div>
+        <div class="stat-pill"><span>Staff:</span> <strong><%= stats.employees %></strong></div>
+        <div class="stat-pill"><span>Batches:</span> <strong><%= stats.orders %></strong></div>
+        <div class="stat-pill"><span>Process Logs:</span> <strong><%= stats.logs %></strong></div>
+      </div>
+
+      <a href="/admin/logout" class="btn-logout">Logout</a>
     </div>
 
+    <!-- Feedback Alerts -->
+    <% if (success) { %>
+      <div class="alert alert-success">✓ <%= success %></div>
+    <% } %>
     <% if (error) { %>
-      <div class="error-banner"><%= error %></div>
+      <div class="alert alert-error">⚠ <%= error %></div>
     <% } %>
 
-    <div class="card">
-      <h2>Global Settings</h2>
-      <form action="/admin/toggle-register" method="POST" class="flex-form">
-        <label>
-          <input type="radio" name="enabled" value="true" <%= regEnabled ? 'checked' : '' %>> Enable Registration
-        </label>
-        <label style="margin-left: 1rem;">
-          <input type="radio" name="enabled" value="false" <%= !regEnabled ? 'checked' : '' %>> Disable Registration
-        </label>
-        <button type="submit" style="margin-left: auto;">Save Setting</button>
-      </form>
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="switchTab('tab-production')">🏭 Production Recipes & Steps</button>
+      <button class="tab-btn" onclick="switchTab('tab-users')">👥 User Accounts & Access</button>
+      <button class="tab-btn" onclick="switchTab('tab-notify')">🔔 Send Factory Broadcast</button>
+      <button class="tab-btn" onclick="switchTab('tab-wipe')">⚠️ Master Database Wipe</button>
     </div>
 
-    <div class="card">
-      <h2>Create New User</h2>
-      <form action="/admin/create-user" method="POST" class="flex-form">
-        <input type="email" name="email" placeholder="User Email" required>
-        <input type="password" name="password" placeholder="Temporary Password" required>
-        <button type="submit">Create User</button>
-      </form>
-    </div>
+    <!-- ─── TAB 1: PRODUCTION PRODUCTS & PRE-DEFINED STEPS ─────────────────── -->
+    <div id="tab-production" class="tab-pane active">
+      <div class="grid-2">
+        <!-- Add New Product Type Form -->
+        <div class="card">
+          <h2>➕ Add Product Type & Steps</h2>
+          <form action="/admin/production/add-product" method="POST">
+            <div class="form-group">
+              <label>Product Name (e.g. Brown Pencil, White Pencil, Eraser (Red))</label>
+              <input type="text" name="product_name" placeholder="e.g. Brown Pencil" required>
+            </div>
+            <div class="form-group">
+              <label>Category</label>
+              <input type="text" name="category" placeholder="e.g. Pencils, Erasers, Plastics" value="Stationery">
+            </div>
+            <div class="form-group">
+              <label>Color Accent Code</label>
+              <input type="text" name="color" placeholder="e.g. #8D6E63 or #EF4444" value="#2563EB">
+            </div>
+            <div class="form-group">
+              <label>Pre-Defined Process Steps (One per line with optional tolerance %)</label>
+              <textarea name="steps_text" rows="6" placeholder="Paper Cutting (3%)&#10;Rolling & Glueing (4%)&#10;Drying (2%)&#10;Lead Insertion (3%)&#10;Polishing & Packaging (1%)" required></textarea>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+                Tip: Enter step names in chronological order. When operators log production in the app, these steps are automatically selected in sequence!
+              </div>
+            </div>
+            <button type="submit" class="btn-primary">Save Product & Recipe</button>
+          </form>
+        </div>
 
-    <div class="card">
-      <h2>Send In-App Notification</h2>
-      <form action="/admin/send-notification" method="POST" style="display: flex; flex-direction: column; gap: 0.75rem;">
-        <select name="targetUserId" required style="padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 4px;">
-          <option value="all">-- Send to All Users --</option>
-          <% if (users && users.length > 0) { %>
-            <% users.forEach(user => { %>
-              <option value="<%= user.id %>"><%= user.email %></option>
-            <% }) %>
-          <% } %>
-        </select>
-        <input type="text" name="title" placeholder="Notification Title" required style="padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 4px;">
-        <input type="text" name="message" placeholder="Notification Message" required style="padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 4px;">
-        <button type="submit" style="align-self: flex-start;">Send Notification</button>
-      </form>
-    </div>
-
-    <div class="card">
-      <h2>Manage Users</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Email</th>
-            <th>Created At</th>
-            <th>Actions (Update Password)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% if (users && users.length > 0) { %>
-            <% users.forEach(user => { %>
-              <tr>
-                <td style="font-size: 12px; color: #64748b;"><%= user.id %></td>
-                <td><%= user.email %></td>
-                <td><%= new Date(user.created_at).toLocaleDateString() %></td>
-                <td>
-                  <form action="/admin/update-user" method="POST" class="flex-form">
-                    <input type="hidden" name="userId" value="<%= user.id %>">
-                    <input type="hidden" name="email" value="<%= user.email %>">
-                    <input type="password" name="password" placeholder="New Password" required>
-                    <button type="submit" style="padding: 0.25rem 0.5rem; font-size: 0.875rem;">Update</button>
+        <!-- Existing Products List -->
+        <div class="card">
+          <h2>📦 Active Factory Products (<%= products.length %>)</h2>
+          <% if (products && products.length > 0) { %>
+            <% products.forEach(prod => { %>
+              <div class="product-card">
+                <div class="product-header">
+                  <div class="product-title">
+                    <span class="color-dot" style="background: <%= prod.color || '#2563EB' %>;"></span>
+                    <%= prod.name %>
+                    <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">(<%= prod.category || 'General' %>)</span>
+                  </div>
+                  <form action="/admin/production/delete-product" method="POST" onsubmit="return confirm('Delete <%= prod.name %> recipe?');" style="margin: 0;">
+                    <input type="hidden" name="product_id" value="<%= prod.id %>">
+                    <button type="submit" style="background: none; border: none; color: #EF4444; font-size: 12px; font-weight: 700; cursor: pointer;">Delete</button>
                   </form>
-                </td>
-              </tr>
+                </div>
+
+                <div style="font-size: 12px; color: var(--text-muted);">
+                  Pre-defined Sequence (<%= prod.steps ? prod.steps.length : 0 %> Stages):
+                </div>
+                <div class="steps-timeline">
+                  <% if (prod.steps && prod.steps.length > 0) { %>
+                    <% prod.steps.forEach(st => { %>
+                      <div class="step-pill">
+                        <%= st.step_number %>. <%= st.process_name %> 
+                        <span style="color: #60A5FA; font-size: 10px;">(<%= st.expected_tolerance_pct || 5 %>%)</span>
+                      </div>
+                    <% }) %>
+                  <% } else { %>
+                    <span style="font-size: 11px; color: var(--text-muted);">No steps defined.</span>
+                  <% } %>
+                </div>
+              </div>
             <% }) %>
           <% } else { %>
-            <tr>
-              <td colspan="4" style="text-align: center; color: #94a3b8;">No users found or lacking Service Role Key.</td>
-            </tr>
+            <div style="color: var(--text-muted); font-size: 13px;">No product recipes created yet.</div>
           <% } %>
-        </tbody>
-      </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── TAB 2: USER MANAGEMENT ─────────────────────────────────────────── -->
+    <div id="tab-users" class="tab-pane">
+      <div class="card">
+        <h2>🔒 Global Registration Controls</h2>
+        <form action="/admin/toggle-register" method="POST" style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
+          <label style="margin: 0; cursor: pointer;">
+            <input type="radio" name="enabled" value="true" <%= regEnabled ? 'checked' : '' %>> Allow New Operator Registration
+          </label>
+          <label style="margin: 0; cursor: pointer;">
+            <input type="radio" name="enabled" value="false" <%= !regEnabled ? 'checked' : '' %>> Disable Registration (Lock Factory Access)
+          </label>
+          <button type="submit" class="btn-primary" style="padding: 0.5rem 1rem;">Save Policy</button>
+        </form>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h2>➕ Create User Account</h2>
+          <form action="/admin/create-user" method="POST">
+            <div class="form-group">
+              <label>Operator Email</label>
+              <input type="email" name="email" placeholder="worker@factory.com" required>
+            </div>
+            <div class="form-group">
+              <label>Temporary Password</label>
+              <input type="password" name="password" placeholder="Min 6 characters" required>
+            </div>
+            <button type="submit" class="btn-primary">Create Account</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>👥 Factory Accounts (<%= users.length %>)</h2>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>User Email</th>
+                  <th>Created</th>
+                  <th>Reset Password</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (users && users.length > 0) { %>
+                  <% users.forEach(u => { %>
+                    <tr>
+                      <td><strong><%= u.email %></strong></td>
+                      <td style="font-size: 12px; color: var(--text-muted);"><%= new Date(u.created_at).toLocaleDateString() %></td>
+                      <td>
+                        <form action="/admin/update-user" method="POST" style="display: flex; gap: 0.4rem;">
+                          <input type="hidden" name="userId" value="<%= u.id %>">
+                          <input type="password" name="password" placeholder="New Pass" required style="padding: 0.4rem; font-size: 12px; width: 110px;">
+                          <button type="submit" class="btn-primary" style="padding: 0.4rem 0.6rem; font-size: 11px;">Update</button>
+                        </form>
+                      </td>
+                    </tr>
+                  <% }) %>
+                <% } else { %>
+                  <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">No operator accounts found.</td></tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── TAB 3: BROADCAST NOTIFICATIONS ─────────────────────────────────── -->
+    <div id="tab-notify" class="tab-pane">
+      <div class="card" style="max-width: 650px;">
+        <h2>📢 Send In-App Push Broadcast</h2>
+        <form action="/admin/send-notification" method="POST">
+          <div class="form-group">
+            <label>Target Audience</label>
+            <select name="targetUserId" required>
+              <option value="all">-- Send to All Operators Globally --</option>
+              <% if (users && users.length > 0) { %>
+                <% users.forEach(user => { %>
+                  <option value="<%= user.id %>"><%= user.email %></option>
+                <% }) %>
+              <% } %>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Notification Title</label>
+            <input type="text" name="title" placeholder="e.g. Shift 2 Production Target Updated" required>
+          </div>
+          <div class="form-group">
+            <label>Message Content</label>
+            <textarea name="message" rows="3" placeholder="Enter message for operators..." required></textarea>
+          </div>
+          <button type="submit" class="btn-primary">Broadcast Notification</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ─── TAB 4: MASTER DATABASE RESET & CLEAN WIPE ─────────────────────── -->
+    <div id="tab-wipe" class="tab-pane">
+      <div class="card" style="border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.04);">
+        <h2 style="color: #F87171;">⚠️ Factory Master Clean Wipe (Pre-Handover Testing Reset)</h2>
+        <p style="color: var(--text-muted); font-size: 13.5px; line-height: 1.6;">
+          This administrative key action completely empties testing data across all factory modules in Supabase so you can test thoroughly and hand over a clean production database to the client.
+        </p>
+
+        <div style="background: var(--surface-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem;">
+          <h3 style="margin: 0 0 0.75rem 0; font-size: 14px; color: var(--text-main);">Tables that will be wiped globally:</h3>
+          <ul style="margin: 0; padding-left: 1.2rem; font-size: 13px; color: var(--text-muted); line-height: 1.7;">
+            <li><strong>Production Logs & Orders:</strong> All active/completed batches and process stage entries.</li>
+            <li><strong>Inventory Items:</strong> All test raw materials and finished goods stock items.</li>
+            <li><strong>HR & Payroll:</strong> All employee staff directory records, attendance punch-ins, and salary payments.</li>
+            <li><strong>In-App Notifications:</strong> All user alerts and push logs.</li>
+            <li><strong>Product Recipes:</strong> <em>Protected.</em> Predefined product types and process steps are preserved so production can start immediately.</li>
+          </ul>
+        </div>
+
+        <form action="/admin/master-wipe" method="POST" onsubmit="return confirm('DANGER: Are you 100% sure you want to wipe all factory operational data?');" style="max-width: 500px;">
+          <div class="form-group">
+            <label style="color: #FCA5A5;">Type <strong>DELETE-ALL-DATA</strong> to authorize master wipe:</label>
+            <input type="text" name="confirm_phrase" placeholder="DELETE-ALL-DATA" required style="border-color: rgba(239, 68, 68, 0.5); font-weight: 700; letter-spacing: 0.5px;">
+          </div>
+          <div class="form-group">
+            <label style="cursor: pointer; display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted);">
+              <input type="checkbox" name="wipe_users" value="true"> Also delete test operator user accounts (Admin account is protected)
+            </label>
+          </div>
+          <button type="submit" class="btn-danger">Execute Global Clean Wipe</button>
+        </form>
+      </div>
     </div>
 
   </div>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      event.target.classList.add('active');
+    }
+  </script>
 </body>
 </html>
