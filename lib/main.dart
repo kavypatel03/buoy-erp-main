@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'app/app.dart';
 import 'core/services/local_notification_service.dart';
@@ -10,7 +11,9 @@ void main() {
   runApp(const BouyApp());
 
   // Initialize background services asynchronously in a non-blocking manner
-  _initializeBackgroundServices();
+  if (!kIsWeb) {
+    _initializeBackgroundServices();
+  }
 }
 
 Future<void> _initializeBackgroundServices() async {

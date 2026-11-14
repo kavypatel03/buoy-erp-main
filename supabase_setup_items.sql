@@ -64,3 +64,4 @@ DROP POLICY IF EXISTS "Allow public read from items bucket" ON storage.objects;
 CREATE POLICY "Allow public read from items bucket"
 ON storage.objects FOR SELECT
 USING (bucket_id = 'items');
+
