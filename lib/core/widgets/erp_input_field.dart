@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import '../../app/constants/app_colors.dart';
 
-class ErpInputField extends StatelessWidget {
+class ErpInputField extends StatefulWidget {
   final String label;
   final String hintText;
   final TextEditingController? controller;
   final bool obscureText;
   final TextInputType keyboardType;
   final Widget? suffixIcon;
+  final dynamic prefixIcon; // Can be IconData or Widget
   final int maxLines;
+  final String? Function(String?)? validator;
+  final ValueChanged<String>? onChanged;
 
   const ErpInputField({
     super.key,
@@ -17,19 +21,69 @@ class ErpInputField extends StatelessWidget {
     this.obscureText = false,
     this.keyboardType = TextInputType.text,
     this.suffixIcon,
+    this.prefixIcon,
     this.maxLines = 1,
+    this.validator,
+    this.onChanged,
   });
+
+  @override
+  State<ErpInputField> createState() => _ErpInputFieldState();
+}
+
+class _ErpInputFieldState extends State<ErpInputField> {
+  final FocusNode _focusNode = FocusNode();
+  bool _isFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() {
+      setState(() {
+        _isFocused = _focusNode.hasFocus;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  Widget? _buildPrefix() {
+    if (widget.prefixIcon == null) return null;
+    if (widget.prefixIcon is IconData) {
+      return Icon(
+        widget.prefixIcon as IconData,
+        size: 20,
+        color: _isFocused ? AppColors.primary : const Color(0xFF94A3B8),
+      );
+    }
+    if (widget.prefixIcon is Widget) {
+      return widget.prefixIcon as Widget;
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final borderRadius = BorderRadius.circular(16);
-    
+
+    final bgColor = isDarkMode
+        ? AppColors.darkCard
+        : const Color(0xFFF8FAFC);
+
+    final borderColor = _isFocused
+        ? (isDarkMode ? AppColors.primaryLight : AppColors.primary)
+        : (isDarkMode ? AppColors.darkCardBorder : const Color(0xFFE2E8F0));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
+          widget.label,
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
@@ -40,27 +94,33 @@ class ErpInputField extends StatelessWidget {
         ClipRRect(
           borderRadius: borderRadius,
           clipBehavior: Clip.antiAlias,
-          child: Container(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
-              color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+              color: bgColor,
               borderRadius: borderRadius,
               border: Border.all(
-                color: isDarkMode ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                width: 1.2,
+                color: borderColor,
+                width: _isFocused ? 1.6 : 1.2,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.02),
-                  blurRadius: 8,
+                  color: _isFocused
+                      ? AppColors.primary.withValues(alpha: isDarkMode ? 0.25 : 0.08)
+                      : Colors.black.withValues(alpha: isDarkMode ? 0.15 : 0.02),
+                  blurRadius: _isFocused ? 12 : 6,
                   offset: const Offset(0, 2),
                 ),
               ],
             ),
             child: TextFormField(
-              controller: controller,
-              obscureText: obscureText,
-              keyboardType: keyboardType,
-              maxLines: maxLines,
+              controller: widget.controller,
+              focusNode: _focusNode,
+              obscureText: widget.obscureText,
+              keyboardType: widget.keyboardType,
+              maxLines: widget.maxLines,
+              validator: widget.validator,
+              onChanged: widget.onChanged,
               style: TextStyle(
                 fontSize: 14,
                 color: Theme.of(context).colorScheme.onSurface,
@@ -70,10 +130,12 @@ class ErpInputField extends StatelessWidget {
                 isDense: true,
                 filled: false,
                 fillColor: Colors.transparent,
-                hintText: hintText,
-                hintStyle: const TextStyle(
+                hintText: widget.hintText,
+                hintStyle: TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF94A3B8),
+                  color: isDarkMode
+                      ? AppColors.darkTextMuted
+                      : const Color(0xFF94A3B8),
                   fontWeight: FontWeight.w400,
                 ),
                 contentPadding: const EdgeInsets.symmetric(
@@ -86,7 +148,8 @@ class ErpInputField extends StatelessWidget {
                 errorBorder: InputBorder.none,
                 focusedErrorBorder: InputBorder.none,
                 disabledBorder: InputBorder.none,
-                suffixIcon: suffixIcon,
+                prefixIcon: _buildPrefix(),
+                suffixIcon: widget.suffixIcon,
               ),
             ),
           ),

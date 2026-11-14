@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../app/constants/app_colors.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/erp_header_bar.dart';
@@ -169,13 +170,36 @@ class LowStocksPageState extends State<LowStocksPage> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: goToAddNewItem,
+        backgroundColor: const Color(0xFF5B3DF5),
+        foregroundColor: Colors.white,
+        elevation: 4,
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Add Item', style: TextStyle(fontWeight: FontWeight.w700)),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-          padding: const EdgeInsets.only(bottom: 85.0),
+          padding: const EdgeInsets.only(bottom: 100.0),
           child: Column(
             children: [
-              const ErpHeaderBar(title: 'Inventory'),
+              ErpHeaderBar(
+                title: 'Inventory',
+                trailing: Row(children: [
+                  GestureDetector(
+                    onTap: goToAddNewItem,
+                    child: Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF5B3DF5),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.add_rounded, color: Colors.white, size: 22),
+                    ),
+                  ),
+                ]),
+              ),
 
               const SizedBox(height: 8),
 
@@ -198,16 +222,55 @@ class LowStocksPageState extends State<LowStocksPage> {
 
               const SizedBox(height: 16),
 
-              // Main List Container Card with + button inside at bottom-right
+              // Stats strip
+              if (!_isLoading && _inventoryItems.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                  child: Row(children: [
+                    _StockStatChip(
+                      label: '${_inventoryItems.length} Items',
+                      color: const Color(0xFF5B3DF5),
+                      isDark: Theme.of(context).brightness == Brightness.dark,
+                    ),
+                    const SizedBox(width: 10),
+                    _StockStatChip(
+                      label: '${_inventoryItems.where((i) => double.tryParse(i.stockQuantity) != null && double.tryParse(i.minQuantity) != null && double.parse(i.stockQuantity) <= double.parse(i.minQuantity)).length} Low Stock',
+                      color: const Color(0xFFEF4444),
+                      isDark: Theme.of(context).brightness == Brightness.dark,
+                    ),
+                  ]),
+                ),
+
+              // Main List Container Card
               if (_isLoading)
                 const Padding(
                   padding: EdgeInsets.all(40.0),
                   child: Center(child: CircularProgressIndicator(color: Color(0xFF5B3DF5))),
                 )
               else if (filteredList.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(40.0),
-                  child: Center(child: Text("No items found in inventory.")),
+                Padding(
+                  padding: const EdgeInsets.all(40.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 72, height: 72,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF5B3DF5).withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(22),
+                        ),
+                        child: const Icon(Icons.inventory_2_outlined,
+                            color: Color(0xFF5B3DF5), size: 36),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text('No items found',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 6),
+                      const Text('Add items to your inventory to get started.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                    ],
+                  ),
                 )
               else
               Padding(
@@ -302,7 +365,10 @@ class LowStocksPageState extends State<LowStocksPage> {
                                 ),
                               ),
                             ),
-                            if (!isLast) const Divider(color: Color(0xFFF1F5F9), height: 1),
+                            if (!isLast) Divider(
+                              color: Theme.of(context).dividerTheme.color,
+                              height: 1,
+                            ),
                           ],
                         );
                       }),
@@ -547,8 +613,7 @@ class LowStocksPageState extends State<LowStocksPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          title: Text('Restock Item'),
+          title: const Text('Restock Item'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -559,7 +624,7 @@ class LowStocksPageState extends State<LowStocksPage> {
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                   hintText: 'Quantity',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                 ),
               ),
             ],
@@ -567,9 +632,9 @@ class LowStocksPageState extends State<LowStocksPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Cancel', style: TextStyle(color: Colors.grey)),
+              child: const Text('Cancel'),
             ),
-            TextButton(
+            ElevatedButton(
               onPressed: () async {
                 final qty = int.tryParse(qtyCtrl.text);
                 if (qty == null || qty <= 0) return;
@@ -584,7 +649,8 @@ class LowStocksPageState extends State<LowStocksPage> {
 
                 if (res['success']) {
                   if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Restocked Successfully!')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Restocked Successfully!')));
                   Navigator.pop(context);
                   _fetchItems();
                   setState(() {
@@ -593,10 +659,11 @@ class LowStocksPageState extends State<LowStocksPage> {
                   });
                 } else {
                   if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: ${res['error']}')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed: ${res['error']}')));
                 }
               },
-              child: Text('Restock', style: TextStyle(color: Color(0xFF5B3DF5), fontWeight: FontWeight.bold)),
+              child: const Text('Restock'),
             ),
           ],
         );
@@ -615,8 +682,7 @@ class LowStocksPageState extends State<LowStocksPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          title: Text('Edit Item'),
+          title: const Text('Edit Item'),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -654,9 +720,9 @@ class LowStocksPageState extends State<LowStocksPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Cancel', style: TextStyle(color: Colors.grey)),
+              child: const Text('Cancel'),
             ),
-            TextButton(
+            ElevatedButton(
               onPressed: () async {
                 final res = await InventoryService.updateItem(item.id, {
                   'title': nameCtrl.text,
@@ -681,7 +747,7 @@ class LowStocksPageState extends State<LowStocksPage> {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: ${res['error']}')));
                 }
               },
-              child: Text('Save', style: TextStyle(color: Color(0xFF5B3DF5), fontWeight: FontWeight.bold)),
+              child: const Text('Save'),
             ),
           ],
         );
@@ -779,19 +845,32 @@ class LowStocksPageState extends State<LowStocksPage> {
                         width: 76,
                         height: 76,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.darkSurface
+                              : const Color(0xFFF1F5F9),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFCBD5E1), width: 1),
+                          border: Border.all(
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.darkCardBorder
+                                : const Color(0xFFCBD5E1),
+                            width: 1,
+                          ),
                         ),
                         clipBehavior: Clip.hardEdge,
                         child: base64Image != null
                             ? Image.memory(base64Decode(base64Image!), fit: BoxFit.cover)
-                            : const Column(
+                            : Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.image_outlined, color: Color(0xFF64748B), size: 28),
-                                  SizedBox(height: 2),
-                                  Text(
+                                  Icon(
+                                    Icons.image_outlined,
+                                    color: Theme.of(context).brightness == Brightness.dark
+                                        ? AppColors.darkTextMuted
+                                        : const Color(0xFF64748B),
+                                    size: 28,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  const Text(
                                     'Preview\n(Only .jpg,.png)',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(fontSize: 8.5, color: Color(0xFF94A3B8)),
@@ -947,6 +1026,9 @@ class LowStocksPageState extends State<LowStocksPage> {
   }
 
   Widget _buildRealDropdown(String label, List<String> items, String value, ValueChanged<String?> onChanged) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderRadius = BorderRadius.circular(16);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -955,33 +1037,72 @@ class LowStocksPageState extends State<LowStocksPage> {
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF1E293B),
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              isExpanded: true,
-              value: value,
-              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),
-              items: items.map((String val) {
-                return DropdownMenuItem<String>(
-                  value: val,
-                  child: Text(val, style: TextStyle(fontSize: 13, color: Color(0xFF1E293B))),
-                );
-              }).toList(),
-              onChanged: onChanged,
+        ClipRRect(
+          borderRadius: borderRadius,
+          clipBehavior: Clip.antiAlias,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+              borderRadius: borderRadius,
+              border: Border.all(
+                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                width: 1.2,
+              ),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                isExpanded: true,
+                value: value,
+                dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF94A3B8)),
+                items: items.map((String val) {
+                  return DropdownMenuItem<String>(
+                    value: val,
+                    child: Text(
+                      val,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  );
+                }).toList(),
+                onChanged: onChanged,
+              ),
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+// ── Helper widget ─────────────────────────────────────────────────────────────
+
+class _StockStatChip extends StatelessWidget {
+  final String label;
+  final Color color;
+  final bool isDark;
+  const _StockStatChip({required this.label, required this.color, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: isDark ? 0.15 : 0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Text(label,
+          style: TextStyle(
+              fontSize: 12, fontWeight: FontWeight.w700, color: color)),
     );
   }
 }

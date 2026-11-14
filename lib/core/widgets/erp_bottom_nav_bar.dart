@@ -80,19 +80,19 @@ class _ErpBottomNavBarState extends State<ErpBottomNavBar> with SingleTickerProv
           child: Container(
             decoration: BoxDecoration(
               color: isDarkMode
-                  ? Colors.black.withValues(alpha: 0.4)
-                  : Colors.white.withValues(alpha: 0.45),
+                  ? const Color(0xFF16161F).withValues(alpha: 0.88)
+                  : Colors.white.withValues(alpha: 0.85),
               borderRadius: BorderRadius.circular(40),
               border: Border.all(
                 color: isDarkMode
-                    ? Colors.white.withValues(alpha: 0.12)
-                    : Colors.white.withValues(alpha: 0.6),
+                    ? Colors.white.withValues(alpha: 0.14)
+                    : Colors.white.withValues(alpha: 0.7),
                 width: 1.2,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: isDarkMode ? 0.25 : 0.06),
-                  blurRadius: 16,
+                  color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
+                  blurRadius: 18,
                   spreadRadius: 1,
                   offset: const Offset(0, 4),
                 ),
@@ -210,6 +210,8 @@ class _ErpBottomNavBarState extends State<ErpBottomNavBar> with SingleTickerProv
 
     final isSelected = activeIndex == index;
     const primaryColor = Color(0xFF5B3DF5);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final unselectedColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -229,7 +231,7 @@ class _ErpBottomNavBarState extends State<ErpBottomNavBar> with SingleTickerProv
               child: Icon(
                 isSelected ? activeIcon : icon,
                 key: ValueKey<bool>(isSelected),
-                color: isSelected ? primaryColor : const Color(0xFF64748B),
+                color: isSelected ? primaryColor : unselectedColor,
                 size: isSelected ? 26 : 24,
               ),
             ),
@@ -239,7 +241,7 @@ class _ErpBottomNavBarState extends State<ErpBottomNavBar> with SingleTickerProv
               style: TextStyle(
                 fontSize: 10.5,
                 fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                color: isSelected ? primaryColor : const Color(0xFF64748B),
+                color: isSelected ? primaryColor : unselectedColor,
               ),
               child: Text(label),
             ),

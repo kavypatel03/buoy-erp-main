@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import '../../../../app/constants/app_colors.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/erp_header_bar.dart';
 import '../../../../core/widgets/erp_input_field.dart';
@@ -61,7 +63,7 @@ class EmployeeModel {
       payableSalary: json['payable_salary']?.toString() ?? '0',
       upiId: json['upi_id'] ?? '',
       salaryPayments: json['salary_payments'] ?? [],
-      avatarBgColor: const Color(0xFFFCD34D),
+      avatarBgColor: const Color(0xFF6366F1),
       profilePicUrl: json['profile_pic_url'],
     );
   }
@@ -92,8 +94,9 @@ class EmployeePageState extends State<EmployeePage> {
   }
 
   Future<void> _fetchEmployees() async {
-    setState(() => _isLoading = true);
+    if (mounted) setState(() => _isLoading = true);
     final res = await EmployeeService.getEmployees();
+    if (!mounted) return;
     setState(() => _isLoading = false);
 
     if (res['success']) {
@@ -102,11 +105,9 @@ class EmployeePageState extends State<EmployeePage> {
         _employees = data.map((e) => EmployeeModel.fromJson(e)).toList();
       });
     } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to fetch employees: ${res['error']}')),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to fetch employees: ${res['error']}')),
+      );
     }
   }
 
@@ -116,7 +117,9 @@ class EmployeePageState extends State<EmployeePage> {
     if (_currentSubIndex > 0) {
       setState(() {
         _currentSubIndex = 0;
+        _selectedEmployee = null;
       });
+      _fetchEmployees();
     }
   }
 
@@ -154,197 +157,296 @@ class EmployeePageState extends State<EmployeePage> {
     }
   }
 
+  // ─── Screen: Employees List ────────────────────────────────────────────────
   Widget _buildEmployeeListScreen() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final filteredList = _employees.where((emp) {
       if (_selectedFilter == 'Available') return emp.isIn;
       if (_selectedFilter == 'Unavailable') return !emp.isIn;
       return true;
     }).toList();
 
+    final clockedInCount = _employees.where((e) => e.isIn).length;
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: goToAddNewEmployee,
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        elevation: 4,
+        icon: const Icon(Icons.person_add_alt_1_rounded),
+        label: const Text('Add Employee', style: TextStyle(fontWeight: FontWeight.w700)),
+      ),
       body: SafeArea(
-        child: _isLoading 
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-          padding: const EdgeInsets.only(bottom: 85.0),
-          child: Column(
-            children: [
-              const ErpHeaderBar(title: 'Employee'),
+        child: Column(
+          children: [
+            ErpHeaderBar(
+              title: 'Employees',
+              trailing: Row(
+                children: [
+                  GestureDetector(
+                    onTap: goToAddNewEmployee,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.add_rounded, color: Colors.white, size: 22),
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-              const SizedBox(height: 8),
-
+            // Summary stats strip
+            if (!_isLoading && _employees.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
                 child: Row(
                   children: [
-                    _buildFilterChip('All Employee'),
+                    _buildStatPill('$clockedInCount On Duty', AppColors.success, isDark),
                     const SizedBox(width: 8),
-                    _buildFilterChip('Available'),
+                    _buildStatPill('${_employees.length - clockedInCount} Off Duty', AppColors.textSecondary, isDark),
                     const SizedBox(width: 8),
-                    _buildFilterChip('Unavailable'),
+                    _buildStatPill('${_employees.length} Total', AppColors.primary, isDark),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 16),
+            // Filter chips
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Row(
+                children: [
+                  _buildFilterChip('All Employee'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Available'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Unavailable'),
+                ],
+              ),
+            ),
 
-              if (filteredList.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.only(top: 40.0),
-                  child: Center(child: Text("No employees found.")),
-                )
-              else
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: GlassContainer(
-                  useGradientBorder: true,
-                  borderRadius: 26,
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-                  child: Column(
-                    children: [
-                      ...filteredList.asMap().entries.map((entry) {
-                        final idx = entry.key;
-                        final emp = entry.value;
-                        final isLast = idx == filteredList.length - 1;
+            const SizedBox(height: 14),
 
-                        return Column(
-                          children: [
-                            InkWell(
-                              onTap: () => _onSelectEmployee(emp),
-                              borderRadius: BorderRadius.circular(16),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 4.0),
-                                child: Row(
-                                  children: [
-                                    // Avatar
-                                    Container(
-                                      width: 44,
-                                      height: 44,
-                                      decoration: BoxDecoration(
-                                        color: emp.avatarBgColor,
-                                        shape: BoxShape.circle,
-                                        image: emp.profilePicUrl != null && emp.profilePicUrl!.isNotEmpty
-                                          ? DecorationImage(
-                                              image: MemoryImage(base64Decode(emp.profilePicUrl!)),
-                                              fit: BoxFit.cover,
-                                            )
-                                          : null,
-                                      ),
-                                      child: emp.profilePicUrl == null || emp.profilePicUrl!.isEmpty
-                                      ? const Icon(
-                                        Icons.person_rounded,
-                                        color: Colors.white,
-                                        size: 28,
-                                      ) : null,
-                                    ),
-                                    const SizedBox(width: 14),
-                                    // Details
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+            // Content List
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                  : filteredList.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(40.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 72,
+                                  height: 72,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(22),
+                                  ),
+                                  child: const Icon(Icons.people_outline_rounded, color: AppColors.primary, size: 36),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No employees found',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                const Text(
+                                  'Add your staff to track attendance and payroll.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : RefreshIndicator(
+                          color: AppColors.primary,
+                          onRefresh: _fetchEmployees,
+                          child: ListView.builder(
+                            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                            itemCount: filteredList.length,
+                            itemBuilder: (context, index) {
+                              final emp = filteredList[index];
+                              return RepaintBoundary(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(bottom: 12.0),
+                                  child: GlassContainer(
+                                    borderRadius: 20,
+                                    onTap: () => _onSelectEmployee(emp),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(14.0),
+                                      child: Row(
                                         children: [
-                                          Text(
-                                            emp.name,
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold,
-                                              color: Theme.of(context).colorScheme.onSurface,
+                                          // Avatar
+                                          _buildAvatar(emp, 48),
+                                          const SizedBox(width: 14),
+                                          // Details
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  emp.name,
+                                                  style: TextStyle(
+                                                    fontSize: 15,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: Theme.of(context).colorScheme.onSurface,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                                const SizedBox(height: 3),
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      emp.role,
+                                                      style: const TextStyle(
+                                                        fontSize: 12,
+                                                        color: AppColors.textSecondary,
+                                                        fontWeight: FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                    if (emp.phone.isNotEmpty) ...[
+                                                      const Text(' · ', style: TextStyle(color: AppColors.textMuted)),
+                                                      Text(
+                                                        emp.phone,
+                                                        style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: AppColors.textSecondary,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ],
+                                                ),
+                                              ],
                                             ),
                                           ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            emp.phone,
-                                            style: TextStyle(
-                                              fontSize: 11.5,
-                                              color: Color(0xFF64748B),
+                                          // Status Badge (In / Out)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                            decoration: BoxDecoration(
+                                              color: emp.isIn
+                                                  ? (isDark ? AppColors.darkSuccessBg : AppColors.successBg)
+                                                  : (isDark ? AppColors.darkErrorBg : AppColors.errorBg),
+                                              borderRadius: BorderRadius.circular(16),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Container(
+                                                  width: 6,
+                                                  height: 6,
+                                                  decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+                                                    color: emp.isIn ? AppColors.success : AppColors.error,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 5),
+                                                Text(
+                                                  emp.isIn ? 'Clocked In' : 'Clocked Out',
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: emp.isIn ? AppColors.success : AppColors.error,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
+                                          const SizedBox(width: 4),
+                                          const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 20),
                                         ],
                                       ),
                                     ),
-                                    // In / Out Status Badge
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: emp.isIn ? const Color(0xFFE6F4EA) : const Color(0xFFFCE8E6),
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: Text(
-                                        emp.isIn ? 'In' : 'Out',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: emp.isIn ? const Color(0xFF137333) : const Color(0xFFC5221F),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ),
-                            if (!isLast) const Divider(color: Color(0xFFF1F5F9), height: 1),
-                          ],
-                        );
-                      }),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+                              );
+                            },
+                          ),
+                        ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildStatPill(String text, Color color, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: isDark ? 0.15 : 0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color),
       ),
     );
   }
 
   Widget _buildFilterChip(String label) {
     final isSelected = _selectedFilter == label;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
       onTap: () {
-        setState(() {
-          _selectedFilter = label;
-        });
+        HapticFeedback.selectionClick();
+        setState(() => _selectedFilter = label);
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF5B3DF5) : Colors.white.withValues(alpha: 0.9),
+          color: isSelected
+              ? AppColors.primary
+              : (isDark ? AppColors.darkCard : Colors.white),
           borderRadius: BorderRadius.circular(22),
-          border: isSelected
-              ? null
-              : Border.all(color: Colors.white.withValues(alpha: 0.8), width: 1),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primary
+                : (isDark ? AppColors.darkCardBorder : AppColors.border),
+            width: 1,
+          ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: const Color(0xFF5B3DF5).withValues(alpha: 0.35),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: AppColors.primary.withValues(alpha: 0.35),
                     blurRadius: 10,
                     offset: const Offset(0, 3),
                   ),
-                ],
+                ]
+              : null,
         ),
         child: Text(
           label,
           style: TextStyle(
             fontSize: 12.5,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-            color: isSelected ? Colors.white : const Color(0xFF475569),
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+            color: isSelected
+                ? Colors.white
+                : (isDark ? AppColors.darkTextSecondary : const Color(0xFF475569)),
           ),
         ),
       ),
     );
   }
 
+  // ─── Screen: Add New Employee ──────────────────────────────────────────────
   Widget _buildAddNewEmployeeScreen() {
     final nameCtrl = TextEditingController();
     final salaryCtrl = TextEditingController();
@@ -357,41 +459,39 @@ class EmployeePageState extends State<EmployeePage> {
     Future<void> pickImage(ImageSource source) async {
       final pickedFile = await _picker.pickImage(source: source, imageQuality: 50);
       if (pickedFile != null) {
-        setState(() {
-          _selectedImage = File(pickedFile.path);
-        });
+        setState(() => _selectedImage = File(pickedFile.path));
       }
     }
 
     void showImageSourceSelector() {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
       showModalBottomSheet(
         context: context,
+        backgroundColor: isDark ? AppColors.darkCard : Colors.white,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
         builder: (ctx) => SafeArea(
-          child: Wrap(
-            children: [
-              Material(
-                type: MaterialType.transparency,
-                child: ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: Text('Photo Library'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  pickImage(ImageSource.gallery);
-                },
-              ),
-              ),
-              Material(
-                type: MaterialType.transparency,
-                child: ListTile(
-                leading: const Icon(Icons.photo_camera),
-                title: Text('Camera'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  pickImage(ImageSource.camera);
-                },
-              ),
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Wrap(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.photo_library_outlined, color: AppColors.primary),
+                  title: const Text('Choose from Gallery'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    pickImage(ImageSource.gallery);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_camera_outlined, color: AppColors.primary),
+                  title: const Text('Take a Photo'),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    pickImage(ImageSource.camera);
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -399,6 +499,7 @@ class EmployeePageState extends State<EmployeePage> {
 
     return StatefulBuilder(
       builder: (context, setLocalState) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: SafeArea(
@@ -408,130 +509,159 @@ class EmployeePageState extends State<EmployeePage> {
               child: Column(
                 children: [
                   ErpHeaderBar(
-                    title: 'Add Employee',
+                    title: 'New Employee',
                     onBackTap: _onBackToList,
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
 
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20.0),
                     child: GlassContainer(
-                      useGradientBorder: true,
-                      borderRadius: 26,
+                      borderRadius: 24,
                       padding: const EdgeInsets.all(22),
                       child: Column(
                         children: [
+                          // Photo upload circular button
                           GestureDetector(
                             onTap: showImageSourceSelector,
-                            child: Container(
-                              width: 80,
-                              height: 80,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF1F5F9),
-                                shape: BoxShape.circle,
-                                image: _selectedImage != null
-                                    ? DecorationImage(
-                                        image: FileImage(_selectedImage!),
-                                        fit: BoxFit.cover,
-                                      )
-                                    : null,
-                              ),
-                              child: _selectedImage == null
-                                  ? const Icon(
-                                      Icons.camera_alt,
-                                      color: Color(0xFF64748B),
-                                      size: 32,
-                                    )
-                                  : null,
+                            child: Stack(
+                              alignment: Alignment.bottomRight,
+                              children: [
+                                Container(
+                                  width: 86,
+                                  height: 86,
+                                  decoration: BoxDecoration(
+                                    color: isDark ? AppColors.darkSurface : const Color(0xFFF1F5F9),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: isDark ? AppColors.darkCardBorder : AppColors.border,
+                                      width: 2,
+                                    ),
+                                    image: _selectedImage != null
+                                        ? DecorationImage(
+                                            image: FileImage(_selectedImage!),
+                                            fit: BoxFit.cover,
+                                          )
+                                        : null,
+                                  ),
+                                  child: _selectedImage == null
+                                      ? const Icon(
+                                          Icons.person_add_rounded,
+                                          color: AppColors.textMuted,
+                                          size: 38,
+                                        )
+                                      : null,
+                                ),
+                                Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.primary,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 16),
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(height: 8),
-                          Text("Tap to upload photo", style: TextStyle(fontSize: 12, color: Colors.grey)),
-
-                          const SizedBox(height: 20),
-
-                          ErpInputField(
-                            label: 'Employee Name',
-                            hintText: 'Enter Name of Employee',
-                            controller: nameCtrl,
+                          const Text(
+                            "Tap to add photo",
+                            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                           ),
-                          const SizedBox(height: 14),
+
+                          const SizedBox(height: 22),
+
                           ErpInputField(
-                            label: 'Employee Salary (Hourly)',
-                            hintText: 'Enter hourly salary',
+                            label: 'Full Name *',
+                            hintText: 'e.g. Ramesh Sharma',
+                            controller: nameCtrl,
+                            prefixIcon: Icons.person_outline_rounded,
+                          ),
+                          const SizedBox(height: 16),
+                          ErpInputField(
+                            label: 'Hourly Salary (INR) *',
+                            hintText: 'e.g. 120',
                             controller: salaryCtrl,
                             keyboardType: TextInputType.number,
+                            prefixIcon: Icons.currency_rupee_rounded,
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 16),
                           ErpInputField(
-                            label: 'Employee Mo. Number',
-                            hintText: 'Enter Mobile Number',
+                            label: 'Mobile Number',
+                            hintText: 'e.g. 9876543210',
                             controller: phoneCtrl,
                             keyboardType: TextInputType.phone,
+                            prefixIcon: Icons.phone_outlined,
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 16),
                           ErpInputField(
-                            label: 'Employee Role / Work',
-                            hintText: 'Employee work in factory',
+                            label: 'Role / Designation',
+                            hintText: 'e.g. Machine Operator, Assembly',
                             controller: workCtrl,
+                            prefixIcon: Icons.badge_outlined,
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 16),
                           ErpInputField(
-                            label: 'Employee Address',
-                            hintText: 'Enter full address of Employee',
+                            label: 'Residential Address',
+                            hintText: 'e.g. Plot 42, GIDC Industrial Estate',
                             controller: addressCtrl,
+                            prefixIcon: Icons.location_on_outlined,
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 16),
                           ErpInputField(
-                            label: 'Employee UPI ID',
-                            hintText: 'Enter UPI ID (optional)',
+                            label: 'UPI ID for Salary Payments',
+                            hintText: 'e.g. ramesh@okaxis',
                             controller: upiCtrl,
+                            prefixIcon: Icons.payment_outlined,
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 26),
 
-                          isSaving ? const CircularProgressIndicator() : CustomButton(
-                            text: 'Add New Employee',
-                            onPressed: () async {
-                              if (nameCtrl.text.isEmpty || salaryCtrl.text.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Name and Salary are required')),
-                                );
-                                return;
-                              }
+                          isSaving
+                              ? const CircularProgressIndicator(color: AppColors.primary)
+                              : CustomButton(
+                                  text: 'Create Employee Profile',
+                                  onPressed: () async {
+                                    if (nameCtrl.text.trim().isEmpty || salaryCtrl.text.trim().isEmpty) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Name and Hourly Salary are required')),
+                                      );
+                                      return;
+                                    }
 
-                              setLocalState(() => isSaving = true);
-                              String? base64Image;
-                              if (_selectedImage != null) {
-                                final bytes = await _selectedImage!.readAsBytes();
-                                base64Image = base64Encode(bytes);
-                              }
+                                    setLocalState(() => isSaving = true);
+                                    String? base64Image;
+                                    if (_selectedImage != null) {
+                                      final bytes = await _selectedImage!.readAsBytes();
+                                      base64Image = base64Encode(bytes);
+                                    }
 
-                              final res = await EmployeeService.createEmployee({
-                                'name': nameCtrl.text,
-                                'hourly_salary': double.tryParse(salaryCtrl.text) ?? 0,
-                                'phone': phoneCtrl.text,
-                                'role': workCtrl.text,
-                                'address': addressCtrl.text,
-                                'upi_id': upiCtrl.text,
-                                'profile_pic_url': base64Image ?? '',
-                              });
+                                    final res = await EmployeeService.createEmployee({
+                                      'name': nameCtrl.text.trim(),
+                                      'hourly_salary': double.tryParse(salaryCtrl.text.trim()) ?? 0,
+                                      'phone': phoneCtrl.text.trim(),
+                                      'role': workCtrl.text.trim().isEmpty ? 'Worker' : workCtrl.text.trim(),
+                                      'address': addressCtrl.text.trim(),
+                                      'upi_id': upiCtrl.text.trim(),
+                                      'profile_pic_url': base64Image ?? '',
+                                    });
 
-                              setLocalState(() => isSaving = false);
+                                    setLocalState(() => isSaving = false);
 
-                              if (res['success']) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('New Employee Added Successfully!')),
-                                );
-                                _fetchEmployees();
-                                _onBackToList();
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Failed: ${res['error']}')),
-                                );
-                              }
-                            },
-                          ),
+                                    if (res['success']) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('New Employee Added Successfully!')),
+                                      );
+                                      _fetchEmployees();
+                                      _onBackToList();
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('Failed: ${res['error']}')),
+                                      );
+                                    }
+                                  },
+                                ),
                         ],
                       ),
                     ),
@@ -541,12 +671,13 @@ class EmployeePageState extends State<EmployeePage> {
             ),
           ),
         );
-      }
+      },
     );
   }
 
+  // ─── Screen: Edit Employee ─────────────────────────────────────────────────
   Widget _buildEditEmployeeScreen() {
-    if (_selectedEmployee == null) return Container();
+    if (_selectedEmployee == null) return const SizedBox();
     final emp = _selectedEmployee!;
 
     final nameCtrl = TextEditingController(text: emp.name);
@@ -560,41 +691,39 @@ class EmployeePageState extends State<EmployeePage> {
     Future<void> pickImage(ImageSource source) async {
       final pickedFile = await _picker.pickImage(source: source, imageQuality: 50);
       if (pickedFile != null) {
-        setState(() {
-          _selectedImage = File(pickedFile.path);
-        });
+        setState(() => _selectedImage = File(pickedFile.path));
       }
     }
 
     void showImageSourceSelector() {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
       showModalBottomSheet(
         context: context,
+        backgroundColor: isDark ? AppColors.darkCard : Colors.white,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
         builder: (ctx) => SafeArea(
-          child: Wrap(
-            children: [
-              Material(
-                type: MaterialType.transparency,
-                child: ListTile(
-                  leading: const Icon(Icons.photo_library),
-                  title: Text('Photo Library'),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Wrap(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.photo_library_outlined, color: AppColors.primary),
+                  title: const Text('Photo Library'),
                   onTap: () {
                     Navigator.of(context).pop();
                     pickImage(ImageSource.gallery);
                   },
                 ),
-              ),
-              Material(
-                type: MaterialType.transparency,
-                child: ListTile(
-                  leading: const Icon(Icons.photo_camera),
-                  title: Text('Camera'),
+                ListTile(
+                  leading: const Icon(Icons.photo_camera_outlined, color: AppColors.primary),
+                  title: const Text('Camera'),
                   onTap: () {
                     Navigator.of(context).pop();
                     pickImage(ImageSource.camera);
                   },
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       );
@@ -602,6 +731,7 @@ class EmployeePageState extends State<EmployeePage> {
 
     return StatefulBuilder(
       builder: (context, setLocalState) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: SafeArea(
@@ -615,136 +745,150 @@ class EmployeePageState extends State<EmployeePage> {
                     onBackTap: () => setState(() => _currentSubIndex = 2),
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
 
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20.0),
                     child: GlassContainer(
-                      useGradientBorder: true,
-                      borderRadius: 26,
+                      borderRadius: 24,
                       padding: const EdgeInsets.all(22),
                       child: Column(
                         children: [
                           GestureDetector(
                             onTap: showImageSourceSelector,
-                            child: Container(
-                              width: 80,
-                              height: 80,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF1F5F9),
-                                shape: BoxShape.circle,
-                                image: _selectedImage != null
-                                    ? DecorationImage(
-                                        image: FileImage(_selectedImage!),
-                                        fit: BoxFit.cover,
-                                      )
-                                    : (emp.profilePicUrl != null && emp.profilePicUrl!.isNotEmpty
-                                        ? DecorationImage(
-                                            image: MemoryImage(base64Decode(emp.profilePicUrl!)),
-                                            fit: BoxFit.cover,
-                                          )
-                                        : null),
-                              ),
-                              child: (_selectedImage == null && (emp.profilePicUrl == null || emp.profilePicUrl!.isEmpty))
-                                  ? const Icon(
-                                      Icons.camera_alt,
-                                      color: Color(0xFF64748B),
-                                      size: 32,
-                                    )
-                                  : null,
+                            child: Stack(
+                              alignment: Alignment.bottomRight,
+                              children: [
+                                Container(
+                                  width: 86,
+                                  height: 86,
+                                  decoration: BoxDecoration(
+                                    color: isDark ? AppColors.darkSurface : const Color(0xFFF1F5F9),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: isDark ? AppColors.darkCardBorder : AppColors.border,
+                                      width: 2,
+                                    ),
+                                    image: _selectedImage != null
+                                        ? DecorationImage(image: FileImage(_selectedImage!), fit: BoxFit.cover)
+                                        : (emp.profilePicUrl != null && emp.profilePicUrl!.isNotEmpty
+                                            ? DecorationImage(
+                                                image: MemoryImage(base64Decode(emp.profilePicUrl!)),
+                                                fit: BoxFit.cover,
+                                              )
+                                            : null),
+                                  ),
+                                  child: (_selectedImage == null && (emp.profilePicUrl == null || emp.profilePicUrl!.isEmpty))
+                                      ? const Icon(Icons.person_rounded, color: AppColors.textMuted, size: 40)
+                                      : null,
+                                ),
+                                Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                                  child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 16),
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(height: 8),
-                          Text("Tap to change photo", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          const Text("Tap to change photo", style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
 
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 22),
 
                           ErpInputField(
-                            label: 'Employee Name',
-                            hintText: 'Enter Name of Employee',
+                            label: 'Full Name *',
+                            hintText: 'Enter Name',
                             controller: nameCtrl,
+                            prefixIcon: Icons.person_outline_rounded,
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 16),
                           ErpInputField(
-                            label: 'Employee Salary (Hourly)',
-                            hintText: 'Enter hourly salary',
+                            label: 'Hourly Salary (INR) *',
+                            hintText: 'Hourly salary',
                             controller: salaryCtrl,
                             keyboardType: TextInputType.number,
+                            prefixIcon: Icons.currency_rupee_rounded,
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 16),
                           ErpInputField(
-                            label: 'Employee Mo. Number',
-                            hintText: 'Enter Mobile Number',
+                            label: 'Mobile Number',
+                            hintText: 'Mobile Number',
                             controller: phoneCtrl,
                             keyboardType: TextInputType.phone,
+                            prefixIcon: Icons.phone_outlined,
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 16),
                           ErpInputField(
-                            label: 'Employee Role / Work',
-                            hintText: 'Employee work in factory',
+                            label: 'Role / Designation',
+                            hintText: 'Employee role',
                             controller: workCtrl,
+                            prefixIcon: Icons.badge_outlined,
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 16),
                           ErpInputField(
-                            label: 'Employee Address',
-                            hintText: 'Enter full address of Employee',
+                            label: 'Address',
+                            hintText: 'Full address',
                             controller: addressCtrl,
+                            prefixIcon: Icons.location_on_outlined,
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 16),
                           ErpInputField(
-                            label: 'Employee UPI ID',
-                            hintText: 'Enter UPI ID (optional)',
+                            label: 'UPI ID',
+                            hintText: 'UPI ID (optional)',
                             controller: upiCtrl,
+                            prefixIcon: Icons.payment_outlined,
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 26),
 
-                          isSaving ? const CircularProgressIndicator() : CustomButton(
-                            text: 'Save Changes',
-                            onPressed: () async {
-                              if (nameCtrl.text.isEmpty || salaryCtrl.text.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Name and Salary are required')),
-                                );
-                                return;
-                              }
+                          isSaving
+                              ? const CircularProgressIndicator(color: AppColors.primary)
+                              : CustomButton(
+                                  text: 'Save Changes',
+                                  onPressed: () async {
+                                    if (nameCtrl.text.trim().isEmpty || salaryCtrl.text.trim().isEmpty) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Name and Salary are required')),
+                                      );
+                                      return;
+                                    }
 
-                              setLocalState(() => isSaving = true);
-                              String? base64Image = emp.profilePicUrl;
-                              if (_selectedImage != null) {
-                                final bytes = await _selectedImage!.readAsBytes();
-                                base64Image = base64Encode(bytes);
-                              }
+                                    setLocalState(() => isSaving = true);
+                                    String? base64Image = emp.profilePicUrl;
+                                    if (_selectedImage != null) {
+                                      final bytes = await _selectedImage!.readAsBytes();
+                                      base64Image = base64Encode(bytes);
+                                    }
 
-                              final res = await EmployeeService.editEmployee(emp.id, {
-                                'name': nameCtrl.text,
-                                'hourly_salary': double.tryParse(salaryCtrl.text) ?? 0,
-                                'phone': phoneCtrl.text,
-                                'role': workCtrl.text,
-                                'address': addressCtrl.text,
-                                'upi_id': upiCtrl.text,
-                                'profile_pic_url': base64Image ?? '',
-                              });
+                                    final res = await EmployeeService.editEmployee(emp.id, {
+                                      'name': nameCtrl.text.trim(),
+                                      'hourly_salary': double.tryParse(salaryCtrl.text.trim()) ?? 0,
+                                      'phone': phoneCtrl.text.trim(),
+                                      'role': workCtrl.text.trim(),
+                                      'address': addressCtrl.text.trim(),
+                                      'upi_id': upiCtrl.text.trim(),
+                                      'profile_pic_url': base64Image ?? '',
+                                    });
 
-                              setLocalState(() => isSaving = false);
+                                    setLocalState(() => isSaving = false);
 
-                              if (res['success']) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Employee Updated Successfully!')),
-                                );
-                                await _fetchEmployees();
-                                // find updated employee
-                                final updated = _employees.firstWhere((e) => e.id == emp.id);
-                                setState(() {
-                                  _selectedEmployee = updated;
-                                  _currentSubIndex = 2; // back to details
-                                });
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Failed: ${res['error']}')),
-                                );
-                              }
-                            },
-                          ),
+                                    if (res['success']) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Employee Updated Successfully!')),
+                                      );
+                                      await _fetchEmployees();
+                                      final updated = _employees.firstWhere((e) => e.id == emp.id, orElse: () => emp);
+                                      setState(() {
+                                        _selectedEmployee = updated;
+                                        _currentSubIndex = 2; // return to details
+                                      });
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('Failed: ${res['error']}')),
+                                      );
+                                    }
+                                  },
+                                ),
                         ],
                       ),
                     ),
@@ -754,17 +898,21 @@ class EmployeePageState extends State<EmployeePage> {
             ),
           ),
         );
-      }
+      },
     );
   }
 
+  // ─── Screen: Employee Details ──────────────────────────────────────────────
   Widget _buildEmployeeDetailsScreen() {
-    if (_selectedEmployee == null) return Container();
+    if (_selectedEmployee == null) return const SizedBox();
     final emp = _selectedEmployee!;
     bool isProcessing = false;
 
     return StatefulBuilder(
       builder: (context, setLocalState) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final payable = double.tryParse(emp.payableSalary) ?? 0;
+
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: SafeArea(
@@ -777,14 +925,13 @@ class EmployeePageState extends State<EmployeePage> {
                     title: 'Employee Details',
                     onBackTap: _onBackToList,
                     trailing: GlassContainer(
-                      width: 48,
-                      height: 48,
+                      width: 44,
+                      height: 44,
                       isCircle: true,
-                      blur: 14,
-                      opacity: 0.95,
                       child: PopupMenuButton<String>(
-                        icon: Icon(Icons.more_vert_rounded, color: Theme.of(context).colorScheme.onSurface),
+                        icon: Icon(Icons.more_vert_rounded, color: Theme.of(context).colorScheme.onSurface, size: 20),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        color: isDark ? AppColors.darkCard : Colors.white,
                         onSelected: (value) async {
                           if (value == 'edit') {
                             setState(() => _currentSubIndex = 3);
@@ -792,14 +939,14 @@ class EmployeePageState extends State<EmployeePage> {
                             final confirm = await showDialog<bool>(
                               context: context,
                               builder: (ctx) => AlertDialog(
-                                title: Text('Delete Employee?'),
-                                content: Text('Are you sure you want to permanently delete ${emp.name}? This action cannot be undone.'),
+                                title: const Text('Delete Employee?'),
+                                content: Text('Permanently delete ${emp.name}? This action cannot be undone.'),
                                 actions: [
-                                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel')),
+                                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
                                   ElevatedButton(
-                                    onPressed: () => Navigator.pop(ctx, true), 
-                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-                                    child: Text('Delete', style: TextStyle(color: Colors.white))
+                                    onPressed: () => Navigator.pop(ctx, true),
+                                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+                                    child: const Text('Delete', style: TextStyle(color: Colors.white)),
                                   ),
                                 ],
                               ),
@@ -809,11 +956,11 @@ class EmployeePageState extends State<EmployeePage> {
                               final res = await EmployeeService.deleteEmployee(emp.id);
                               setLocalState(() => isProcessing = false);
                               if (res['success']) {
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Employee deleted successfully')));
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Employee deleted')));
                                 await _fetchEmployees();
                                 _onBackToList();
                               } else {
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete: ${res['error']}')));
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: ${res['error']}')));
                               }
                             }
                           }
@@ -823,9 +970,9 @@ class EmployeePageState extends State<EmployeePage> {
                             value: 'edit',
                             child: Row(
                               children: [
-                                Icon(Icons.edit_rounded, color: Color(0xFF5B3DF5), size: 20),
+                                Icon(Icons.edit_outlined, color: AppColors.primary, size: 18),
                                 SizedBox(width: 8),
-                                Text('Edit Employee'),
+                                Text('Edit Profile'),
                               ],
                             ),
                           ),
@@ -833,9 +980,9 @@ class EmployeePageState extends State<EmployeePage> {
                             value: 'delete',
                             child: Row(
                               children: [
-                                Icon(Icons.delete_rounded, color: Colors.redAccent, size: 20),
+                                Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 18),
                                 SizedBox(width: 8),
-                                Text('Delete Employee', style: TextStyle(color: Colors.redAccent)),
+                                Text('Delete', style: TextStyle(color: AppColors.error)),
                               ],
                             ),
                           ),
@@ -844,108 +991,136 @@ class EmployeePageState extends State<EmployeePage> {
                     ),
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
 
+                  // Hero Profile Card
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20.0),
                     child: GlassContainer(
-                      useGradientBorder: true,
-                      borderRadius: 26,
+                      borderRadius: 24,
                       padding: const EdgeInsets.all(22),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Container(
-                            width: 72,
-                            height: 72,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFCD34D),
-                              shape: BoxShape.circle,
-                              image: emp.profilePicUrl != null && emp.profilePicUrl!.isNotEmpty
-                                  ? DecorationImage(
-                                      image: MemoryImage(base64Decode(emp.profilePicUrl!)),
-                                      fit: BoxFit.cover,
-                                    )
-                                  : null,
-                            ),
-                            child: emp.profilePicUrl == null || emp.profilePicUrl!.isEmpty
-                                ? const Icon(
-                                    Icons.person_rounded,
-                                    color: Color(0xFF1E3A8A),
-                                    size: 48,
-                                  )
-                                : null,
-                          ),
+                          _buildAvatar(emp, 76),
                           const SizedBox(height: 12),
                           Text(
                             emp.name,
                             style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
                               color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 3),
                           Text(
                             emp.role,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 13,
-                              color: Color(0xFF64748B),
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 10),
 
-                          // Present/Out Badge
+                          // Present / Absent Pill
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
                             decoration: BoxDecoration(
-                              color: emp.isIn ? const Color(0xFFE6F4EA) : const Color(0xFFFCE8E6),
+                              color: emp.isIn
+                                  ? (isDark ? AppColors.darkSuccessBg : AppColors.successBg)
+                                  : (isDark ? AppColors.darkErrorBg : AppColors.errorBg),
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: Text(
-                              emp.isIn ? 'Present' : 'Absent',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: emp.isIn ? const Color(0xFF137333) : const Color(0xFFC5221F),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 7,
+                                  height: 7,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: emp.isIn ? AppColors.success : AppColors.error,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  emp.isIn ? 'Present on Floor' : 'Clocked Out',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: emp.isIn ? AppColors.success : AppColors.error,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 22),
+                          Divider(color: isDark ? AppColors.darkDivider : AppColors.border, height: 1),
+                          const SizedBox(height: 18),
+
+                          // Details Key-Value Table
+                          _buildDetailRow('Mobile Number', emp.phone.isNotEmpty ? emp.phone : 'Not provided'),
+                          const SizedBox(height: 12),
+                          _buildDetailRow('Join Date', emp.joinDate),
+                          const SizedBox(height: 12),
+                          _buildDetailRow('Rate', '₹${emp.hourlySalary} / hour'),
+                          const SizedBox(height: 12),
+                          _buildDetailRow('Work Role', emp.work),
+                          const SizedBox(height: 12),
+                          _buildDetailRow('Address', emp.address.isNotEmpty ? emp.address : '—'),
+                          const SizedBox(height: 12),
+                          _buildDetailRow('Hours Logged', '${emp.attendanceHours} hrs'),
+                          const SizedBox(height: 14),
+
+                          // Payable Highlight Card
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF063320) : const Color(0xFFECFDF5),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isDark ? const Color(0xFF047857) : const Color(0xFFA7F3D0),
+                                width: 1,
                               ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Outstanding Salary', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                                    SizedBox(height: 2),
+                                    Text('Ready for payout', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.success)),
+                                  ],
+                                ),
+                                Text(
+                                  '₹${emp.payableSalary}',
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.success,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
 
                           const SizedBox(height: 24),
 
-                          // Details Key-Value Table
-                          _buildDetailRow('Employee Mo. Number', emp.phone),
-                          const SizedBox(height: 14),
-                          _buildDetailRow('Join Date', emp.joinDate),
-                          const SizedBox(height: 14),
-                          _buildDetailRow('Salary Hourly', '${emp.hourlySalary}/h INR'),
-                          const SizedBox(height: 14),
-                          _buildDetailRow('Work', emp.work),
-                          const SizedBox(height: 14),
-                          _buildDetailRow('Address', emp.address),
-                          const SizedBox(height: 14),
-                          _buildDetailRow('Attendance (Hours)', emp.attendanceHours),
-                          const SizedBox(height: 14),
-                          _buildDetailRow(
-                            'Payable Salary',
-                            '${emp.payableSalary} INR',
-                            valueColor: const Color(0xFF00B039),
-                            isBoldValue: true,
-                            fontSize: 15,
-                          ),
-
-                          const SizedBox(height: 28),
-
+                          // Actions (Clock In / Clock Out)
                           if (isProcessing)
-                            const CircularProgressIndicator()
+                            const CircularProgressIndicator(color: AppColors.primary)
                           else
                             Column(
                               children: [
                                 Row(
                                   children: [
                                     Expanded(
-                                      child: ElevatedButton(
+                                      child: ElevatedButton.icon(
                                         onPressed: emp.isIn ? null : () async {
                                           TimeOfDay? customTime = await showTimePicker(
                                             context: context,
@@ -963,24 +1138,27 @@ class EmployeePageState extends State<EmployeePage> {
                                           final res = await EmployeeService.clockIn(emp.id, time: finalTime);
                                           setLocalState(() => isProcessing = false);
                                           if (res['success']) {
-                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Clocked in ${finalTime != null ? 'at custom time' : 'successfully'}')));
-                                            _fetchEmployees();
+                                            HapticFeedback.lightImpact();
+                                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Clocked in successfully')));
+                                            await _fetchEmployees();
                                             _onBackToList();
                                           } else {
-                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['error'])));
+                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['error'] ?? 'Error')));
                                           }
                                         },
+                                        icon: const Icon(Icons.login_rounded, size: 18),
+                                        label: const Text('Clock In'),
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.green,
+                                          backgroundColor: AppColors.success,
+                                          foregroundColor: Colors.white,
                                           padding: const EdgeInsets.symmetric(vertical: 14),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                         ),
-                                        child: Text('Clock In', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                                       ),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
-                                      child: ElevatedButton(
+                                      child: ElevatedButton.icon(
                                         onPressed: !emp.isIn ? null : () async {
                                           TimeOfDay? customTime = await showTimePicker(
                                             context: context,
@@ -998,50 +1176,67 @@ class EmployeePageState extends State<EmployeePage> {
                                           final res = await EmployeeService.clockOut(emp.id, time: finalTime);
                                           setLocalState(() => isProcessing = false);
                                           if (res['success']) {
-                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Clocked out ${finalTime != null ? 'at custom time' : 'successfully'}')));
-                                            _fetchEmployees();
+                                            HapticFeedback.lightImpact();
+                                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Clocked out successfully')));
+                                            await _fetchEmployees();
                                             _onBackToList();
                                           } else {
-                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['error'])));
+                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['error'] ?? 'Error')));
                                           }
                                         },
+                                        icon: const Icon(Icons.logout_rounded, size: 18),
+                                        label: const Text('Clock Out'),
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.redAccent,
+                                          backgroundColor: AppColors.error,
+                                          foregroundColor: Colors.white,
                                           padding: const EdgeInsets.symmetric(vertical: 14),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                         ),
-                                        child: Text('Clock Out', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                                       ),
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 16),
-                                if (double.tryParse(emp.payableSalary) != null && double.parse(emp.payableSalary) > 0)
+                                const SizedBox(height: 14),
+
+                                // Payout buttons
+                                if (payable > 0)
                                   Row(
                                     children: [
                                       if (emp.upiId.isNotEmpty)
                                         Expanded(
                                           child: ElevatedButton.icon(
-                                            onPressed: () => _handlePayment(emp, 'UPI', setLocalState, (val) => setLocalState(() => isProcessing = val)),
-                                            icon: const Icon(Icons.qr_code, color: Colors.white, size: 18),
-                                            label: Text('Pay via UPI', style: TextStyle(color: Colors.white)),
+                                            onPressed: () => _handlePayment(
+                                              emp,
+                                              'UPI',
+                                              setLocalState,
+                                              (val) => setLocalState(() => isProcessing = val),
+                                            ),
+                                            icon: const Icon(Icons.qr_code_rounded, size: 18),
+                                            label: const Text('Pay UPI'),
                                             style: ElevatedButton.styleFrom(
-                                              backgroundColor: const Color(0xFF5B3DF5),
-                                              padding: const EdgeInsets.symmetric(vertical: 12),
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                                              backgroundColor: AppColors.primary,
+                                              foregroundColor: Colors.white,
+                                              padding: const EdgeInsets.symmetric(vertical: 14),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                             ),
                                           ),
                                         ),
-                                      if (emp.upiId.isNotEmpty) const SizedBox(width: 8),
+                                      if (emp.upiId.isNotEmpty) const SizedBox(width: 10),
                                       Expanded(
                                         child: ElevatedButton.icon(
-                                          onPressed: () => _handlePayment(emp, 'Cash', setLocalState, (val) => setLocalState(() => isProcessing = val)),
-                                          icon: const Icon(Icons.money, color: Colors.white, size: 18),
-                                          label: Text('Pay via Cash', style: TextStyle(color: Colors.white)),
+                                          onPressed: () => _handlePayment(
+                                            emp,
+                                            'Cash',
+                                            setLocalState,
+                                            (val) => setLocalState(() => isProcessing = val),
+                                          ),
+                                          icon: const Icon(Icons.payments_outlined, size: 18),
+                                          label: const Text('Pay Cash'),
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.orange,
-                                            padding: const EdgeInsets.symmetric(vertical: 12),
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                                            backgroundColor: const Color(0xFFF59E0B),
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(vertical: 14),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                           ),
                                         ),
                                       ),
@@ -1054,64 +1249,101 @@ class EmployeePageState extends State<EmployeePage> {
                     ),
                   ),
 
+                  // Payment History List
                   if (emp.salaryPayments.isNotEmpty) ...[
                     const SizedBox(height: 24),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 24),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Align(
                         alignment: Alignment.centerLeft,
-                        child: Text("Payment History", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        child: Text(
+                          "Payment History",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: emp.salaryPayments.length,
                       itemBuilder: (ctx, i) {
                         final payment = emp.salaryPayments[i];
+                        final method = payment['payment_method']?.toString() ?? 'Cash';
+                        final isUPI = method == 'UPI';
+
                         return Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: isDark ? AppColors.darkCard : Colors.white,
                             borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.04),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
+                            border: Border.all(
+                              color: isDark ? AppColors.darkCardBorder : AppColors.border,
+                              width: 1,
+                            ),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              Row(
                                 children: [
-                                  Text(
-                                    '${payment['amount']} INR',
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF00B039)),
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      color: isUPI
+                                          ? AppColors.primary.withValues(alpha: 0.12)
+                                          : const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Icon(
+                                      isUPI ? Icons.qr_code_rounded : Icons.payments_outlined,
+                                      color: isUPI ? AppColors.primary : const Color(0xFFF59E0B),
+                                      size: 20,
+                                    ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    payment['paid_at'].toString().split('T')[0],
-                                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                                  const SizedBox(width: 12),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '₹${payment['amount']}',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 15,
+                                          color: Theme.of(context).colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        payment['paid_at'] != null
+                                            ? payment['paid_at'].toString().split('T')[0]
+                                            : '',
+                                        style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: payment['payment_method'] == 'UPI' ? const Color(0xFF5B3DF5).withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(12),
+                                  color: isUPI
+                                      ? AppColors.primary.withValues(alpha: 0.1)
+                                      : const Color(0xFFF59E0B).withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Text(
-                                  payment['payment_method'],
+                                  method,
                                   style: TextStyle(
-                                    color: payment['payment_method'] == 'UPI' ? const Color(0xFF5B3DF5) : Colors.orange,
-                                    fontWeight: FontWeight.bold,
+                                    color: isUPI ? AppColors.primary : const Color(0xFFF59E0B),
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 11,
                                   ),
                                 ),
                               ),
@@ -1126,12 +1358,78 @@ class EmployeePageState extends State<EmployeePage> {
             ),
           ),
         );
-      }
+      },
     );
   }
 
-  Future<void> _handlePayment(EmployeeModel emp, String method, StateSetter setLocalState, void Function(bool) setProcessing) async {
-    double amount = double.parse(emp.payableSalary);
+  // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+  Widget _buildAvatar(EmployeeModel emp, double size) {
+    final hasImage = emp.profilePicUrl != null && emp.profilePicUrl!.isNotEmpty;
+    final initials = emp.name.isNotEmpty
+        ? emp.name.trim().split(' ').map((w) => w.isNotEmpty ? w[0] : '').take(2).join().toUpperCase()
+        : 'E';
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: emp.avatarBgColor,
+        shape: BoxShape.circle,
+        image: hasImage
+            ? DecorationImage(
+                image: MemoryImage(base64Decode(emp.profilePicUrl!)),
+                fit: BoxFit.cover,
+              )
+            : null,
+      ),
+      child: !hasImage
+          ? Center(
+              child: Text(
+                initials,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: size * 0.38,
+                ),
+              ),
+            )
+          : null,
+    );
+  }
+
+  Widget _buildDetailRow(String key, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          key,
+          style: const TextStyle(
+            fontSize: 13,
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _handlePayment(
+    EmployeeModel emp,
+    String method,
+    StateSetter setLocalState,
+    void Function(bool) setProcessing,
+  ) async {
+    double amount = double.tryParse(emp.payableSalary) ?? 0;
 
     if (method == 'UPI') {
       final url = 'upi://pay?pa=${emp.upiId}&pn=${Uri.encodeComponent(emp.name)}&am=$amount&cu=INR';
@@ -1140,25 +1438,26 @@ class EmployeePageState extends State<EmployeePage> {
         await launchUrl(uri);
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No UPI app found on this device.')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No UPI app found on this device.')),
+          );
         }
       }
     }
 
     if (!mounted) return;
-    
-    // Show confirmation dialog before logging in DB
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text('Confirm $method Payment'),
-        content: Text('Did you successfully pay $amount INR to ${emp.name} via $method?'),
+        content: Text('Confirm salary payout of ₹$amount to ${emp.name} via $method?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true), 
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF5B3DF5)),
-            child: Text('Yes, Paid', style: TextStyle(color: Colors.white))
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+            child: const Text('Yes, Paid', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -1172,53 +1471,14 @@ class EmployeePageState extends State<EmployeePage> {
       if (res['success']) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payment logged successfully!')));
         await _fetchEmployees();
-        // find updated employee
-        final updated = _employees.firstWhere((e) => e.id == emp.id);
+        final updated = _employees.firstWhere((e) => e.id == emp.id, orElse: () => emp);
         setState(() {
           _selectedEmployee = updated;
-          _currentSubIndex = 2; // refresh details
+          _currentSubIndex = 2;
         });
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to log payment: ${res['error']}')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: ${res['error']}')));
       }
     }
-  }
-
-  Widget _buildDetailRow(
-    String key,
-    String value, {
-    Color? valueColor,
-    bool isBoldValue = false,
-    double fontSize = 13,
-  }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 5,
-          child: Text(
-            key,
-            style: TextStyle(
-              fontSize: 12.5,
-              color: Color(0xFF64748B),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-        Expanded(
-          flex: 5,
-          child: Text(
-            value,
-            textAlign: TextAlign.right,
-            style: TextStyle(
-              fontSize: fontSize,
-              fontWeight: isBoldValue ? FontWeight.bold : FontWeight.w600,
-              color: valueColor,
-            ),
-          ),
-        ),
-      ],
-    );
   }
 }

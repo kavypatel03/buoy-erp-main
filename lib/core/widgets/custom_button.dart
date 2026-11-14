@@ -21,6 +21,7 @@ class CustomButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     Color backgroundColor;
     Color textColor;
     List<BoxShadow>? shadow;
@@ -31,18 +32,18 @@ class CustomButton extends StatelessWidget {
         textColor = Colors.white;
         shadow = [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.35),
+            color: AppColors.primary.withValues(alpha: isDark ? 0.45 : 0.35),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
         ];
         break;
       case CustomButtonVariant.secondary:
-        backgroundColor = const Color(0xFFF5F5F7);
-        textColor = AppColors.primary;
+        backgroundColor = isDark ? AppColors.darkCard : const Color(0xFFF5F5F7);
+        textColor = isDark ? AppColors.primaryLight : AppColors.primary;
         shadow = [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -50,14 +51,14 @@ class CustomButton extends StatelessWidget {
         break;
       case CustomButtonVariant.outline:
         backgroundColor = Colors.transparent;
-        textColor = AppColors.primary;
+        textColor = isDark ? AppColors.primaryLight : AppColors.primary;
         shadow = null;
         break;
     }
 
     if (onPressed == null) {
-      backgroundColor = const Color(0xFFE2E8F0);
-      textColor = const Color(0xFF94A3B8);
+      backgroundColor = isDark ? AppColors.darkCardBorder : const Color(0xFFE2E8F0);
+      textColor = isDark ? AppColors.darkTextMuted : const Color(0xFF94A3B8);
       shadow = null;
     }
 

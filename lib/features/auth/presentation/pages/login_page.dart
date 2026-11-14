@@ -71,11 +71,13 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
+          physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
           child: Form(
             key: _formKey,
@@ -89,11 +91,15 @@ class _LoginPageState extends State<LoginPage> {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: isDark ? AppColors.darkCard : Colors.white,
                       shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isDark ? AppColors.darkCardBorder : AppColors.border,
+                        width: 1,
+                      ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.06),
+                          color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.06),
                           blurRadius: 14,
                           offset: const Offset(0, 4),
                         ),
@@ -259,11 +265,15 @@ class _LoginPageState extends State<LoginPage> {
                     width: 58,
                     height: 58,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: isDark ? AppColors.darkCard : Colors.white,
                       shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isDark ? AppColors.darkCardBorder : AppColors.border,
+                        width: 1,
+                      ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
+                          color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.08),
                           blurRadius: 18,
                           offset: const Offset(0, 4),
                         ),

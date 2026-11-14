@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../app/constants/app_assets.dart';
-import '../../../../app/constants/app_colors.dart';
 import '../../../../core/widgets/erp_header_bar.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/services/profile_service.dart';
@@ -129,6 +128,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
@@ -154,22 +154,22 @@ class _DashboardPageState extends State<DashboardPage> {
                 child: PageView(
                   controller: _pageController,
                   onPageChanged: (index) => _currentCarouselIndex.value = index,
-                  children: const [
+                  children: [
                     _CarouselCard(
                       title: 'Warehouse Control',
                       subtitle: 'Manage stock transfers & bin locations.',
                       buttonText: 'Explore',
-                      bgColor: Color(0xFFFFFBEB),
-                      iconBg: Color(0xFFF59E0B),
+                      bgColor: isDark ? const Color(0xFF1A1500) : const Color(0xFFFFFBEB),
+                      iconBg: const Color(0xFFF59E0B),
                       icon: Icons.warehouse_rounded,
                     ),
-                    _SmartInventoryCard(),
+                    const _SmartInventoryCard(),
                     _CarouselCard(
                       title: 'Real-time Reports',
                       subtitle: 'Get insights to make smarter decisions.',
                       buttonText: 'Get Started',
-                      bgColor: Color(0xFFF0FDF4),
-                      iconBg: Color(0xFF10B981),
+                      bgColor: isDark ? const Color(0xFF001A0A) : const Color(0xFFF0FDF4),
+                      iconBg: const Color(0xFF10B981),
                       icon: Icons.bar_chart_rounded,
                     ),
                   ],
@@ -192,7 +192,9 @@ class _DashboardPageState extends State<DashboardPage> {
                         width: isActive ? 16 : 6,
                         height: 6,
                         decoration: BoxDecoration(
-                          color: isActive ? const Color(0xFF5B3DF5) : const Color(0xFFCBD5E1),
+                          color: isActive
+                              ? const Color(0xFF5B3DF5)
+                              : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       );
@@ -414,13 +416,17 @@ class _SmartInventoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F3FF),
+        color: isDark ? const Color(0xFF1A1030) : const Color(0xFFF5F3FF),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFDDD6FE), width: 1),
+        border: Border.all(
+          color: isDark ? const Color(0xFF3D2080) : const Color(0xFFDDD6FE),
+          width: 1,
+        ),
       ),
       child: Row(
         children: [

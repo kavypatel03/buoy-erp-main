@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../../../../app/constants/app_colors.dart';
 import '../../../../core/widgets/erp_header_bar.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/services/notification_service.dart';
@@ -31,7 +33,7 @@ class _NotificationPageState extends State<NotificationPage> {
         _notifications = result['data'] ?? [];
         _isLoading = false;
       });
-      // Mark all as read optionally here
+      // Mark all as read
       for (var n in _notifications) {
         if (n['is_read'] == false) {
           NotificationService.markAsRead(n['id']);
@@ -46,12 +48,30 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 
   Future<void> _clearAllNotifications() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Clear All Notifications?'),
+        content: const Text('This will remove all current notifications.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Clear All', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
     final result = await NotificationService.clearAll();
     if (result['success']) {
-      setState(() {
-        _notifications.clear();
-      });
+      HapticFeedback.lightImpact();
+      setState(() => _notifications.clear());
     } else {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result['error'] ?? 'Failed to clear notifications')),
       );
@@ -61,10 +81,12 @@ class _NotificationPageState extends State<NotificationPage> {
   Future<void> _deleteNotification(String id) async {
     final result = await NotificationService.deleteNotification(id);
     if (result['success']) {
+      HapticFeedback.lightImpact();
       setState(() {
         _notifications.removeWhere((n) => n['id'] == id);
       });
     } else {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result['error'] ?? 'Failed to delete notification')),
       );
@@ -80,73 +102,110 @@ class _NotificationPageState extends State<NotificationPage> {
         body: SafeArea(
           child: Column(
             children: [
-              // Top Header Bar with Back Arrow Tap
               ErpHeaderBar(
-                title: 'Notification',
+                title: 'Notifications',
                 isNotificationActive: true,
                 onBackTap: () => Navigator.pop(context),
-              ),
-
-              if (!_isLoading && _notifications.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton.icon(
-                      onPressed: _clearAllNotifications,
-                      icon: const Icon(Icons.clear_all_rounded, size: 18, color: Color(0xFFFF334B)),
-                      label: Text(
-                        'Clear All',
-                        style: TextStyle(
-                          color: Color(0xFFFF334B),
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
+                trailing: _notifications.isNotEmpty
+                    ? TextButton.icon(
+                        onPressed: _clearAllNotifications,
+                        icon: const Icon(Icons.clear_all_rounded, size: 18, color: AppColors.error),
+                        label: const Text(
+                          'Clear',
+                          style: TextStyle(
+                            color: AppColors.error,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12.5,
+                          ),
                         ),
-                      ),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        backgroundColor: const Color(0x1FFF334B),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      ),
-                    ),
-                  ),
-                ),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          backgroundColor: AppColors.error.withValues(alpha: 0.1),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                      )
+                    : null,
+              ),
 
               const SizedBox(height: 8),
 
-            // Notification List Content
               Expanded(
-                child: _isLoading 
-                  ? const Center(child: CircularProgressIndicator(color: Color(0xFF5B3DF5)))
-                  : _error.isNotEmpty 
-                  ? Center(child: Text(_error, style: TextStyle(color: Colors.red)))
-                  : _notifications.isEmpty 
-                  ? const Center(child: Text('No notifications yet', style: TextStyle(color: Colors.grey)))
-                  : ListView.builder(
-                      physics: const ClampingScrollPhysics(),
-                      padding: const EdgeInsets.only(bottom: 40.0, left: 20, right: 20),
-                      itemCount: _notifications.length,
-                      itemBuilder: (context, index) {
-                        final notif = _notifications[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12.0),
-                          child: GlassContainer(
-                            useGradientBorder: true,
-                            borderRadius: 16,
-                            padding: const EdgeInsets.all(18),
-                            child: _buildNotificationItem(
-                              id: notif['id'],
-                              title: notif['title'] ?? 'Notification',
-                              message: notif['message'] ?? '',
-                              isRead: notif['is_read'] ?? true,
-                              date: notif['created_at'],
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                    : _error.isNotEmpty
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24.0),
+                              child: Text(_error, style: const TextStyle(color: AppColors.error)),
                             ),
-                          ),
-                        );
-                      },
-                    ),
+                          )
+                        : _notifications.isEmpty
+                            ? Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(40.0),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        width: 72,
+                                        height: 72,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary.withValues(alpha: 0.08),
+                                          borderRadius: BorderRadius.circular(22),
+                                        ),
+                                        child: const Icon(
+                                          Icons.notifications_none_rounded,
+                                          color: AppColors.primary,
+                                          size: 36,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'All caught up!',
+                                        style: TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w700,
+                                          color: Theme.of(context).colorScheme.onSurface,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      const Text(
+                                        'You have no unread notifications or alerts.',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            : RefreshIndicator(
+                                color: AppColors.primary,
+                                onRefresh: _fetchNotifications,
+                                child: ListView.builder(
+                                  physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 80),
+                                  itemCount: _notifications.length,
+                                  itemBuilder: (context, index) {
+                                    final notif = _notifications[index];
+                                    return RepaintBoundary(
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(bottom: 12.0),
+                                        child: GlassContainer(
+                                          borderRadius: 18,
+                                          padding: const EdgeInsets.all(16),
+                                          child: _buildNotificationItem(
+                                            id: notif['id'],
+                                            title: notif['title'] ?? 'Notification',
+                                            message: notif['message'] ?? '',
+                                            isRead: notif['is_read'] ?? true,
+                                            date: notif['created_at'],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
               ),
             ],
           ),
@@ -166,7 +225,7 @@ class _NotificationPageState extends State<NotificationPage> {
     if (date != null) {
       try {
         final dt = DateTime.parse(date).toLocal();
-        formattedDate = DateFormat('MMM dd, hh:mm a').format(dt);
+        formattedDate = DateFormat('MMM dd · hh:mm a').format(dt);
       } catch (e) {
         formattedDate = '';
       }
@@ -181,7 +240,7 @@ class _NotificationPageState extends State<NotificationPage> {
           margin: const EdgeInsets.only(top: 6, right: 12),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: isRead ? Colors.transparent : const Color(0xFF5B3DF5),
+            color: isRead ? Colors.transparent : AppColors.primary,
           ),
         ),
         Expanded(
@@ -191,27 +250,29 @@ class _NotificationPageState extends State<NotificationPage> {
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: isRead ? FontWeight.w600 : FontWeight.bold,
+                  fontSize: 14.5,
+                  fontWeight: isRead ? FontWeight.w600 : FontWeight.w700,
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 message,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 13,
-                  color: Color(0xFF64748B),
+                  color: AppColors.textSecondary,
+                  height: 1.35,
                 ),
               ),
               if (formattedDate.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
+                  padding: const EdgeInsets.only(top: 6.0),
                   child: Text(
                     formattedDate,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Color(0xFF94A3B8),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textMuted,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
@@ -223,14 +284,14 @@ class _NotificationPageState extends State<NotificationPage> {
           onTap: () => _deleteNotification(id),
           child: Container(
             padding: const EdgeInsets.all(6),
-            decoration: const BoxDecoration(
-              color: Color(0x1FFF334B),
+            decoration: BoxDecoration(
+              color: AppColors.error.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.close_rounded,
               size: 14,
-              color: Color(0xFFFF334B),
+              color: AppColors.error,
             ),
           ),
         ),
@@ -238,5 +299,3 @@ class _NotificationPageState extends State<NotificationPage> {
     );
   }
 }
-
-
