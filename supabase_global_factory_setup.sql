@@ -47,3 +47,4 @@ CREATE POLICY "Global factory access for notifications" ON public.notifications 
 SELECT schemaname, tablename, rowsecurity 
 FROM pg_tables 
 WHERE tablename IN ('items', 'employees', 'attendance', 'salary_payments', 'production_orders', 'production_logs', 'notifications');
+

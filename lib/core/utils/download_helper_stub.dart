@@ -6,3 +6,4 @@ void downloadFileFromUrl(String url, {String? filename}) async {
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 }
+

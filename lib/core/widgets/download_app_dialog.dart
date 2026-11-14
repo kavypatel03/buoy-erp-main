@@ -220,3 +220,4 @@ class DownloadAppDialog extends StatelessWidget {
     );
   }
 }
+
