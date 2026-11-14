@@ -8,10 +8,29 @@ const supabaseAdmin = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
+// Helper to get client (prefers service role key, otherwise authenticated user JWT)
+const getClient = (req) => {
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY) {
+    return supabaseAdmin;
+  }
+  if (req && req.token) {
+    return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_PUBLISHABLE_KEY, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${req.token}`
+        }
+      },
+      auth: { persistSession: false }
+    });
+  }
+  return supabaseAdmin;
+};
+
 // Get all items
 const getItems = async (req, res) => {
   try {
-    const { data, error } = await supabaseAdmin
+    const client = getClient(req);
+    const { data, error } = await client
       .from('items')
       .select('*');
 
@@ -26,7 +45,8 @@ const getItems = async (req, res) => {
 const getItemById = async (req, res) => {
   try {
     const { id } = req.params;
-    const { data, error } = await supabaseAdmin
+    const client = getClient(req);
+    const { data, error } = await client
       .from('items')
       .select('*')
       .eq('id', id)
@@ -76,7 +96,8 @@ const createItem = async (req, res) => {
       delete newItem.image_base64; // Don't insert base64 into the DB
     }
 
-    const { data, error } = await supabaseAdmin
+    const client = getClient(req);
+    const { data, error } = await client
       .from('items')
       .insert([newItem])
       .select();
@@ -94,7 +115,8 @@ const updateItem = async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
     
-    const { data, error } = await supabaseAdmin
+    const client = getClient(req);
+    const { data, error } = await client
       .from('items')
       .update(updates)
       .eq('id', id)
@@ -112,7 +134,8 @@ const deleteItem = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const { data, error } = await supabaseAdmin
+    const client = getClient(req);
+    const { data, error } = await client
       .from('items')
       .delete()
       .eq('id', id)
