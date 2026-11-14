@@ -170,14 +170,6 @@ class EmployeePageState extends State<EmployeePage> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: goToAddNewEmployee,
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 4,
-        icon: const Icon(Icons.person_add_alt_1_rounded),
-        label: const Text('Add Employee', style: TextStyle(fontWeight: FontWeight.w700)),
-      ),
       body: SafeArea(
         child: Column(
           children: [

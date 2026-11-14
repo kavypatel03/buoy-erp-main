@@ -167,63 +167,6 @@ class _MainShellScreenState extends State<MainShellScreen> {
                 ],
               ),
 
-              // + FAB button above the Settings nav icon — visible only on Inventory/Employee list screens
-              if ((_currentIndex == 1 && _inventoryKey.currentState?.hasSubScreen != true) ||
-                  (_currentIndex == 2 && _employeeKey.currentState?.hasSubScreen != true))
-                Positioned(
-                  right: 28,
-                  bottom: 95,
-                  child: GestureDetector(
-                    onTap: () {
-                      if (_currentIndex == 1) {
-                        _inventoryKey.currentState?.goToAddNewItem();
-                      } else if (_currentIndex == 2) {
-                        _employeeKey.currentState?.goToAddNewEmployee();
-                      }
-                      setState(() {}); // refresh to hide FAB after navigating
-                    },
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(18),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                        child: Container(
-                          width: 52,
-                          height: 52,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.85),
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.8),
-                              width: 1.5,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF5B3DF5).withValues(alpha: 0.15),
-                                blurRadius: 18,
-                                spreadRadius: 2,
-                                offset: const Offset(0, 6),
-                              ),
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.06),
-                                blurRadius: 12,
-                                spreadRadius: 0,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Center(
-                            child: Icon(
-                              Icons.add_rounded,
-                              color: Color(0xFF5B3DF5),
-                              size: 30,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
               // Persistent Floating Bottom Navigation Bar
               Align(
                 alignment: Alignment.bottomCenter,

@@ -170,14 +170,6 @@ class LowStocksPageState extends State<LowStocksPage> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: goToAddNewItem,
-        backgroundColor: const Color(0xFF5B3DF5),
-        foregroundColor: Colors.white,
-        elevation: 4,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Item', style: TextStyle(fontWeight: FontWeight.w700)),
-      ),
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
@@ -190,9 +182,10 @@ class LowStocksPageState extends State<LowStocksPage> {
                   GestureDetector(
                     onTap: goToAddNewItem,
                     child: Container(
-                      width: 40, height: 40,
+                      width: 40,
+                      height: 40,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF5B3DF5),
+                        color: AppColors.primary,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(Icons.add_rounded, color: Colors.white, size: 22),
@@ -837,7 +830,9 @@ class LowStocksPageState extends State<LowStocksPage> {
                         style: TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF64748B),
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.darkTextSecondary
+                              : const Color(0xFF64748B),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -1045,21 +1040,51 @@ class LowStocksPageState extends State<LowStocksPage> {
           borderRadius: borderRadius,
           clipBehavior: Clip.antiAlias,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+              color: isDark ? AppColors.darkCard : const Color(0xFFF8FAFC),
               borderRadius: borderRadius,
               border: Border.all(
-                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                color: isDark ? AppColors.darkCardBorder : const Color(0xFFE2E8F0),
                 width: 1.2,
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.02),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 isExpanded: true,
                 value: value,
-                dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF94A3B8)),
+                dropdownColor: isDark ? AppColors.darkCard : Colors.white,
+                icon: Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: isDark ? AppColors.darkTextSecondary : const Color(0xFF94A3B8),
+                ),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                selectedItemBuilder: (BuildContext context) {
+                  return items.map<Widget>((String val) {
+                    return Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        val,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    );
+                  }).toList();
+                },
                 items: items.map((String val) {
                   return DropdownMenuItem<String>(
                     value: val,
