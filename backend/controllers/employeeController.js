@@ -8,16 +8,13 @@ const supabaseAdmin = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
-// Get all employees for the current user
+// Get all employees for the factory (accessible by all factory users globally)
 exports.getEmployees = async (req, res) => {
   try {
-    const userId = req.user.id;
-
-    // Fetch employees, their attendance, and their salary_payments in a single optimized query
+    // Fetch all factory employees, their attendance, and their salary_payments in a single optimized query
     const { data: employees, error: empError } = await supabaseAdmin
       .from('employees')
       .select('*, attendance(*), salary_payments(*)')
-      .eq('owner_id', userId)
       .order('created_at', { ascending: false });
 
     if (empError) throw empError;

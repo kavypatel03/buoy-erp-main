@@ -8,12 +8,10 @@ const supabaseAdmin = createClient(
 
 // GET /api/dashboard/summary
 // Returns: total inventory items, low stock count, active production orders,
-//          active process logs (today), employees clocked in
+//          active process logs (today), employees clocked in (global factory view)
 exports.getSummary = async (req, res) => {
   try {
-    const userId = req.user.id;
-
-    // Run all queries in parallel for speed
+    // Run all queries in parallel for speed across the shared factory data
     const [
       itemsResult,
       ordersResult,
@@ -21,36 +19,32 @@ exports.getSummary = async (req, res) => {
       employeesResult,
       clockedInResult,
     ] = await Promise.all([
-      // Total inventory items (items table has no owner_id)
+      // Total inventory items
       supabaseAdmin
         .from('items')
         .select('id', { count: 'exact', head: true }),
 
-      // Active production orders
+      // Active production orders (global factory)
       supabaseAdmin
         .from('production_orders')
         .select('id', { count: 'exact', head: true })
-        .eq('owner_id', userId)
         .eq('status', 'In Progress'),
 
-      // Process logs today
+      // Process logs today (global factory)
       supabaseAdmin
         .from('production_logs')
         .select('id', { count: 'exact', head: true })
-        .eq('owner_id', userId)
         .gte('created_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString()),
 
-      // Total employees
+      // Total employees (global factory)
       supabaseAdmin
         .from('employees')
-        .select('id', { count: 'exact', head: true })
-        .eq('owner_id', userId),
+        .select('id', { count: 'exact', head: true }),
 
-      // Employees currently clocked in (must belong to this user)
+      // Employees currently clocked in (global factory)
       supabaseAdmin
         .from('attendance')
-        .select('id, employees!inner(owner_id)', { count: 'exact', head: true })
-        .eq('employees.owner_id', userId)
+        .select('id', { count: 'exact', head: true })
         .is('clock_out', null),
     ]);
 

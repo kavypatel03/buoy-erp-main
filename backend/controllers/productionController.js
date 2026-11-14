@@ -7,16 +7,13 @@ const supabaseAdmin = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
-// 1. Get all production orders for the current user
+// 1. Get all production orders for the factory (shared globally across users)
 exports.getOrders = async (req, res) => {
   try {
-    const userId = req.user.id;
-
     // Fetch orders and their associated logs
     const { data: orders, error } = await supabaseAdmin
       .from('production_orders')
       .select('*, production_logs(*)')
-      .eq('owner_id', userId)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -125,14 +122,12 @@ exports.addProcessLog = async (req, res) => {
 // 5. Get Wastage Report
 exports.getWastageReport = async (req, res) => {
   try {
-    const userId = req.user.id;
     // Optional filters: start_date, end_date
     const { start_date, end_date } = req.query;
 
     let query = supabaseAdmin
       .from('production_logs')
-      .select('process_name, input_qty, output_qty, wastage_qty, created_at, items(name)')
-      .eq('owner_id', userId)
+      .select('process_name, input_qty, output_qty, wastage_qty, created_at, items(title)')
       .order('created_at', { ascending: false });
 
     if (start_date) query = query.gte('created_at', start_date);

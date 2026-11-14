@@ -15,7 +15,7 @@ exports.getNotifications = async (req, res) => {
     const { data, error } = await supabaseAdmin
       .from('notifications')
       .select('*')
-      .eq('user_id', req.user.id)
+      .or(`user_id.eq.${req.user.id},user_id.is.null`)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
