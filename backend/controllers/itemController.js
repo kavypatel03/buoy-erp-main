@@ -27,11 +27,15 @@ const getClient = (req) => {
   // Best option: service role bypasses RLS
   if (supabaseAdmin) return supabaseAdmin;
 
+  // Extract auth token from req.token or Authorization header
+  const authHeader = req?.headers?.authorization;
+  const token = req?.token || (authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null);
+
   // Second option: authenticated user client using their JWT
-  if (req && req.token && ANON_KEY) {
+  if (token && ANON_KEY) {
     return createClient(SUPABASE_URL, ANON_KEY, {
       global: {
-        headers: { Authorization: `Bearer ${req.token}` }
+        headers: { Authorization: `Bearer ${token}` }
       },
       auth: { persistSession: false, autoRefreshToken: false }
     });
@@ -112,18 +116,36 @@ const createItem = async (req, res) => {
       delete newItem.image_base64;
     }
 
-    // Attach user_id from the authenticated user so RLS owner policies pass
-    if (req.user && req.user.id && !newItem.user_id) {
-      newItem.user_id = req.user.id;
+    // Attach user identifiers so RLS owner policies pass
+    const userId = req.user?.id;
+    if (userId) {
+      if (!newItem.owner_id) newItem.owner_id = userId;
+      if (!newItem.user_id) newItem.user_id = userId;
     }
 
-    const { data, error } = await getClient(req)
+    let result = await getClient(req)
       .from('items')
       .insert([newItem])
       .select();
 
-    if (error) throw error;
-    res.status(201).json(data[0]);
+    // If table doesn't have owner_id or user_id columns, strip and retry
+    if (result.error && result.error.message && result.error.message.includes('does not exist')) {
+      const match = result.error.message.match(/column "([^"]+)" of relation/);
+      if (match && match[1]) {
+        delete newItem[match[1]];
+        result = await getClient(req).from('items').insert([newItem]).select();
+      }
+      if (result.error && result.error.message && result.error.message.includes('does not exist')) {
+        const match2 = result.error.message.match(/column "([^"]+)" of relation/);
+        if (match2 && match2[1]) {
+          delete newItem[match2[1]];
+          result = await getClient(req).from('items').insert([newItem]).select();
+        }
+      }
+    }
+
+    if (result.error) throw result.error;
+    res.status(201).json(result.data[0]);
   } catch (error) {
     console.error('createItem error:', error.message);
     res.status(500).json({ error: error.message });
