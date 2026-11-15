@@ -6,8 +6,8 @@ class AppConstants {
   static const String copyright = '© 2026 Buoy';
 
   // Auto-incremented release version & build info
-  static const String appVersion = '1.0.1';
-  static const int buildNumber = 2;
+  static const String appVersion = '1.0.2';
+  static const int buildNumber = 3;
   static const String buildDate = 'Nov 15, 2026';
   static String get fullVersionString => 'v$appVersion (Build $buildNumber)';
 }

@@ -49,16 +49,17 @@ jobs:
       - name: Build Release APK
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx3584m -XX:MaxMetaspaceSize=1024m'"
-        run: |
-          set -o pipefail
-          flutter build apk --release --no-tree-shake-icons --android-skip-build-dependency-validation 2>&1 | tee build_log.txt || {
-            echo "### ❌ Build Failure Log" >> $GITHUB_STEP_SUMMARY
-            echo '```text' >> $GITHUB_STEP_SUMMARY
-            grep -A 30 -B 5 "What went wrong:" build_log.txt >> $GITHUB_STEP_SUMMARY 2>&1 || true
-            tail -n 80 build_log.txt >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            exit 1
-          }
+        run: flutter build apk --release --no-tree-shake-icons --android-skip-build-dependency-validation -v
+
+      - name: Upload Failure Logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-build-failure-reports
+          path: |
+            android/build/reports/
+            build/app/outputs/logs/
+          if-no-files-found: ignore
 
       - name: Rename Release APK
         run: |
