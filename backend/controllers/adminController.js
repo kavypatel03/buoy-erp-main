@@ -1,6 +1,7 @@
 const supabaseConfig = require('../config/supabase');
 const { createClient } = require('@supabase/supabase-js');
 const admin = require('firebase-admin');
+const pushNotificationService = require('../services/pushNotificationService');
 
 // Create admin client bypassing RLS using SERVICE_ROLE_KEY if available
 const supabaseAdmin = createClient(
@@ -167,6 +168,14 @@ exports.getDashboard = async (req, res) => {
       if (verRow?.value) apkVersion = verRow.value;
     }
 
+    // Extract Push Notification stats
+    let pushStats = { isConfigured: false, totalDevices: 0, activeUsersWithDevices: 0, tableExists: false };
+    try {
+      pushStats = await pushNotificationService.getPushStats();
+    } catch (e) {
+      console.warn('Failed to fetch pushStats:', e.message);
+    }
+
     const successMsg = req.query.success || null;
     const errorMsg = req.query.error || null;
 
@@ -177,6 +186,7 @@ exports.getDashboard = async (req, res) => {
       stats,
       apkDownloadUrl,
       apkVersion,
+      pushStats,
       success: successMsg,
       error: errorMsg
     });
@@ -189,6 +199,7 @@ exports.getDashboard = async (req, res) => {
       stats: { items: 0, employees: 0, orders: 0, logs: 0 },
       apkDownloadUrl: 'https://github.com/kavypatel03/buoy-erp-main/releases/latest/download/buoy-erp.apk',
       apkVersion: '1.0.0',
+      pushStats: { isConfigured: false, totalDevices: 0, activeUsersWithDevices: 0, tableExists: false },
       success: null,
       error: err.message
     });
@@ -288,9 +299,21 @@ exports.sendNotification = async (req, res) => {
     const { error: insertErr } = await supabaseAdmin.from('notifications').insert(notifications);
     if (insertErr) throw insertErr;
 
-    const countMsg = audience === 'all' || targetUserId === 'all'
+    // Send real-time FCM background push notification (displays on locked phones & terminated app)
+    const pushResult = await pushNotificationService.sendPushNotification({
+      userIds: (audience === 'all' || targetUserId === 'all') ? 'all' : userIds,
+      title: title.trim(),
+      body: message.trim()
+    });
+
+    let countMsg = audience === 'all' || targetUserId === 'all'
       ? 'Broadcast+sent+to+all+operators'
       : `Notification+sent+to+${userIds.length}+selected+user(s)`;
+
+    if (pushResult.sent) {
+      countMsg += `+(Pushed+to+${pushResult.successCount}+device(s))`;
+    }
+
     res.redirect(`/admin?success=${countMsg}`);
   } catch (err) {
     res.redirect('/admin?error=' + encodeURIComponent(err.message));
@@ -456,6 +479,37 @@ exports.updateApkSettings = async (req, res) => {
     }
 
     res.redirect('/admin?success=Release+APK+download+URL+updated+successfully');
+  } catch (err) {
+    res.redirect('/admin?error=' + encodeURIComponent(err.message));
+  }
+};
+
+exports.saveFirebaseCredentials = async (req, res) => {
+  try {
+    const { serviceAccountJson } = req.body;
+    if (!serviceAccountJson || serviceAccountJson.trim().length === 0) {
+      throw new Error('Please paste your Firebase Service Account JSON');
+    }
+    await pushNotificationService.saveCredentials(serviceAccountJson);
+    res.redirect('/admin?success=Firebase+Cloud+Messaging+credentials+saved+and+connected+successfully!');
+  } catch (err) {
+    res.redirect('/admin?error=' + encodeURIComponent(err.message));
+  }
+};
+
+exports.testPushNotification = async (req, res) => {
+  try {
+    const result = await pushNotificationService.sendPushNotification({
+      userIds: 'all',
+      title: '🔔 Buoy ERP Test Push',
+      body: 'Success! Push notifications are working on your device even with the app closed.'
+    });
+
+    if (result.sent) {
+      res.redirect(`/admin?success=Test+push+sent+to+${result.totalDevices}+device(s)+(${result.successCount}+delivered+successfully)`);
+    } else {
+      res.redirect('/admin?error=' + encodeURIComponent(result.reason || result.error || 'Test push could not be delivered'));
+    }
   } catch (err) {
     res.redirect('/admin?error=' + encodeURIComponent(err.message));
   }

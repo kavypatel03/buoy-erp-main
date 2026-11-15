@@ -79,17 +79,46 @@ const getRegistrationStatus = async (req, res) => {
 
 const updateFcmToken = async (req, res) => {
   try {
-    const { fcmToken } = req.body;
-    const userId = req.user.id;
+    const { fcmToken, deviceType } = req.body;
+    const userId = req.user?.id;
     
-    const { error } = await supabase
+    if (!fcmToken || typeof fcmToken !== 'string' || fcmToken.trim().length === 0) {
+      return res.status(400).json({ error: 'Valid fcmToken is required' });
+    }
+
+    if (!userId) {
+      return res.status(401).json({ error: 'User unauthorized' });
+    }
+
+    // Upsert into user_fcm_tokens (supports multiple devices per user or token updates)
+    const { error } = await supabaseAdmin
       .from('user_fcm_tokens')
-      .upsert({ user_id: userId, token: fcmToken }, { onConflict: 'user_id' });
+      .upsert({
+        user_id: userId,
+        token: fcmToken.trim(),
+        device_type: deviceType || 'android',
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'token' });
       
-    if (error) throw error;
-    res.status(200).json({ message: 'Token updated' });
+    if (error) {
+      // If schema uses onConflict user_id, retry
+      const { error: err2 } = await supabaseAdmin
+        .from('user_fcm_tokens')
+        .upsert({
+          user_id: userId,
+          token: fcmToken.trim(),
+          device_type: deviceType || 'android',
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+      if (err2) {
+        console.warn('user_fcm_tokens notice:', err2.message);
+      }
+    }
+    
+    res.status(200).json({ success: true, message: 'FCM device token registered' });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error('updateFcmToken error:', error);
+    res.status(500).json({ error: error.message });
   }
 };
 

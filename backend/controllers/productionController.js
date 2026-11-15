@@ -1,4 +1,5 @@
 const { getClient, supabaseAdmin } = require('../config/supabase');
+const pushNotificationService = require('../services/pushNotificationService');
 
 // Default Pre-defined Factory Products & Step Recipes (used as immediate fallback if DB tables not seeded yet)
 const DEFAULT_PRODUCTS = [
@@ -270,12 +271,22 @@ exports.addProcessLog = async (req, res) => {
           .single();
 
         if (itemData && parseFloat(itemData.stock_quantity || 0) <= parseFloat(itemData.min_quantity || 0)) {
+          const alertTitle = '⚠️ Low Stock Alert';
+          const alertBody = `Stock for ${itemData.title} has fallen to ${itemData.stock_quantity} (Minimum: ${itemData.min_quantity}). Please restock!`;
+
           await getClient(req).from('notifications').insert([{
             user_id: userId,
-            title: 'Low Stock Alert',
-            message: `Stock for ${itemData.title} has fallen to ${itemData.stock_quantity} (Minimum: ${itemData.min_quantity}). Please restock!`,
+            title: alertTitle,
+            message: alertBody,
             is_read: false
           }]);
+
+          // Push to device immediately
+          pushNotificationService.sendPushNotification({
+            userIds: userId,
+            title: alertTitle,
+            body: alertBody
+          }).catch(err => console.warn('Push alert error:', err.message));
         }
       } catch (e) {
         console.warn('Low stock check ignored:', e.message);

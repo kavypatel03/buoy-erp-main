@@ -7,6 +7,7 @@ import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/services/profile_service.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/services/local_notification_service.dart';
+import '../../../../core/services/firebase_messaging_service.dart';
 import '../../../../core/services/dashboard_service.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -62,6 +63,7 @@ class _DashboardPageState extends State<DashboardPage> {
     });
 
     LocalNotificationService.requestPermission();
+    FirebaseMessagingService.syncToken();
 
     // Notification polling every 15s
     _notificationPollTimer = Timer.periodic(const Duration(seconds: 15), (_) {

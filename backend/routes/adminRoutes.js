@@ -27,6 +27,10 @@ router.post('/production/delete-product', requireAdmin, adminController.deletePr
 // Factory Master Reset & Clean Wipe
 router.post('/master-wipe', requireAdmin, adminController.masterWipe);
 
+// Push Notifications & FCM Configuration
+router.post('/save-firebase-credentials', requireAdmin, adminController.saveFirebaseCredentials);
+router.post('/test-push-notification', requireAdmin, adminController.testPushNotification);
+
 // Release APK & OTA Manager
 router.post('/update-apk-settings', requireAdmin, adminController.updateApkSettings);
 

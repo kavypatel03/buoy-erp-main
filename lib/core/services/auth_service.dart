@@ -22,7 +22,21 @@ class AuthService {
       if (response.statusCode == 200) {
         final prefs = await SharedPreferences.getInstance();
         if (data['session'] != null) {
-          await prefs.setString('token', data['session']['access_token']);
+          final accessToken = data['session']['access_token'];
+          await prefs.setString('token', accessToken);
+          
+          // Auto-sync cached FCM token immediately upon login
+          final cachedFcm = prefs.getString('fcm_token') ?? prefs.getString('pending_fcm_token');
+          if (cachedFcm != null && cachedFcm.isNotEmpty) {
+            http.post(
+              Uri.parse('$baseUrl/fcm-token'),
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer $accessToken',
+              },
+              body: jsonEncode({'fcmToken': cachedFcm, 'deviceType': 'android'}),
+            ).catchError((_) => http.Response('', 500));
+          }
         }
         return {'success': true, 'data': data};
       } else {
@@ -78,8 +92,12 @@ class AuthService {
   static Future<void> updateFcmToken(String token) async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('fcm_token', token);
       final userToken = prefs.getString('token');
-      if (userToken == null) return;
+      if (userToken == null) {
+        await prefs.setString('pending_fcm_token', token);
+        return;
+      }
 
       await http.post(
         Uri.parse('$baseUrl/fcm-token'),
@@ -87,7 +105,7 @@ class AuthService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $userToken',
         },
-        body: jsonEncode({'fcmToken': token}),
+        body: jsonEncode({'fcmToken': token, 'deviceType': 'android'}),
       );
     } catch (e) {
       print('Failed to update FCM token: $e');

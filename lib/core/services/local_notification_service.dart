@@ -7,6 +7,15 @@ class LocalNotificationService {
       
   static bool _initialized = false;
 
+  static const AndroidNotificationChannel defaultChannel = AndroidNotificationChannel(
+    'buoy_erp_notifications',
+    'Buoy ERP Notifications',
+    description: 'Notifications and operational alerts from Buoy ERP Admin',
+    importance: Importance.max,
+    playSound: true,
+    enableVibration: true,
+  );
+
   static Future<void> initialize() async {
     if (_initialized) return;
 
@@ -26,6 +35,14 @@ class LocalNotificationService {
       );
 
       await _notificationsPlugin.initialize(settings: initializationSettings);
+
+      // Create Android Notification Channel explicitly for background/lockscreen alerts
+      final androidPlatform = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      if (androidPlatform != null) {
+        await androidPlatform.createNotificationChannel(defaultChannel);
+      }
+
       _initialized = true;
     } catch (e, stack) {
       print("LocalNotificationService initialize error: $e");
@@ -46,13 +63,21 @@ class LocalNotificationService {
     required String body,
   }) async {
     print("🔔 Sending notification request to OS: $title");
+    
+    // Ensure initialized
+    if (!_initialized) {
+      await initialize();
+    }
+
     const androidDetails = AndroidNotificationDetails(
       'buoy_erp_notifications',
       'Buoy ERP Notifications',
-      channelDescription: 'Notifications from Buoy ERP Admin',
+      channelDescription: 'Notifications and operational alerts from Buoy ERP Admin',
       importance: Importance.max,
       priority: Priority.high,
       icon: '@mipmap/launcher_icon',
+      playSound: true,
+      enableVibration: true,
     );
     
     const iosDetails = DarwinNotificationDetails(

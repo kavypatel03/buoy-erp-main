@@ -997,6 +997,12 @@
         <span class="title">Database Master Wipe</span>
         <span class="active-dot"></span>
       </button>
+
+      <button class="nav-item" onclick="switchTab('tab-apk', this)">
+        <span class="icon">📦</span>
+        <span class="title">Release APK & Updates</span>
+        <span class="active-dot"></span>
+      </button>
     </nav>
 
     <!-- Sidebar Bottom Mobile App Info Card -->
@@ -1020,6 +1026,7 @@
       <button class="mobile-tab-btn" onclick="switchTab('tab-users', this)">👥 Users</button>
       <button class="mobile-tab-btn" onclick="switchTab('tab-notify', this)">🔔 Broadcast</button>
       <button class="mobile-tab-btn" onclick="switchTab('tab-wipe', this)">⚠️ Wipe</button>
+      <button class="mobile-tab-btn" onclick="switchTab('tab-apk', this)">📦 APK</button>
       <button class="btn-theme-toggle" onclick="toggleTheme()" style="padding: 6px 10px; font-size: 11px;">
         <span class="theme-icon-indicator">☀️</span>
       </button>
@@ -1252,83 +1259,142 @@
         </div>
       </section>
 
-      <!-- ─── TAB 3: BROADCAST NOTIFICATIONS (ALL USERS OR SELECTABLE USERS) ─── -->
+      <!-- ─── TAB 3: BROADCAST NOTIFICATIONS & FCM PUSH ─── -->
       <section id="tab-notify" class="tab-pane">
-        <div class="glass-card" style="max-width: 720px;">
-          <div class="card-header">
-            <h2 class="card-title">
-              <span>🔔</span> Send Notification Broadcast
-            </h2>
+        <div class="grid-2">
+          <!-- Notification Broadcast Form -->
+          <div class="glass-card">
+            <div class="card-header">
+              <h2 class="card-title">
+                <span>🔔</span> Send Notification Broadcast
+              </h2>
+            </div>
+
+            <form action="/admin/send-notification" method="POST" id="notificationForm">
+              <!-- Audience Selection Toggle Cards -->
+              <label style="margin-bottom: 8px;">Recipient Audience</label>
+              <div class="audience-selector-grid">
+                <!-- Option 1: All Operators -->
+                <div class="audience-option-card selected" id="cardAudienceAll" onclick="selectAudience('all')">
+                  <input type="radio" name="audience" id="radioAudienceAll" value="all" checked style="display:none;">
+                  <div class="audience-header">
+                    <span>🌐</span>
+                    <span>All Factory Operators</span>
+                  </div>
+                  <p class="audience-desc">Broadcast notification to all active user accounts in the factory globally.</p>
+                </div>
+
+                <!-- Option 2: Particular Selectable Users -->
+                <div class="audience-option-card" id="cardAudienceCustom" onclick="selectAudience('custom')">
+                  <input type="radio" name="audience" id="radioAudienceCustom" value="custom" style="display:none;">
+                  <div class="audience-header">
+                    <span>👥</span>
+                    <span>Select Particular Users</span>
+                  </div>
+                  <p class="audience-desc">Choose specific individual operators from the user directory.</p>
+                </div>
+              </div>
+
+              <!-- Interactive User Checklist Panel (Appears when Select Particular Users is clicked) -->
+              <div class="user-checklist-container" id="userChecklistPanel">
+                <div class="checklist-toolbar">
+                  <input type="text" id="userFilterInput" class="user-search-input" placeholder="🔍 Search operator email..." onkeyup="filterUsers()">
+                  <div class="checklist-actions">
+                    <button type="button" class="btn-action-small" onclick="selectAllUsers(true)">Select All</button>
+                    <button type="button" class="btn-action-small" onclick="selectAllUsers(false)">Deselect All</button>
+                    <span class="selection-counter" id="selectedCounter">0 selected</span>
+                  </div>
+                </div>
+
+                <div class="user-scroll-box" id="userScrollBox">
+                  <% if (users && users.length > 0) { %>
+                    <% users.forEach(user => { %>
+                      <label class="user-select-row" data-email="<%= user.email.toLowerCase() %>">
+                        <input type="checkbox" name="selectedUsers" value="<%= user.id %>" onchange="updateSelectedCounter()">
+                        <div class="user-select-info">
+                          <span class="user-select-email"><%= user.email %></span>
+                          <span class="user-select-date">Joined <%= new Date(user.created_at).toLocaleDateString() %></span>
+                        </div>
+                      </label>
+                    <% }) %>
+                  <% } else { %>
+                    <div style="padding: 12px; text-align: center; color: var(--text-secondary); font-size: 13px;">No operator accounts found.</div>
+                  <% } %>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Notification Title</label>
+                <input type="text" name="title" id="notifTitle" placeholder="e.g. Shift 2 Production Target Updated" required>
+              </div>
+
+              <div class="form-group">
+                <label>Message Content</label>
+                <textarea name="message" id="notifMessage" rows="3" placeholder="Enter instructions or notification details for operators..." required></textarea>
+              </div>
+
+              <button type="submit" class="btn-primary" id="btnSendNotification">
+                <span>🚀</span>
+                <span id="btnSendText">Broadcast to All Operators</span>
+              </button>
+            </form>
           </div>
 
-          <form action="/admin/send-notification" method="POST" id="notificationForm">
-            <!-- Audience Selection Toggle Cards -->
-            <label style="margin-bottom: 8px;">Recipient Audience</label>
-            <div class="audience-selector-grid">
-              <!-- Option 1: All Operators -->
-              <div class="audience-option-card selected" id="cardAudienceAll" onclick="selectAudience('all')">
-                <input type="radio" name="audience" id="radioAudienceAll" value="all" checked style="display:none;">
-                <div class="audience-header">
-                  <span>🌐</span>
-                  <span>All Factory Operators</span>
-                </div>
-                <p class="audience-desc">Broadcast notification to all active user accounts in the factory globally.</p>
-              </div>
-
-              <!-- Option 2: Particular Selectable Users -->
-              <div class="audience-option-card" id="cardAudienceCustom" onclick="selectAudience('custom')">
-                <input type="radio" name="audience" id="radioAudienceCustom" value="custom" style="display:none;">
-                <div class="audience-header">
-                  <span>👥</span>
-                  <span>Select Particular Users</span>
-                </div>
-                <p class="audience-desc">Choose specific individual operators from the user directory.</p>
-              </div>
+          <!-- Real-time FCM Background Push Status & Config -->
+          <div class="glass-card">
+            <div class="card-header">
+              <h2 class="card-title">
+                <span>📡</span> Background Push Delivery (FCM)
+              </h2>
             </div>
 
-            <!-- Interactive User Checklist Panel (Appears when Select Particular Users is clicked) -->
-            <div class="user-checklist-container" id="userChecklistPanel">
-              <div class="checklist-toolbar">
-                <input type="text" id="userFilterInput" class="user-search-input" placeholder="🔍 Search operator email..." onkeyup="filterUsers()">
-                <div class="checklist-actions">
-                  <button type="button" class="btn-action-small" onclick="selectAllUsers(true)">Select All</button>
-                  <button type="button" class="btn-action-small" onclick="selectAllUsers(false)">Deselect All</button>
-                  <span class="selection-counter" id="selectedCounter">0 selected</span>
-                </div>
+            <!-- Status Pill -->
+            <div style="padding: 14px; border-radius: 12px; margin-bottom: 16px; border: 1.5px solid <%= pushStats.isConfigured ? 'rgba(34, 197, 94, 0.3)' : 'rgba(234, 179, 8, 0.3)' %>; background: <%= pushStats.isConfigured ? 'rgba(34, 197, 94, 0.08)' : 'rgba(234, 179, 8, 0.08)' %>;">
+              <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13.5px; color: <%= pushStats.isConfigured ? '#22C55E' : '#EAB308' %>;">
+                <span><%= pushStats.isConfigured ? '🟢' : '🟠' %></span>
+                <span><%= pushStats.isConfigured ? 'Firebase Cloud Messaging Connected' : 'Firebase Service Account Needed for App-Closed Push' %></span>
               </div>
+              <p style="margin: 6px 0 0 0; font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+                <%= pushStats.isConfigured 
+                  ? 'Real-time background push is active. Alerts pop up immediately in operators Android notification drawers and lockscreens, even when the app is completely closed.' 
+                  : 'Currently notifications appear when operators open the app. To trigger native pop-up push alerts when the app is closed or phone is locked, paste your Firebase Service Account JSON below.' %>
+              </p>
+            </div>
 
-              <div class="user-scroll-box" id="userScrollBox">
-                <% if (users && users.length > 0) { %>
-                  <% users.forEach(user => { %>
-                    <label class="user-select-row" data-email="<%= user.email.toLowerCase() %>">
-                      <input type="checkbox" name="selectedUsers" value="<%= user.id %>" onchange="updateSelectedCounter()">
-                      <div class="user-select-info">
-                        <span class="user-select-email"><%= user.email %></span>
-                        <span class="user-select-date">Joined <%= new Date(user.created_at).toLocaleDateString() %></span>
-                      </div>
-                    </label>
-                  <% }) %>
-                <% } else { %>
-                  <div style="padding: 12px; text-align: center; color: var(--text-secondary); font-size: 13px;">No operator accounts found.</div>
-                <% } %>
+            <!-- Device Stats Ribbon -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+              <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px; text-align: center;">
+                <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Registered Devices</div>
+                <div style="font-size: 22px; font-weight: 800; color: var(--primary); margin-top: 4px;"><%= pushStats.totalDevices %></div>
+              </div>
+              <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px; text-align: center;">
+                <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Users with Devices</div>
+                <div style="font-size: 22px; font-weight: 800; color: var(--accent); margin-top: 4px;"><%= pushStats.activeUsersWithDevices %></div>
               </div>
             </div>
 
-            <div class="form-group">
-              <label>Notification Title</label>
-              <input type="text" name="title" id="notifTitle" placeholder="e.g. Shift 2 Production Target Updated" required>
-            </div>
+            <!-- Test Push Button -->
+            <form action="/admin/test-push-notification" method="POST" style="margin-bottom: 18px;">
+              <button type="submit" class="btn-action-small" style="width: 100%; padding: 10px; justify-content: center; font-size: 13px;" <%= !pushStats.isConfigured ? 'disabled title="Connect Firebase first"' : '' %>>
+                <span>📲</span> Send Test Push Alert to Active Devices
+              </button>
+            </form>
 
-            <div class="form-group">
-              <label>Message Content</label>
-              <textarea name="message" id="notifMessage" rows="3" placeholder="Enter instructions or notification details for operators..." required></textarea>
-            </div>
-
-            <button type="submit" class="btn-primary" id="btnSendNotification">
-              <span>🚀</span>
-              <span id="btnSendText">Broadcast to All Operators</span>
-            </button>
-          </form>
+            <!-- Firebase Service Account Configuration Form -->
+            <form action="/admin/save-firebase-credentials" method="POST" style="border-top: 1px solid var(--border); padding-top: 14px;">
+              <label style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-weight: 700; font-size: 13px;">Firebase Service Account JSON</span>
+                <span style="font-size: 11px; color: var(--text-secondary);">(Project: buoy-erp)</span>
+              </label>
+              <textarea name="serviceAccountJson" rows="3" placeholder='{"type": "service_account", "project_id": "buoy-erp", "private_key": "-----BEGIN PRIVATE KEY-----...", ...}' style="font-family: monospace; font-size: 11px; line-height: 1.4; resize: vertical;" required></textarea>
+              <p style="font-size: 11px; color: var(--text-secondary); margin: 6px 0 10px 0;">
+                From Firebase Console: <em>Project Settings → Service accounts → Generate new private key</em>. Paste here to enable instant cloud background push.
+              </p>
+              <button type="submit" class="btn-primary" style="padding: 9px 16px; font-size: 12.5px;">
+                <span>💾</span> Save Firebase Credentials
+              </button>
+            </form>
+          </div>
         </div>
       </section>
 
@@ -1370,6 +1436,84 @@
 
             <button type="submit" class="btn-danger">Execute Global Clean Wipe</button>
           </form>
+        </div>
+      </section>
+
+      <!-- ─── TAB 5: RELEASE APK & AUTOMATED UPDATES ─── -->
+      <section id="tab-apk" class="tab-pane">
+        <div class="grid-2">
+          <!-- Live Release Status & Web Download Button -->
+          <div class="glass-card">
+            <div class="card-header">
+              <h2 class="card-title">
+                <span>📦</span> Live Web Download & Build Mechanism
+              </h2>
+            </div>
+
+            <p style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px;">
+              The <strong>Download APK</strong> button on the web app dynamically serves the latest compiled release without manual file replacement.
+            </p>
+
+            <div style="background: var(--surface); border: 1.5px solid var(--border); border-radius: 16px; padding: 18px; margin-bottom: 18px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Public Download Endpoint</span>
+                <span class="badge" style="background: rgba(91, 61, 245, 0.15); color: var(--primary); font-weight: 700;">Dynamic 302 Redirect</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--divider); border-radius: 10px; padding: 10px 14px;">
+                <code style="font-size: 13px; color: var(--primary); font-weight: 600; flex: 1; word-break: break-all;">/download/buoy-erp.apk</code>
+                <a href="/download/buoy-erp.apk" target="_blank" class="btn-action-small" style="text-decoration: none;">Test Download</a>
+              </div>
+            </div>
+
+            <div style="background: var(--surface); border: 1.5px solid var(--border); border-radius: 16px; padding: 18px;">
+              <h3 style="font-size: 13.5px; font-weight: 700; margin: 0 0 8px 0; color: var(--text-primary);">Automated GitHub Actions CI/CD Pipeline</h3>
+              <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin: 0 0 12px 0;">
+                Whenever code is pushed to <code>main</code>, GitHub Actions automatically compiles the Flutter release APK and attaches it to the <code>latest</code> release tag.
+              </p>
+              <div style="font-size: 12px; color: var(--text-secondary);">
+                <strong>Target Release URL:</strong>
+                <a href="<%= apkDownloadUrl %>" target="_blank" style="color: var(--primary); word-break: break-all; display: block; margin-top: 4px;"><%= apkDownloadUrl %></a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Override Download URL & Version -->
+          <div class="glass-card">
+            <div class="card-header">
+              <h2 class="card-title">
+                <span>⚙️</span> Override APK Download URL & Version
+              </h2>
+            </div>
+
+            <form action="/admin/update-apk-settings" method="POST">
+              <div class="form-group">
+                <label>APK Direct Download URL</label>
+                <input type="url" name="apk_download_url" value="<%= apkDownloadUrl %>" placeholder="https://github.com/.../releases/latest/download/buoy-erp.apk" required>
+                <small style="color: var(--text-secondary); font-size: 11px; margin-top: 4px; display: block;">
+                  Point to your GitHub Release, Supabase Storage bucket, or Google Drive direct link.
+                </small>
+              </div>
+
+              <div class="form-group">
+                <label>Current Released App Version</label>
+                <input type="text" name="apk_version" value="<%= apkVersion %>" placeholder="1.0.0" required>
+                <small style="color: var(--text-secondary); font-size: 11px; margin-top: 4px; display: block;">
+                  Client apps check <code>/api/app/version</code> to prompt operators to download new APKs.
+                </small>
+              </div>
+
+              <button type="submit" class="btn-primary" style="margin-top: 8px;">
+                <span>💾</span> Save APK Settings
+              </button>
+            </form>
+
+            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border);">
+              <h4 style="margin: 0 0 6px 0; font-size: 12.5px; font-weight: 700; color: var(--text-primary);">Offline 1-Click Local Build Script</h4>
+              <p style="font-size: 11.5px; color: var(--text-secondary); margin: 0 0 10px 0; line-height: 1.4;">
+                If you ever want to compile locally and push directly from your computer, simply double-click <code>update-release-apk.bat</code> in the project root.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
     </div>
@@ -1423,7 +1567,8 @@
         'tab-production': 0,
         'tab-users': 1,
         'tab-notify': 2,
-        'tab-wipe': 3
+        'tab-wipe': 3,
+        'tab-apk': 4
       };
       const idx = tabMap[tabId];
       if (idx !== undefined) {

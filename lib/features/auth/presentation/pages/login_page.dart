@@ -6,6 +6,7 @@ import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/erp_input_field.dart';
 import '../../../../core/widgets/google_logo_widget.dart';
 import '../../../../core/services/auth_service.dart';
+import '../../../../core/services/firebase_messaging_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
@@ -53,6 +54,8 @@ class _LoginPageState extends State<LoginPage> {
       }
       
       if (!mounted) return;
+      // Sync FCM token immediately so background notifications reach this device
+      FirebaseMessagingService.syncToken();
       Navigator.pushReplacementNamed(context, '/dashboard');
     } else {
       if (!mounted) return;
