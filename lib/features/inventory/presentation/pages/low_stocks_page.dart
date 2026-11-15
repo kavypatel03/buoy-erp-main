@@ -89,10 +89,12 @@ class LowStocksPageState extends State<LowStocksPage> {
       final List<dynamic> data = result['data'];
       setState(() {
         _inventoryItems = data.map((json) {
-          // Determine color based on stock
-          double stock = double.tryParse(json['stock_quantity']?.toString() ?? '0') ?? 0;
+          // Determine color based on stock (clamp negative stock to 0)
+          double rawStock = double.tryParse(json['stock_quantity']?.toString() ?? '0') ?? 0;
+          double stock = rawStock < 0 ? 0 : rawStock;
           double min = double.tryParse(json['min_quantity']?.toString() ?? '0') ?? 0;
           Color metricColor = stock <= min ? const Color(0xFFFF334B) : const Color(0xFF00B039);
+          final stockDisplay = stock.truncateToDouble() == stock ? stock.toInt().toString() : stock.toString();
           
           // Determine icon based on category
           IconData icon = Icons.inventory_2_rounded;
@@ -112,7 +114,7 @@ class LowStocksPageState extends State<LowStocksPage> {
             id: json['id']?.toString() ?? '',
             title: json['title']?.toString() ?? 'Unknown',
             subtitle: json['subtitle']?.toString() ?? '',
-            metric: json['stock_quantity']?.toString() ?? '0',
+            metric: stockDisplay,
             unit: json['unit']?.toString() ?? 'Kg',
             metricColor: metricColor,
             icon: icon,
@@ -120,7 +122,7 @@ class LowStocksPageState extends State<LowStocksPage> {
             itemCode: json['item_code']?.toString() ?? '',
             type: json['type']?.toString() ?? '',
             category: json['category']?.toString() ?? 'Other',
-            stockQuantity: json['stock_quantity']?.toString() ?? '0',
+            stockQuantity: stockDisplay,
             minQuantity: json['min_quantity']?.toString() ?? '0',
             description: json['description']?.toString() ?? '',
             imageUrl: json['image_url']?.toString() ?? '',
@@ -718,12 +720,16 @@ class LowStocksPageState extends State<LowStocksPage> {
             ),
             ElevatedButton(
               onPressed: () async {
+                final parsedStock = double.tryParse(stockCtrl.text.trim()) ?? 0;
+                final safeStock = parsedStock < 0 ? 0 : parsedStock;
+                final safeStockStr = safeStock.truncateToDouble() == safeStock ? safeStock.toInt().toString() : safeStock.toString();
+
                 final res = await InventoryService.updateItem(item.id, {
                   'title': nameCtrl.text,
                   'subtitle': subtitleCtrl.text,
-                  'stock_quantity': stockCtrl.text,
+                  'stock_quantity': safeStockStr,
                   'min_quantity': minQtyCtrl.text,
-                  'metric': stockCtrl.text,
+                  'metric': safeStockStr,
                   'description': descCtrl.text,
                 });
 
@@ -978,15 +984,19 @@ class LowStocksPageState extends State<LowStocksPage> {
                             return;
                           }
 
+                          final parsedStock = double.tryParse(stockCtrl.text.trim()) ?? 0;
+                          final safeStock = parsedStock < 0 ? 0 : parsedStock;
+                          final safeStockStr = safeStock.truncateToDouble() == safeStock ? safeStock.toInt().toString() : safeStock.toString();
+
                           final newItem = {
                             'title': nameCtrl.text,
                             'subtitle': subtitleCtrl.text,
                             'item_code': codeCtrl.text,
                             'category': selectedCategory,
                             'type': selectedType,
-                            'stock_quantity': stockCtrl.text,
+                            'stock_quantity': safeStockStr,
                             'min_quantity': minQtyCtrl.text,
-                            'metric': stockCtrl.text,
+                            'metric': safeStockStr,
                             'unit': unitCtrl.text,
                             'description': descCtrl.text,
                             if (base64Image != null) 'image_base64': base64Image,

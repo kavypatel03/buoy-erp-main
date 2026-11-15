@@ -1,4 +1,4 @@
-﻿const supabaseConfig = require('../config/supabase');
+const supabaseConfig = require('../config/supabase');
 const { createClient } = require('@supabase/supabase-js');
 const admin = require('firebase-admin');
 
@@ -77,7 +77,12 @@ exports.getLogin = (req, res) => {
 exports.postLogin = (req, res) => {
   const { email, password } = req.body;
   if (email === 'mtkv@gmail.com' && password === 'mtkv2004@2005') {
-    res.cookie('admin_auth', 'true', { signed: true, httpOnly: true });
+    res.cookie('admin_auth', 'true', {
+      signed: true,
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production'
+    });
     res.redirect('/admin');
   } else {
     res.render('login', { error: 'Invalid admin credentials' });
@@ -85,7 +90,10 @@ exports.postLogin = (req, res) => {
 };
 
 exports.logout = (req, res) => {
-  res.clearCookie('admin_auth');
+  res.clearCookie('admin_auth', {
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production'
+  });
   res.redirect('/admin/login');
 };
 

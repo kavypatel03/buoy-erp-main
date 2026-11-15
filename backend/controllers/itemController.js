@@ -81,6 +81,13 @@ const createItem = async (req, res) => {
   try {
     const newItem = { ...req.body };
 
+    // Prevent negative stock
+    if (newItem.stock_quantity !== undefined) {
+      const stockVal = parseFloat(newItem.stock_quantity || 0);
+      newItem.stock_quantity = Math.max(0, isNaN(stockVal) ? 0 : stockVal).toString();
+      newItem.metric = newItem.stock_quantity;
+    }
+
     // Handle optional base64 image upload
     if (newItem.image_base64) {
       try {
@@ -156,7 +163,16 @@ const createItem = async (req, res) => {
 const updateItem = async (req, res) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
+    const updates = { ...req.body };
+
+    // Prevent negative stock
+    if (updates.stock_quantity !== undefined) {
+      const stockVal = parseFloat(updates.stock_quantity || 0);
+      updates.stock_quantity = Math.max(0, isNaN(stockVal) ? 0 : stockVal).toString();
+      if (updates.metric !== undefined) {
+        updates.metric = updates.stock_quantity;
+      }
+    }
 
     const { data, error } = await getClient(req)
       .from('items')

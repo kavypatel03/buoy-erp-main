@@ -1,11 +1,4 @@
-const { createClient } = require('@supabase/supabase-js');
-
-// Create admin client bypassing RLS using SERVICE_ROLE_KEY
-const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL || 'https://placeholder.supabase.co',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || 'placeholder-key',
-  { auth: { autoRefreshToken: false, persistSession: false } }
-);
+const { getClient, supabaseAdmin } = require('../config/supabase');
 
 // Default Pre-defined Factory Products & Step Recipes (used as immediate fallback if DB tables not seeded yet)
 const DEFAULT_PRODUCTS = [
@@ -72,7 +65,7 @@ const DEFAULT_PRODUCTS = [
 // ─── 1. GET ALL PRODUCT TYPES & PRE-DEFINED STEPS ────────────────────────────
 exports.getProductTypes = async (req, res) => {
   try {
-    const { data: products, error } = await supabaseAdmin
+    const { data: products, error } = await getClient(req)
       .from('production_products')
       .select('*, production_process_templates(*)')
       .order('created_at', { ascending: true });
@@ -104,7 +97,7 @@ exports.createProductType = async (req, res) => {
     const { name, category, description, color, steps } = req.body;
     if (!name) return res.status(400).json({ error: 'Product name is required' });
 
-    const { data: product, error: pErr } = await supabaseAdmin
+    const { data: product, error: pErr } = await getClient(req)
       .from('production_products')
       .insert([{ name, category, description, color }])
       .select()
@@ -119,7 +112,7 @@ exports.createProductType = async (req, res) => {
         process_name: s.process_name || s.name || `Step ${idx + 1}`,
         expected_tolerance_pct: s.expected_tolerance_pct || 5.0,
       }));
-      await supabaseAdmin.from('production_process_templates').insert(stepRows);
+      await getClient(req).from('production_process_templates').insert(stepRows);
     }
 
     res.status(201).json(product);
@@ -132,8 +125,8 @@ exports.createProductType = async (req, res) => {
 exports.deleteProductType = async (req, res) => {
   try {
     const { id } = req.params;
-    await supabaseAdmin.from('production_process_templates').delete().eq('product_id', id);
-    const { error } = await supabaseAdmin.from('production_products').delete().eq('id', id);
+    await getClient(req).from('production_process_templates').delete().eq('product_id', id);
+    const { error } = await getClient(req).from('production_products').delete().eq('id', id);
     if (error) throw error;
     res.status(200).json({ success: true, message: 'Product type deleted' });
   } catch (err) {
@@ -144,7 +137,7 @@ exports.deleteProductType = async (req, res) => {
 // ─── 4. GET PRODUCTION ORDERS ────────────────────────────────────────────────
 exports.getOrders = async (req, res) => {
   try {
-    const { data: orders, error } = await supabaseAdmin
+    const { data: orders, error } = await getClient(req)
       .from('production_orders')
       .select('*, production_logs(*)')
       .order('created_at', { ascending: false });
@@ -167,14 +160,30 @@ exports.createOrder = async (req, res) => {
       return res.status(400).json({ error: 'Product name is required' });
     }
 
-    const { data, error } = await supabaseAdmin
+    const orderPayload = {
+      owner_id: userId,
+      product_name,
+      status: 'In Progress'
+    };
+    if (product_id) orderPayload.product_id = product_id;
+    if (batch_code) orderPayload.batch_code = batch_code;
+
+    let { data, error } = await getClient(req)
       .from('production_orders')
-      .insert([{
-        owner_id: userId,
-        product_name,
-        status: 'In Progress'
-      }])
+      .insert([orderPayload])
       .select();
+
+    // If product_id or batch_code column doesn't exist, retry without them
+    if (error && error.message && error.message.includes('does not exist')) {
+      delete orderPayload.product_id;
+      delete orderPayload.batch_code;
+      const retry = await getClient(req)
+        .from('production_orders')
+        .insert([orderPayload])
+        .select();
+      data = retry.data;
+      error = retry.error;
+    }
 
     if (error) throw error;
     res.status(201).json(data[0]);
@@ -189,7 +198,7 @@ exports.completeOrder = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getClient(req)
       .from('production_orders')
       .update({ status: 'Completed', end_date: new Date().toISOString() })
       .eq('id', id)
@@ -218,7 +227,25 @@ exports.addProcessLog = async (req, res) => {
     const outQty = parseFloat(output_qty || 0);
     const wasteQty = Math.max(0, inQty - outQty);
 
-    const { data: logData, error: logError } = await supabaseAdmin
+    // CRITICAL: Prevent inventory from becoming negative
+    if (input_item_id && inQty > 0) {
+      const { data: itemData } = await getClient(req)
+        .from('items')
+        .select('title, stock_quantity, min_quantity')
+        .eq('id', input_item_id)
+        .single();
+
+      if (itemData) {
+        const currentStock = parseFloat(itemData.stock_quantity || 0);
+        if (currentStock < inQty) {
+          return res.status(400).json({
+            error: `Insufficient stock for "${itemData.title}". Available: ${currentStock}, Requested: ${inQty}. Inventory cannot be negative.`
+          });
+        }
+      }
+    }
+
+    const { data: logData, error: logError } = await getClient(req)
       .from('production_logs')
       .insert([{
         owner_id: userId,
@@ -236,14 +263,14 @@ exports.addProcessLog = async (req, res) => {
     // Trigger low stock notification if raw material is low
     if (input_item_id) {
       try {
-        const { data: itemData } = await supabaseAdmin
+        const { data: itemData } = await getClient(req)
           .from('items')
           .select('title, stock_quantity, min_quantity')
           .eq('id', input_item_id)
           .single();
 
         if (itemData && parseFloat(itemData.stock_quantity || 0) <= parseFloat(itemData.min_quantity || 0)) {
-          await supabaseAdmin.from('notifications').insert([{
+          await getClient(req).from('notifications').insert([{
             user_id: userId,
             title: 'Low Stock Alert',
             message: `Stock for ${itemData.title} has fallen to ${itemData.stock_quantity} (Minimum: ${itemData.min_quantity}). Please restock!`,
@@ -273,7 +300,7 @@ exports.updateProcessLog = async (req, res) => {
     }
 
     // Fetch existing log to calculate wastage
-    const { data: existing } = await supabaseAdmin
+    const { data: existing } = await getClient(req)
       .from('production_logs')
       .select('input_qty')
       .eq('id', logId)
@@ -283,7 +310,7 @@ exports.updateProcessLog = async (req, res) => {
     const outQty = parseFloat(output_qty || 0);
     const wasteQty = Math.max(0, inQty - outQty);
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getClient(req)
       .from('production_logs')
       .update({
         output_qty: outQty,
@@ -306,7 +333,7 @@ exports.getWastageReport = async (req, res) => {
     const { start_date, end_date, horizon } = req.query;
 
     // 1. Fetch all production logs joined with order details safely
-    let query = supabaseAdmin
+    let query = getClient(req)
       .from('production_logs')
       .select('id, order_id, process_name, input_qty, output_qty, wastage_qty, created_at, production_orders(id, product_name, status, created_at)')
       .order('created_at', { ascending: false });
@@ -318,7 +345,7 @@ exports.getWastageReport = async (req, res) => {
     if (error) {
       console.warn('Fallback simple query for production_logs:', error.message);
       // Fallback without embedded relationship
-      const { data: simpleLogs, error: sErr } = await supabaseAdmin
+      const { data: simpleLogs, error: sErr } = await getClient(req)
         .from('production_logs')
         .select('*')
         .order('created_at', { ascending: false });
@@ -586,7 +613,7 @@ function _getWeekNumber(d) {
 // ─── 10. EXPORT WASTAGE REPORT IN EXCEL / CSV ────────────────────────────────
 exports.exportWastageExcel = async (req, res) => {
   try {
-    const { data: rawLogs } = await supabaseAdmin
+    const { data: rawLogs } = await getClient(req)
       .from('production_logs')
       .select('id, order_id, process_name, input_qty, output_qty, wastage_qty, created_at, production_orders(product_name, status)')
       .order('created_at', { ascending: false });
@@ -640,7 +667,7 @@ exports.exportWastageExcel = async (req, res) => {
 // ─── 11. EXPORT WASTAGE REPORT IN EXECUTIVE PRINTABLE PDF / HTML ─────────────
 exports.exportWastagePdf = async (req, res) => {
   try {
-    const { data: rawLogs } = await supabaseAdmin
+    const { data: rawLogs } = await getClient(req)
       .from('production_logs')
       .select('id, order_id, process_name, input_qty, output_qty, wastage_qty, created_at, production_orders(product_name, status)')
       .order('created_at', { ascending: false });

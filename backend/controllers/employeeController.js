@@ -1,18 +1,10 @@
-const supabase = require('../config/supabase');
-const { createClient } = require('@supabase/supabase-js');
-
-// Create admin client bypassing RLS using SERVICE_ROLE_KEY
-const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL || 'https://placeholder.supabase.co',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || 'placeholder-key',
-  { auth: { autoRefreshToken: false, persistSession: false } }
-);
+const { getClient, supabaseAdmin } = require('../config/supabase');
 
 // Get all employees for the factory (accessible by all factory users globally)
 exports.getEmployees = async (req, res) => {
   try {
     // Fetch all factory employees, their attendance, and their salary_payments in a single optimized query
-    const { data: employees, error: empError } = await supabaseAdmin
+    const { data: employees, error: empError } = await getClient(req)
       .from('employees')
       .select('*, attendance(*), salary_payments(*)')
       .order('created_at', { ascending: false });
@@ -64,7 +56,7 @@ exports.createEmployee = async (req, res) => {
       return res.status(400).json({ error: 'Name and hourly salary are required' });
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getClient(req)
       .from('employees')
       .insert([{
         owner_id: userId,
@@ -93,7 +85,7 @@ exports.editEmployee = async (req, res) => {
     const { id } = req.params;
     const { name, hourly_salary, profile_pic_url, phone, role, address, upi_id } = req.body;
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getClient(req)
       .from('employees')
       .update({
         name,
@@ -128,7 +120,7 @@ exports.paySalary = async (req, res) => {
       return res.status(400).json({ error: 'Invalid payment method' });
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getClient(req)
       .from('salary_payments')
       .insert([{
         employee_id: id,
@@ -152,7 +144,7 @@ exports.clockIn = async (req, res) => {
     const { time } = req.body; // Custom time
 
     // Check if already clocked in
-    const { data: existing, error: fetchError } = await supabaseAdmin
+    const { data: existing, error: fetchError } = await getClient(req)
       .from('attendance')
       .select('*')
       .eq('employee_id', id)
@@ -164,7 +156,7 @@ exports.clockIn = async (req, res) => {
       return res.status(400).json({ error: 'Employee is already clocked in' });
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getClient(req)
       .from('attendance')
       .insert([{
         employee_id: id,
@@ -188,7 +180,7 @@ exports.clockOut = async (req, res) => {
     const { time } = req.body; // Custom time
 
     // Find open attendance record
-    const { data: existing, error: fetchError } = await supabaseAdmin
+    const { data: existing, error: fetchError } = await getClient(req)
       .from('attendance')
       .select('*')
       .eq('employee_id', id)
@@ -203,7 +195,7 @@ exports.clockOut = async (req, res) => {
     const clockInTime = new Date(existing.clock_in);
     const diffHrs = (clockOutTime - clockInTime) / (1000 * 60 * 60);
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getClient(req)
       .from('attendance')
       .update({
         clock_out: clockOutTime.toISOString(),
@@ -226,7 +218,7 @@ exports.deleteEmployee = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const { error } = await supabaseAdmin
+    const { error } = await getClient(req)
       .from('employees')
       .delete()
       .eq('id', id);

@@ -1,10 +1,4 @@
-const { createClient } = require('@supabase/supabase-js');
-
-const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL || 'https://placeholder.supabase.co',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || 'placeholder-key',
-  { auth: { autoRefreshToken: false, persistSession: false } }
-);
+const { getClient, supabaseAdmin } = require('../config/supabase');
 
 // GET /api/dashboard/summary
 // Returns: total inventory items, low stock count, active production orders,
@@ -20,36 +14,36 @@ exports.getSummary = async (req, res) => {
       clockedInResult,
     ] = await Promise.all([
       // Total inventory items
-      supabaseAdmin
+      getClient(req)
         .from('items')
         .select('id', { count: 'exact', head: true }),
 
       // Active production orders (global factory)
-      supabaseAdmin
+      getClient(req)
         .from('production_orders')
         .select('id', { count: 'exact', head: true })
         .eq('status', 'In Progress'),
 
       // Process logs today (global factory)
-      supabaseAdmin
+      getClient(req)
         .from('production_logs')
         .select('id', { count: 'exact', head: true })
         .gte('created_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString()),
 
       // Total employees (global factory)
-      supabaseAdmin
+      getClient(req)
         .from('employees')
         .select('id', { count: 'exact', head: true }),
 
       // Employees currently clocked in (global factory)
-      supabaseAdmin
+      getClient(req)
         .from('attendance')
         .select('id', { count: 'exact', head: true })
         .is('clock_out', null),
     ]);
 
     // Low stock needs a separate query
-    const { data: allItems } = await supabaseAdmin
+    const { data: allItems } = await getClient(req)
       .from('items')
       .select('stock_quantity, min_quantity');
 

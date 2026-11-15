@@ -28,6 +28,20 @@ app.use(cookieParser('buoy-erp-secret-key'));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// Transfer/redirect any admin access from frontend domain (buoy-erp.vercel.app) to dedicated backend domain (buoy-erp-main.vercel.app)
+app.use('/admin', (req, res, next) => {
+  const host = req.headers['x-forwarded-host'] || req.headers.host || '';
+  if (host.includes('buoy-erp.vercel.app') && !host.includes('buoy-erp-main')) {
+    return res.redirect(301, `https://buoy-erp-main.vercel.app${req.originalUrl}`);
+  }
+  next();
+});
+
+// Root route on backend redirects directly to the Admin Portal
+app.get('/', (req, res) => {
+  res.redirect('/admin');
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', requireAuth, profileRoutes);

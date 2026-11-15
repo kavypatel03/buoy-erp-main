@@ -218,13 +218,16 @@ class ProductionPageState extends State<ProductionPage>
                       ),
                     ),
                     child: DropdownButtonHideUnderline(
-                      child: DropdownButton<dynamic>(
-                        value: _selectedProductType,
+                      child: DropdownButton<String>(
+                        value: _selectedProductType?['id']?.toString() ?? (_productTypes.isNotEmpty ? _productTypes[0]['id']?.toString() : null),
                         isExpanded: true,
                         dropdownColor: isDark ? AppColors.darkCard : Colors.white,
-                        items: _productTypes.map((prod) {
-                          return DropdownMenuItem<dynamic>(
-                            value: prod,
+                        items: _productTypes.map<DropdownMenuItem<String>>((prod) {
+                          final pId = prod['id']?.toString() ?? '';
+                          final pName = prod['name']?.toString() ?? 'Product';
+                          final pSteps = (prod['steps'] as List?)?.length ?? 0;
+                          return DropdownMenuItem<String>(
+                            value: pId,
                             child: Row(
                               children: [
                                 Container(
@@ -237,7 +240,7 @@ class ProductionPageState extends State<ProductionPage>
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
-                                    prod['name']?.toString() ?? 'Product',
+                                    pName,
                                     style: TextStyle(
                                       fontWeight: FontWeight.w600,
                                       fontSize: 14,
@@ -252,7 +255,7 @@ class ProductionPageState extends State<ProductionPage>
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
-                                    '${(prod['steps'] as List?)?.length ?? 0} Steps',
+                                    '$pSteps Steps',
                                     style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: AppColors.primary),
                                   ),
                                 ),
@@ -262,7 +265,10 @@ class ProductionPageState extends State<ProductionPage>
                         }).toList(),
                         onChanged: (val) {
                           setModal(() {
-                            _selectedProductType = val;
+                            _selectedProductType = _productTypes.firstWhere(
+                              (p) => p['id']?.toString() == val,
+                              orElse: () => _selectedProductType,
+                            );
                           });
                         },
                       ),
@@ -475,69 +481,121 @@ class ProductionPageState extends State<ProductionPage>
                   ),
                   const SizedBox(height: 16),
 
-                  // Auto-suggested stage selector chip bar
-                  if (steps.isNotEmpty) ...[
-                    Text('Pre-defined Recipe Stages (Click to Select):',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                        )),
-                    const SizedBox(height: 6),
-                    SizedBox(
-                      height: 38,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: steps.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 6),
-                        itemBuilder: (context, idx) {
-                          final s = steps[idx];
-                          final stepName = s['process_name'] ?? s['name'] ?? 'Step ${idx + 1}';
-                          final isSelected = _processNameCtrl.text == stepName;
-                          return InkWell(
-                            onTap: () {
+                  // Recipe / Product selection
+                  if (_productTypes.isNotEmpty) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Recipe / Product:',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                            )),
+                        DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: matchedProd?['id']?.toString() ?? _productTypes[0]['id']?.toString(),
+                            isDense: true,
+                            dropdownColor: isDark ? AppColors.darkCard : Colors.white,
+                            items: _productTypes.map<DropdownMenuItem<String>>((p) {
+                              return DropdownMenuItem<String>(
+                                value: p['id']?.toString() ?? '',
+                                child: Text(
+                                  p['name']?.toString() ?? 'Recipe',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
                               setModal(() {
-                                _processNameCtrl.text = stepName;
+                                matchedProd = _productTypes.firstWhere(
+                                  (p) => p['id']?.toString() == val,
+                                  orElse: () => matchedProd,
+                                );
+                                final newSteps = (matchedProd?['steps'] as List?) ?? [];
+                                if (newSteps.isNotEmpty) {
+                                  _processNameCtrl.text = newSteps[0]['process_name'] ?? newSteps[0]['name'] ?? 'Step 1';
+                                }
                               });
                             },
-                            borderRadius: BorderRadius.circular(8),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: isSelected ? AppColors.primary : (isDark ? AppColors.darkSurface : const Color(0xFFF1F5F9)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+
+                  // Auto-suggested stage selector chip bar
+                  Builder(builder: (ctx) {
+                    final currentSteps = (matchedProd?['steps'] as List?) ?? [];
+                    if (currentSteps.isEmpty) return const SizedBox.shrink();
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Pre-defined Recipe Stages (Click to Select):',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                            )),
+                        const SizedBox(height: 6),
+                        SizedBox(
+                          height: 38,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: currentSteps.length,
+                            separatorBuilder: (_, __) => const SizedBox(width: 6),
+                            itemBuilder: (context, idx) {
+                              final s = currentSteps[idx];
+                              final stepName = s['process_name'] ?? s['name'] ?? 'Step ${idx + 1}';
+                              final isSelected = _processNameCtrl.text == stepName;
+                              return InkWell(
+                                onTap: () {
+                                  setModal(() {
+                                    _processNameCtrl.text = stepName;
+                                  });
+                                },
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: isSelected ? AppColors.primary : (isDark ? AppColors.darkCardBorder : const Color(0xFFCBD5E1)),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    '${idx + 1}. $stepName',
-                                    style: TextStyle(
-                                      fontSize: 11.5,
-                                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                      color: isSelected ? Colors.white : (isDark ? AppColors.darkTextPrimary : const Color(0xFF334155)),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: isSelected ? AppColors.primary : (isDark ? AppColors.darkSurface : const Color(0xFFF1F5F9)),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: isSelected ? AppColors.primary : (isDark ? AppColors.darkCardBorder : const Color(0xFFCBD5E1)),
                                     ),
                                   ),
-                                  if (s['expected_tolerance_pct'] != null)
-                                    Text(
-                                      ' (${s['expected_tolerance_pct']}%)',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: isSelected ? Colors.white.withValues(alpha: 0.8) : AppColors.textSecondary,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        '${idx + 1}. $stepName',
+                                        style: TextStyle(
+                                          fontSize: 11.5,
+                                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                          color: isSelected ? Colors.white : (isDark ? AppColors.darkTextPrimary : const Color(0xFF334155)),
+                                        ),
                                       ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                  ],
+                                      if (s['expected_tolerance_pct'] != null)
+                                        Text(
+                                          ' (${s['expected_tolerance_pct']}%)',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: isSelected ? Colors.white.withValues(alpha: 0.8) : AppColors.textSecondary,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                      ],
+                    );
+                  }),
 
                   ErpInputField(
                     controller: _processNameCtrl,
@@ -557,14 +615,23 @@ class ProductionPageState extends State<ProductionPage>
                     items: [
                       const DropdownMenuItem<String>(
                           value: null, child: Text('None')),
-                      ..._inventoryItems.map((item) => DropdownMenuItem<String>(
-                            value: item['id'] as String,
-                            child: Text(
-                              '${item['title'] ?? item['name'] ?? 'Unknown'}'
-                              ' · ${item['stock_quantity'] ?? '0'} ${item['unit'] ?? ''}',
-                              overflow: TextOverflow.ellipsis,
+                      ..._inventoryItems.map((item) {
+                        final rawStock = double.tryParse(item['stock_quantity']?.toString() ?? '0') ?? 0;
+                        final stock = rawStock < 0 ? 0.0 : rawStock;
+                        final stockDisplay = stock.truncateToDouble() == stock ? stock.toInt().toString() : stock.toString();
+                        final title = item['title'] ?? item['name'] ?? 'Unknown';
+                        final isOutOfStock = stock <= 0;
+                        return DropdownMenuItem<String>(
+                          value: item['id'] as String,
+                          child: Text(
+                            '$title · ${isOutOfStock ? 'Out of Stock (0)' : '$stockDisplay ${item['unit'] ?? ''}'}',
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: isOutOfStock ? AppColors.error : null,
                             ),
-                          )),
+                          ),
+                        );
+                      }),
                     ],
                     onChanged: (val) =>
                         setModal(() => _selectedItemId = val),
@@ -601,10 +668,27 @@ class ProductionPageState extends State<ProductionPage>
                     icon: Icons.save_alt_rounded,
                     onPressed: () async {
                       if (_processNameCtrl.text.trim().isEmpty) return;
-                      Navigator.pop(ctx);
-                      setState(() => _isLoading = true);
                       final inQ = double.tryParse(_inputQtyCtrl.text) ?? 0;
                       final outQ = double.tryParse(_outputQtyCtrl.text) ?? 0;
+
+                      // Prevent negative inventory
+                      if (_selectedItemId != null && inQ > 0) {
+                        final matchedItem = _inventoryItems.firstWhere(
+                          (it) => it['id']?.toString() == _selectedItemId,
+                          orElse: () => null,
+                        );
+                        if (matchedItem != null) {
+                          final rawStock = double.tryParse(matchedItem['stock_quantity']?.toString() ?? '0') ?? 0;
+                          final availableStock = rawStock < 0 ? 0.0 : rawStock;
+                          if (inQ > availableStock) {
+                            _showError('Insufficient stock for "${matchedItem['title'] ?? 'item'}". Available: $availableStock, requested: $inQ. Inventory cannot be negative.');
+                            return;
+                          }
+                        }
+                      }
+
+                      Navigator.pop(ctx);
+                      setState(() => _isLoading = true);
                       final logData = {
                         'process_name': _processNameCtrl.text.trim(),
                         'input_item_id': _selectedItemId,
