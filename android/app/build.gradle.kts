@@ -9,7 +9,6 @@ plugins {
 android {
     namespace = "com.example.final_project"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
