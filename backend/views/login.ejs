@@ -2,153 +2,313 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Login - Buoy ERP</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
-    body { 
-      font-family: 'Inter', sans-serif; 
-      background: #0B0F19; 
-      display: flex; 
-      justify-content: center; 
-      align-items: center; 
-      height: 100vh; 
-      margin: 0; 
+    :root {
+      --primary: #5B3DF5;
+      --primary-light: #8166FF;
+      --primary-dark: #4128C4;
+      --accent: #7C3AED;
+      --bg: #0D0D14;
+      --surface: #16161F;
+      --card: #1C1C28;
+      --border: #2A2A3D;
+      --divider: #252535;
+      --text-primary: #EEEEF8;
+      --text-secondary: #8888AA;
+      --text-muted: #55556A;
+      --error: #EF4444;
+      --error-bg: rgba(239, 68, 68, 0.15);
+      --error-border: rgba(239, 68, 68, 0.35);
+      --success: #10B981;
     }
-    .card { 
-      background: #111827; 
-      padding: 2.5rem 2rem; 
-      border-radius: 24px; 
-      box-shadow: 0 10px 25px rgba(0,0,0,0.4), 0 4px 6px rgba(0,0,0,0.2); 
-      width: 100%; 
-      max-width: 380px; 
-      border: 1px solid #374151;
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1.5rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Subtle ambient background glow matching app accent */
+    body::before {
+      content: '';
+      position: absolute;
+      top: -150px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 350px;
+      background: radial-gradient(circle, rgba(91, 61, 245, 0.18) 0%, rgba(13, 13, 20, 0) 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .login-card {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 420px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 4px 12px rgba(0, 0, 0, 0.25);
       display: flex;
       flex-direction: column;
       align-items: center;
     }
-    .logo-container {
-      width: 65px;
-      height: 65px;
-      background: #1F2937;
-      border-radius: 16px;
-      border: 1.2px solid #374151;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.3);
+
+    /* Authentic Buoy Logo Card Widget */
+    .buoy-logo-card {
+      width: 64px;
+      height: 64px;
+      background: #1E293B;
+      border: 1.2px solid #334155;
+      border-radius: 18px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       margin-bottom: 1.5rem;
       line-height: 0.85;
+      user-select: none;
     }
-    .logo-row {
+
+    .buoy-logo-row {
       display: flex;
       align-items: baseline;
+      justify-content: center;
     }
-    .logo-char {
-      font-family: Arial, sans-serif;
-      font-weight: 900;
-      font-size: 20px;
-    }
-    .char-b { color: #2563EB; font-size: 20px; }
-    .char-u { color: #EF4444; font-size: 18px; transform: rotate(6.8deg); }
-    .char-o { color: #F59E0B; font-size: 20px; }
-    .char-y { color: #EC4899; font-size: 22px; transform: rotate(-5.7deg); }
-    .char-exc { color: #10B981; font-size: 24px; }
 
-    h1 { 
-      margin-top: 0; 
-      margin-bottom: 0.25rem;
-      color: #F9FAFB; 
-      font-weight: 800;
-      font-size: 24px;
-      letter-spacing: -0.5px;
+    .char {
+      font-family: 'Plus Jakarta Sans', Arial, sans-serif;
+      font-weight: 900;
+      line-height: 0.85;
     }
-    p.subtitle {
-      color: #9CA3AF;
-      font-size: 13px;
-      margin-bottom: 2rem;
+
+    .char-b { color: #2563EB; font-size: 21px; }
+    .char-u { color: #EF4444; font-size: 19px; display: inline-block; transform: rotate(6.8deg); margin-left: 1px; }
+    .char-o { color: #F59E0B; font-size: 21px; }
+    .char-y { color: #EC4899; font-size: 23px; display: inline-block; transform: rotate(-5.7deg); margin-left: 1px; }
+    .char-exc { color: #10B981; font-size: 24px; margin-left: 1px; }
+
+    .badge-cloud {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(91, 61, 245, 0.12);
+      border: 1px solid rgba(91, 61, 245, 0.3);
+      color: var(--primary-light);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 12px;
+      margin-bottom: 0.75rem;
+    }
+
+    .badge-cloud .pulse-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      box-shadow: 0 0 8px var(--primary-light);
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.4px;
+      margin-bottom: 0.35rem;
       text-align: center;
     }
-    
-    input { 
-      width: 100%; 
-      padding: 1rem; 
-      margin-bottom: 1rem; 
-      border: 1.5px solid #374151; 
-      border-radius: 12px; 
-      box-sizing: border-box; 
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      color: #F9FAFB;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      background: #1F2937;
-    }
-    input::placeholder { color: #6B7280; }
-    input:focus {
-      outline: none;
-      border-color: #2563EB;
-      box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
-      background: #1F2937;
+
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 13.5px;
+      text-align: center;
+      margin-bottom: 2rem;
     }
 
-    button { 
-      width: 100%; 
-      padding: 1rem; 
-      background: #2563EB; 
-      color: white; 
-      border: none; 
-      border-radius: 12px; 
-      cursor: pointer; 
-      font-weight: 700; 
+    .error-banner {
+      width: 100%;
+      background: var(--error-bg);
+      border: 1px solid var(--error-border);
+      color: #F87171;
+      padding: 0.85rem 1rem;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    form {
+      width: 100%;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.2px;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--surface);
+      border: 1.2px solid var(--border);
+      border-radius: 16px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    input::placeholder {
+      color: var(--text-muted);
+    }
+
+    input:focus {
+      border-color: var(--primary-light);
+      box-shadow: 0 0 0 3px rgba(91, 61, 245, 0.25);
+      background: var(--surface);
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 14px 20px;
+      background: var(--primary);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 16px;
+      font-family: inherit;
       font-size: 15px;
-      font-family: 'Inter', sans-serif;
-      transition: opacity 0.2s, transform 0.1s;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(91, 61, 245, 0.4);
+      transition: all 0.2s ease;
       margin-top: 0.5rem;
     }
-    button:hover { opacity: 0.9; }
-    button:active { transform: scale(0.98); }
-    .error { 
-      color: #F87171; 
-      margin-bottom: 1rem; 
-      font-size: 0.875rem; 
-      background: rgba(239,68,68,0.15);
-      border: 1px solid rgba(239,68,68,0.3);
-      padding: 0.75rem;
-      border-radius: 8px;
-      width: 100%;
-      box-sizing: border-box;
+
+    .btn-submit:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(91, 61, 245, 0.5);
+    }
+
+    .btn-submit:active {
+      transform: translateY(0);
+    }
+
+    .footer-note {
+      margin-top: 1.75rem;
+      font-size: 12px;
+      color: var(--text-secondary);
       text-align: center;
+      line-height: 1.5;
+    }
+
+    .footer-note a {
+      color: var(--primary-light);
+      text-decoration: none;
       font-weight: 600;
     }
-    form { width: 100%; }
+
+    .footer-note a:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="logo-container">
-      <div class="logo-row">
-        <span class="logo-char char-b">b</span>
-        <span class="logo-char char-u">u</span>
+  <div class="login-card">
+    <!-- Authentic Buoy Multi-Color Logo -->
+    <div class="buoy-logo-card">
+      <div class="buoy-logo-row">
+        <span class="char char-b">b</span>
+        <span class="char char-u">u</span>
       </div>
-      <div class="logo-row">
-        <span class="logo-char char-o">o</span>
-        <span class="logo-char char-y">y</span>
-        <span class="logo-char char-exc">!</span>
+      <div class="buoy-logo-row">
+        <span class="char char-o">o</span>
+        <span class="char char-y">y</span>
+        <span class="char char-exc">!</span>
       </div>
     </div>
-    
-    <h1>Admin Portal</h1>
-    <p class="subtitle">Buoy Factory Administration Console</p>
-    
+
+    <div class="badge-cloud">
+      <span class="pulse-dot"></span>
+      Factory Cloud Administration
+    </div>
+
+    <h1>Buoy ERP Console</h1>
+    <p class="subtitle">Secure administrative access for factory management</p>
+
     <% if (error) { %>
-      <div class="error"><%= error %></div>
+      <div class="error-banner">
+        <span>⚠</span>
+        <span><%= error %></span>
+      </div>
     <% } %>
-    
+
     <form action="/admin/login" method="POST">
-      <input type="email" name="email" placeholder="admin@factory.com" required autofocus>
-      <input type="password" name="password" placeholder="••••••••" required>
-      <button type="submit">Login</button>
+      <div class="form-group">
+        <label for="username">Admin Username</label>
+        <div class="input-wrapper">
+          <input type="text" id="username" name="username" placeholder="admin" required autocomplete="username" autofocus>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Security Password</label>
+        <div class="input-wrapper">
+          <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit">Sign In to Admin Console</button>
     </form>
+
+    <div class="footer-note">
+      Buoy ERP &copy; <%= new Date().getFullYear() %> &middot; Factory Cloud OS<br>
+      <a href="/">Return to Main Application</a>
+    </div>
   </div>
 </body>
 </html>

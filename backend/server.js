@@ -28,11 +28,12 @@ app.use(cookieParser('buoy-erp-secret-key'));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Transfer/redirect any admin access from frontend domain (buoy-erp.vercel.app) to dedicated backend domain (buoy-erp-main.vercel.app)
+// Completely disable and block /admin route on the frontend domain (buoy-erp.vercel.app)
+// The admin console is isolated and only accessible via https://buoy-erp-main.vercel.app/admin
 app.use('/admin', (req, res, next) => {
   const host = req.headers['x-forwarded-host'] || req.headers.host || '';
   if (host.includes('buoy-erp.vercel.app') && !host.includes('buoy-erp-main')) {
-    return res.redirect(301, `https://buoy-erp-main.vercel.app${req.originalUrl}`);
+    return res.status(404).send('Cannot GET /admin');
   }
   next();
 });

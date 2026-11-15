@@ -3,457 +3,1088 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Buoy ERP - Factory Admin Console</title>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <title>Admin Dashboard - Buoy ERP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary: #2563EB;
-      --primary-dark: #1D4ED8;
-      --primary-light: #EFF6FF;
-      --bg: #0B0F19;
-      --surface: #111827;
-      --surface-card: #1F2937;
-      --border: #374151;
-      --text-main: #F9FAFB;
-      --text-muted: #9CA3AF;
+      --primary: #5B3DF5;
+      --primary-light: #8166FF;
+      --primary-dark: #4128C4;
+      --accent: #7C3AED;
+      --bg: #0D0D14;
+      --surface: #16161F;
+      --card: #1C1C28;
+      --border: #2A2A3D;
+      --divider: #252535;
+      --text-primary: #EEEEF8;
+      --text-secondary: #8888AA;
+      --text-muted: #55556A;
       --success: #10B981;
-      --danger: #EF4444;
       --warning: #F59E0B;
+      --error: #EF4444;
+      --info: #3B82F6;
+      --sidebar-width: 250px;
     }
 
-    * { box-sizing: border-box; }
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      background: var(--bg);
-      color: var(--text-main);
+    * {
+      box-sizing: border-box;
       margin: 0;
-      padding: 1.5rem;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-primary);
       min-height: 100vh;
-    }
-
-    .container { max-width: 1200px; margin: 0 auto; }
-
-    /* Top Header */
-    .top-bar {
       display: flex;
-      justify-content: space-between;
+      overflow-x: hidden;
+    }
+
+    /* ─── WEB DESKTOP SIDEBAR (Matches main_shell_screen.dart) ─── */
+    .sidebar {
+      width: var(--sidebar-width);
+      min-width: var(--sidebar-width);
+      background: var(--card);
+      border-right: 1.2px solid var(--border);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      z-index: 50;
+    }
+
+    .sidebar-header {
+      padding: 20px 18px;
+      display: flex;
       align-items: center;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 1rem 1.5rem;
-      margin-bottom: 1.5rem;
-      flex-wrap: wrap;
-      gap: 1rem;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
     }
 
-    .brand-area { display: flex; align-items: center; gap: 0.9rem; }
-    .brand-logo {
-      width: 44px; height: 44px;
-      background: linear-gradient(135deg, #2563EB, #06B6D4);
+    /* Authentic Buoy Multi-Color Logo Card */
+    .buoy-logo-box {
+      width: 42px;
+      height: 42px;
+      background: #1E293B;
+      border: 1.2px solid #334155;
       border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 800; font-size: 20px; color: white;
-      box-shadow: 0 4px 14px rgba(37,99,235,0.4);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      line-height: 0.85;
+      flex-shrink: 0;
+      user-select: none;
     }
-    .brand-text h1 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -0.3px; }
-    .brand-text span { font-size: 11px; color: #60A5FA; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    /* Stats Ribbon */
-    .stats-ribbon {
-      display: flex; gap: 0.75rem; flex-wrap: wrap;
+    .buoy-logo-box .row-1, .buoy-logo-box .row-2 {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
     }
-    .stat-pill {
-      background: var(--surface-card);
-      border: 1px solid var(--border);
-      padding: 0.4rem 0.8rem;
-      border-radius: 10px;
+
+    .buoy-logo-box .c-b { color: #2563EB; font-size: 14px; font-weight: 900; }
+    .buoy-logo-box .c-u { color: #EF4444; font-size: 13px; font-weight: 900; display: inline-block; transform: rotate(6.8deg); margin-left: 1px; }
+    .buoy-logo-box .c-o { color: #F59E0B; font-size: 14px; font-weight: 900; }
+    .buoy-logo-box .c-y { color: #EC4899; font-size: 15px; font-weight: 900; display: inline-block; transform: rotate(-5.7deg); margin-left: 1px; }
+    .buoy-logo-box .c-exc { color: #10B981; font-size: 16px; font-weight: 900; margin-left: 1px; }
+
+    .brand-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: 0.5px;
+    }
+
+    .brand-badge {
+      display: inline-block;
+      background: rgba(91, 61, 245, 0.12);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--primary-light);
+      letter-spacing: 0.3px;
+      width: fit-content;
+    }
+
+    /* Sidebar Navigation Items */
+    .sidebar-nav {
+      flex: 1;
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1.2px solid transparent;
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s ease;
+      width: 100%;
+    }
+
+    .nav-item:hover:not(.active) {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background: rgba(91, 61, 245, 0.2);
+      border-color: rgba(91, 61, 245, 0.4);
+      color: var(--primary-light);
+      font-weight: 700;
+    }
+
+    .nav-item .icon {
+      margin-right: 12px;
+      font-size: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+    }
+
+    .nav-item .title {
+      flex: 1;
+    }
+
+    .nav-item .active-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 8px var(--primary-light);
+      display: none;
+    }
+
+    .nav-item.active .active-dot {
+      display: block;
+    }
+
+    /* Sidebar Bottom Download Card */
+    .sidebar-footer {
+      padding: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    .mobile-app-card {
+      padding: 14px;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(6, 182, 212, 0.12));
+      border: 1.2px solid rgba(16, 185, 129, 0.3);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .mobile-app-card .app-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .mobile-app-card .app-desc {
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.35;
+    }
+
+    .mobile-app-card a.app-link {
+      margin-top: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: var(--primary);
+      color: #FFFFFF;
+      text-decoration: none;
       font-size: 12px;
-      display: flex; align-items: center; gap: 0.4rem;
+      font-weight: 600;
+      border-radius: 10px;
+      transition: background 0.2s;
     }
-    .stat-pill strong { color: var(--text-main); }
-    .stat-pill span { color: var(--text-muted); }
+
+    .mobile-app-card a.app-link:hover {
+      background: var(--primary-dark);
+    }
+
+    /* ─── MAIN CONTENT AREA ─── */
+    .main-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      background: var(--bg);
+    }
+
+    /* Top Bar Header */
+    .top-header {
+      height: 68px;
+      background: rgba(22, 22, 31, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .header-title-pill {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 25px;
+      padding: 8px 18px;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.2px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .sync-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #34D399;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 20px;
+    }
+
+    .sync-badge .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10B981;
+      box-shadow: 0 0 10px #10B981;
+      animation: pulseGreen 2s infinite ease-in-out;
+    }
+
+    @keyframes pulseGreen {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .stats-ribbon {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stat-badge {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stat-badge span {
+      color: var(--text-secondary);
+    }
+
+    .stat-badge strong {
+      color: var(--primary-light);
+      font-weight: 700;
+    }
 
     .btn-logout {
       background: rgba(239, 68, 68, 0.12);
-      color: #F87171;
       border: 1px solid rgba(239, 68, 68, 0.3);
-      padding: 0.5rem 1rem;
-      border-radius: 10px;
+      color: #F87171;
+      padding: 7px 14px;
+      border-radius: 12px;
       text-decoration: none;
-      font-size: 13px; font-weight: 600;
+      font-size: 12.5px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       transition: all 0.2s;
     }
-    .btn-logout:hover { background: rgba(239, 68, 68, 0.25); }
+
+    .btn-logout:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    /* Content Area */
+    .content-container {
+      padding: 24px;
+      max-width: 1300px;
+      width: 100%;
+    }
 
     /* Alerts */
     .alert {
-      padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem;
-      font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 0.6rem;
+      padding: 14px 18px;
+      border-radius: 16px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: fadeIn 0.25s ease;
     }
-    .alert-success { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34D399; }
-    .alert-error { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #F87171; }
 
-    /* Navigation Tabs */
-    .nav-tabs {
-      display: flex; gap: 0.5rem; margin-bottom: 1.5rem;
-      border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;
-      overflow-x: auto;
+    .alert-success {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #34D399;
     }
-    .tab-btn {
-      background: transparent; border: none; color: var(--text-muted);
-      padding: 0.65rem 1.2rem; border-radius: 10px; font-size: 14px; font-weight: 600;
-      cursor: pointer; transition: all 0.2s; white-space: nowrap;
-    }
-    .tab-btn.active {
-      background: var(--primary); color: white;
-      box-shadow: 0 4px 12px rgba(37,99,235,0.3);
-    }
-    .tab-btn:hover:not(.active) { background: var(--surface-card); color: var(--text-main); }
 
-    .tab-pane { display: none; }
-    .tab-pane.active { display: block; }
+    .alert-error {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #F87171;
+    }
 
-    /* Cards & Grids */
-    .card {
+    /* Tab Panes */
+    .tab-pane {
+      display: none;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Cards (Matches GlassContainer & ErpCard) */
+    .glass-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 22px;
+      margin-bottom: 22px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      border-bottom: 1px solid var(--divider);
+      padding-bottom: 14px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: -0.2px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+    }
+
+    @media (max-width: 992px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .mobile-nav-bar { display: flex !important; }
+    }
+
+    /* Forms & Inputs (Matches ErpInputField) */
+    .form-group {
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.2px;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 13px 16px;
+      background: var(--surface);
+      border: 1.2px solid var(--border);
+      border-radius: 16px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    input::placeholder, textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primary-light);
+      box-shadow: 0 0 0 3px rgba(91, 61, 245, 0.25);
+      background: var(--surface);
+    }
+
+    /* Buttons (Matches ElevatedButton in AppTheme) */
+    .btn-primary {
+      padding: 13px 22px;
+      background: var(--primary);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 16px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(91, 61, 245, 0.35);
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(91, 61, 245, 0.45);
+    }
+
+    .btn-danger {
+      padding: 13px 22px;
+      background: var(--error);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 16px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-danger:hover {
+      background: #DC2626;
+      transform: translateY(-1px);
+    }
+
+    /* Product Cards in Recipe List */
+    .product-recipe-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 1.75rem;
-      margin-bottom: 1.5rem;
-    }
-    .card h2 {
-      margin: 0 0 1.25rem 0; font-size: 17px; font-weight: 700;
-      display: flex; align-items: center; gap: 0.6rem; color: var(--text-main);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      transition: border-color 0.2s, transform 0.2s;
     }
 
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-    @media (max-width: 850px) { .grid-2 { grid-template-columns: 1fr; } }
-
-    /* Forms */
-    .form-group { margin-bottom: 1.1rem; }
-    label { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem; }
-    input[type="text"], input[type="email"], input[type="password"], textarea, select {
-      width: 100%; padding: 0.75rem 1rem;
-      background: var(--surface-card);
-      border: 1.2px solid var(--border);
-      border-radius: 10px;
-      color: var(--text-main);
-      font-family: inherit; font-size: 14px;
-      outline: none; transition: border 0.2s;
+    .product-recipe-card:hover {
+      border-color: rgba(91, 61, 245, 0.5);
+      transform: translateY(-2px);
     }
-    input:focus, textarea:focus, select:focus { border-color: var(--primary); }
 
-    button.btn-primary {
-      background: var(--primary); color: white; border: none;
-      padding: 0.75rem 1.5rem; border-radius: 10px;
-      font-size: 14px; font-weight: 700; cursor: pointer;
-      box-shadow: 0 4px 12px rgba(37,99,235,0.3); transition: opacity 0.2s;
+    .prod-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
     }
-    button.btn-primary:hover { opacity: 0.9; }
 
-    button.btn-danger {
-      background: var(--danger); color: white; border: none;
-      padding: 0.75rem 1.5rem; border-radius: 10px;
-      font-size: 14px; font-weight: 700; cursor: pointer;
-      box-shadow: 0 4px 12px rgba(239,68,68,0.3); transition: opacity 0.2s;
+    .prod-name-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-    button.btn-danger:hover { opacity: 0.9; }
 
-    /* Products Grid */
-    .product-card {
-      background: var(--surface-card);
+    .color-pill {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 6px rgba(0,0,0,0.4);
+    }
+
+    .cat-badge {
+      font-size: 11px;
+      color: var(--text-secondary);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-weight: 500;
+    }
+
+    .steps-flow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .step-chip {
+      background: rgba(91, 61, 245, 0.15);
+      border: 1px solid rgba(91, 61, 245, 0.35);
+      color: #C4B5FD;
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .step-chip .tol {
+      font-size: 10px;
+      color: #8166FF;
+      font-weight: 700;
+    }
+
+    /* Table Styles */
+    .table-container {
+      overflow-x: auto;
+      border-radius: 16px;
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 1.25rem;
-      margin-bottom: 1rem;
-    }
-    .product-header {
-      display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;
-    }
-    .product-title {
-      font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;
-    }
-    .color-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
-    .steps-timeline {
-      display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.75rem;
-    }
-    .step-pill {
-      background: rgba(37,99,235,0.15); border: 1px solid rgba(37,99,235,0.3);
-      color: #93C5FD; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 11.5px; font-weight: 600;
+      background: var(--surface);
     }
 
-    /* Tables */
-    .table-container { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-    th { background: var(--surface-card); color: var(--text-muted); text-align: left; padding: 0.85rem 1rem; font-weight: 600; border-bottom: 1px solid var(--border); }
-    td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); }
-    tr:last-child td { border-bottom: none; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+    }
 
-    /* Smooth tab transitions */
-    .tab-pane { animation: fadeIn 0.25s ease; }
-    /* Sticky header */
-    .top-bar { position: sticky; top: 0; z-index: 100; backdrop-filter: blur(12px); background: rgba(17,24,39,0.95); }
-    /* Page fade in */
-    body { animation: fadeIn 0.3s ease; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-    /* Better button active state */
-    button.btn-primary:active { transform: scale(0.98); }
-    /* Product card hover */
-    .product-card { transition: border-color 0.2s, transform 0.2s; cursor: default; }
-    .product-card:hover { border-color: rgba(37,99,235,0.5); transform: translateY(-2px); }
-    /* Better form inputs */
-    input:focus, textarea:focus, select:focus { box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+    th {
+      background: rgba(22, 22, 31, 0.95);
+      color: var(--text-secondary);
+      text-align: left;
+      padding: 12px 16px;
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--divider);
+      color: var(--text-primary);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: rgba(91, 61, 245, 0.04);
+    }
+
+    /* Mobile Fallback Bar */
+    .mobile-nav-bar {
+      display: none;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+      overflow-x: auto;
+      gap: 8px;
+    }
+
+    .mobile-tab-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .mobile-tab-btn.active {
+      background: var(--primary);
+      color: #FFFFFF;
+      border-color: var(--primary);
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <!-- Top Bar -->
-    <div class="top-bar">
-      <div class="brand-area">
-        <div class="brand-logo">B</div>
-        <div class="brand-text">
-          <h1>BUOY ERP CONSOLE</h1>
-          <span>Factory Central Administration</span>
+
+  <!-- ─── DESKTOP SIDEBAR ─── -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="buoy-logo-box">
+        <div class="row-1">
+          <span class="c-b">b</span>
+          <span class="c-u">u</span>
+        </div>
+        <div class="row-2">
+          <span class="c-o">o</span>
+          <span class="c-y">y</span>
+          <span class="c-exc">!</span>
+        </div>
+      </div>
+      <div class="brand-meta">
+        <span class="brand-title">BUOY ERP</span>
+        <span class="brand-badge">FACTORY CLOUD</span>
+      </div>
+    </div>
+
+    <!-- Navigation List -->
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="switchTab('tab-production', this)">
+        <span class="icon">🏭</span>
+        <span class="title">Production Recipes</span>
+        <span class="active-dot"></span>
+      </button>
+
+      <button class="nav-item" onclick="switchTab('tab-users', this)">
+        <span class="icon">👥</span>
+        <span class="title">User Accounts</span>
+        <span class="active-dot"></span>
+      </button>
+
+      <button class="nav-item" onclick="switchTab('tab-notify', this)">
+        <span class="icon">🔔</span>
+        <span class="title">Factory Broadcasts</span>
+        <span class="active-dot"></span>
+      </button>
+
+      <button class="nav-item" onclick="switchTab('tab-wipe', this)">
+        <span class="icon">⚠️</span>
+        <span class="title">Database Master Wipe</span>
+        <span class="active-dot"></span>
+      </button>
+    </nav>
+
+    <!-- Sidebar Bottom Mobile App Info Card -->
+    <div class="sidebar-footer">
+      <div class="mobile-app-card">
+        <div class="app-title-row">
+          <span>📱</span>
+          <span>Mobile ERP App</span>
+        </div>
+        <p class="app-desc">Native Android APK for tablet workstations & factory floors.</p>
+        <a href="/download-app" class="app-link">Download Client App</a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ─── MAIN CONTENT COLUMN ─── -->
+  <main class="main-wrapper">
+    <!-- Mobile Tab Bar for small screens -->
+    <div class="mobile-nav-bar">
+      <button class="mobile-tab-btn active" onclick="switchTab('tab-production', this)">🏭 Recipes</button>
+      <button class="mobile-tab-btn" onclick="switchTab('tab-users', this)">👥 Users</button>
+      <button class="mobile-tab-btn" onclick="switchTab('tab-notify', this)">🔔 Broadcast</button>
+      <button class="mobile-tab-btn" onclick="switchTab('tab-wipe', this)">⚠️ Wipe</button>
+    </div>
+
+    <!-- Top Header Bar (Matches ErpHeaderBar) -->
+    <header class="top-header">
+      <div class="header-left">
+        <div class="header-title-pill">
+          Factory Administration Console
+        </div>
+        <div class="sync-badge">
+          <span class="dot"></span>
+          Factory Global Sync Active
         </div>
       </div>
 
-      <div class="stats-ribbon">
-        <div class="stat-pill"><span>Items:</span> <strong><%= stats.items %></strong></div>
-        <div class="stat-pill"><span>Staff:</span> <strong><%= stats.employees %></strong></div>
-        <div class="stat-pill"><span>Batches:</span> <strong><%= stats.orders %></strong></div>
-        <div class="stat-pill"><span>Process Logs:</span> <strong><%= stats.logs %></strong></div>
+      <div class="header-right">
+        <div class="stats-ribbon">
+          <div class="stat-badge"><span>Items:</span> <strong><%= stats.items %></strong></div>
+          <div class="stat-badge"><span>Staff:</span> <strong><%= stats.employees %></strong></div>
+          <div class="stat-badge"><span>Batches:</span> <strong><%= stats.orders %></strong></div>
+          <div class="stat-badge"><span>Logs:</span> <strong><%= stats.logs %></strong></div>
+        </div>
+
+        <a href="/admin/logout" class="btn-logout">
+          <span>Logout</span>
+        </a>
       </div>
+    </header>
 
-      <a href="/admin/logout" class="btn-logout">Logout</a>
-    </div>
+    <!-- Content Workspace -->
+    <div class="content-container">
+      <% if (success) { %>
+        <div class="alert alert-success">
+          <span>✓</span>
+          <span><%= success %></span>
+        </div>
+      <% } %>
+      <% if (error) { %>
+        <div class="alert alert-error">
+          <span>⚠</span>
+          <span><%= error %></span>
+        </div>
+      <% } %>
 
-    <!-- Feedback Alerts -->
-    <% if (success) { %>
-      <div class="alert alert-success">✓ <%= success %></div>
-    <% } %>
-    <% if (error) { %>
-      <div class="alert alert-error">⚠ <%= error %></div>
-    <% } %>
-
-    <!-- Navigation Tabs -->
-    <div class="nav-tabs">
-      <button class="tab-btn active" onclick="switchTab('tab-production')">🏭 Production Recipes & Steps</button>
-      <button class="tab-btn" onclick="switchTab('tab-users')">👥 User Accounts & Access</button>
-      <button class="tab-btn" onclick="switchTab('tab-notify')">🔔 Send Factory Broadcast</button>
-      <button class="tab-btn" onclick="switchTab('tab-wipe')">⚠️ Master Database Wipe</button>
-    </div>
-
-    <!-- ─── TAB 1: PRODUCTION PRODUCTS & PRE-DEFINED STEPS ─────────────────── -->
-    <div id="tab-production" class="tab-pane active">
-      <div class="grid-2">
-        <!-- Add New Product Type Form -->
-        <div class="card">
-          <h2>➕ Add Product Type & Steps</h2>
-          <form action="/admin/production/add-product" method="POST">
-            <div class="form-group">
-              <label>Product Name (e.g. Brown Pencil, White Pencil, Eraser (Red))</label>
-              <input type="text" name="product_name" placeholder="e.g. Brown Pencil" required>
+      <!-- ─── TAB 1: PRODUCTION RECIPES & STEPS ─── -->
+      <section id="tab-production" class="tab-pane active">
+        <div class="grid-2">
+          <!-- Add Product Recipe Form -->
+          <div class="glass-card">
+            <div class="card-header">
+              <h2 class="card-title">
+                <span>➕</span> Add Product Type & Steps
+              </h2>
             </div>
-            <div class="form-group">
-              <label>Category</label>
-              <input type="text" name="category" placeholder="e.g. Pencils, Erasers, Plastics" value="Stationery">
-            </div>
-            <div class="form-group">
-              <label>Color Accent Code</label>
-              <input type="text" name="color" placeholder="e.g. #8D6E63 or #EF4444" value="#2563EB">
-            </div>
-            <div class="form-group">
-              <label>Pre-Defined Process Steps (One per line with optional tolerance %)</label>
-              <textarea name="steps_text" rows="6" placeholder="Paper Cutting (3%)&#10;Rolling & Glueing (4%)&#10;Drying (2%)&#10;Lead Insertion (3%)&#10;Polishing & Packaging (1%)" required></textarea>
-              <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
-                Tip: Enter step names in chronological order. When operators log production in the app, these steps are automatically selected in sequence!
+
+            <form action="/admin/production/add-product" method="POST">
+              <div class="form-group">
+                <label>Product Name</label>
+                <input type="text" name="product_name" placeholder="e.g. Brown Pencil, White Paper Roll, Eraser (Red)" required>
               </div>
+
+              <div class="form-group">
+                <label>Category</label>
+                <input type="text" name="category" placeholder="e.g. Pencils, Paper, Stationery" value="Stationery">
+              </div>
+
+              <div class="form-group">
+                <label>Color Accent Code</label>
+                <input type="text" name="color" placeholder="#5B3DF5, #EF4444, #F59E0B" value="#5B3DF5">
+              </div>
+
+              <div class="form-group">
+                <label>Pre-Defined Process Steps (One per line with optional tolerance %)</label>
+                <textarea name="steps_text" rows="6" placeholder="Paper Cutting (3%)&#10;Rolling & Glueing (4%)&#10;Drying (2%)&#10;Lead Insertion (3%)&#10;Polishing & Packaging (1%)" required></textarea>
+                <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 6px;">
+                  💡 Operators on the factory floor will automatically see these stages dynamically linked when starting orders and recording stage logs!
+                </div>
+              </div>
+
+              <button type="submit" class="btn-primary">Save Product Recipe</button>
+            </form>
+          </div>
+
+          <!-- Active Product Recipes List -->
+          <div class="glass-card">
+            <div class="card-header">
+              <h2 class="card-title">
+                <span>📦</span> Active Factory Products (<%= products.length %>)
+              </h2>
             </div>
-            <button type="submit" class="btn-primary">Save Product & Recipe</button>
+
+            <% if (products && products.length > 0) { %>
+              <% products.forEach(prod => { %>
+                <div class="product-recipe-card">
+                  <div class="prod-head">
+                    <div class="prod-name-title">
+                      <span class="color-pill" style="background: <%= prod.color || '#5B3DF5' %>;"></span>
+                      <span><%= prod.name %></span>
+                      <span class="cat-badge"><%= prod.category || 'General' %></span>
+                    </div>
+
+                    <form action="/admin/production/delete-product" method="POST" onsubmit="return confirm('Delete <%= prod.name %> recipe?');" style="margin: 0;">
+                      <input type="hidden" name="product_id" value="<%= prod.id %>">
+                      <button type="submit" style="background: none; border: none; color: #EF4444; font-size: 12px; font-weight: 700; cursor: pointer;">Delete</button>
+                    </form>
+                  </div>
+
+                  <div style="font-size: 12px; color: var(--text-secondary); font-weight: 600;">
+                    Pre-defined Sequence (<%= prod.steps ? prod.steps.length : 0 %> Stages):
+                  </div>
+
+                  <div class="steps-flow">
+                    <% if (prod.steps && prod.steps.length > 0) { %>
+                      <% prod.steps.forEach(st => { %>
+                        <div class="step-chip">
+                          <span><%= st.step_number %>. <%= st.process_name %></span>
+                          <span class="tol">(<%= st.expected_tolerance_pct || 5 %>%)</span>
+                        </div>
+                      <% }) %>
+                    <% } else { %>
+                      <span style="font-size: 11.5px; color: var(--text-muted);">No steps defined for this product.</span>
+                    <% } %>
+                  </div>
+                </div>
+              <% }) %>
+            <% } else { %>
+              <div style="color: var(--text-secondary); font-size: 13.5px; padding: 20px 0; text-align: center;">
+                No product recipes created yet. Add your first product type on the left.
+              </div>
+            <% } %>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── TAB 2: USER ACCOUNTS & CONTROLS ─── -->
+      <section id="tab-users" class="tab-pane">
+        <div class="glass-card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <span>🔒</span> Global Registration Access Policy
+            </h2>
+          </div>
+
+          <form action="/admin/toggle-register" method="POST" style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
+            <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+              <input type="radio" name="enabled" value="true" <%= regEnabled ? 'checked' : '' %>>
+              <span>Allow New Operator Registration</span>
+            </label>
+            <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+              <input type="radio" name="enabled" value="false" <%= !regEnabled ? 'checked' : '' %>>
+              <span>Disable Registration (Lock Factory Access)</span>
+            </label>
+            <button type="submit" class="btn-primary" style="padding: 10px 18px; font-size: 13px;">Save Policy</button>
           </form>
         </div>
 
-        <!-- Existing Products List -->
-        <div class="card">
-          <h2>📦 Active Factory Products (<%= products.length %>)</h2>
-          <% if (products && products.length > 0) { %>
-            <% products.forEach(prod => { %>
-              <div class="product-card">
-                <div class="product-header">
-                  <div class="product-title">
-                    <span class="color-dot" style="background: <%= prod.color || '#2563EB' %>;"></span>
-                    <%= prod.name %>
-                    <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">(<%= prod.category || 'General' %>)</span>
-                  </div>
-                  <form action="/admin/production/delete-product" method="POST" onsubmit="return confirm('Delete <%= prod.name %> recipe?');" style="margin: 0;">
-                    <input type="hidden" name="product_id" value="<%= prod.id %>">
-                    <button type="submit" style="background: none; border: none; color: #EF4444; font-size: 12px; font-weight: 700; cursor: pointer;">Delete</button>
-                  </form>
-                </div>
+        <div class="grid-2">
+          <!-- Create Account -->
+          <div class="glass-card">
+            <div class="card-header">
+              <h2 class="card-title">
+                <span>➕</span> Create User Account
+              </h2>
+            </div>
 
-                <div style="font-size: 12px; color: var(--text-muted);">
-                  Pre-defined Sequence (<%= prod.steps ? prod.steps.length : 0 %> Stages):
-                </div>
-                <div class="steps-timeline">
-                  <% if (prod.steps && prod.steps.length > 0) { %>
-                    <% prod.steps.forEach(st => { %>
-                      <div class="step-pill">
-                        <%= st.step_number %>. <%= st.process_name %> 
-                        <span style="color: #60A5FA; font-size: 10px;">(<%= st.expected_tolerance_pct || 5 %>%)</span>
-                      </div>
+            <form action="/admin/create-user" method="POST">
+              <div class="form-group">
+                <label>Operator Email</label>
+                <input type="email" name="email" placeholder="operator@factory.com" required>
+              </div>
+
+              <div class="form-group">
+                <label>Temporary Password</label>
+                <input type="password" name="password" placeholder="Min 6 characters" required>
+              </div>
+
+              <button type="submit" class="btn-primary">Create User Account</button>
+            </form>
+          </div>
+
+          <!-- Accounts Table -->
+          <div class="glass-card">
+            <div class="card-header">
+              <h2 class="card-title">
+                <span>👥</span> Factory Accounts (<%= users.length %>)
+              </h2>
+            </div>
+
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Email</th>
+                    <th>Created</th>
+                    <th>Reset Password</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if (users && users.length > 0) { %>
+                    <% users.forEach(u => { %>
+                      <tr>
+                        <td><strong><%= u.email %></strong></td>
+                        <td style="color: var(--text-secondary); font-size: 12px;"><%= new Date(u.created_at).toLocaleDateString() %></td>
+                        <td>
+                          <form action="/admin/update-user" method="POST" style="display: flex; gap: 6px;">
+                            <input type="hidden" name="userId" value="<%= u.id %>">
+                            <input type="password" name="password" placeholder="New Pass" required style="padding: 6px 10px; font-size: 12px; width: 110px; border-radius: 10px;">
+                            <button type="submit" class="btn-primary" style="padding: 6px 12px; font-size: 11.5px; border-radius: 10px;">Update</button>
+                          </form>
+                        </td>
+                      </tr>
                     <% }) %>
                   <% } else { %>
-                    <span style="font-size: 11px; color: var(--text-muted);">No steps defined.</span>
+                    <tr>
+                      <td colspan="3" style="text-align: center; color: var(--text-secondary);">No user accounts found.</td>
+                    </tr>
                   <% } %>
-                </div>
-              </div>
-            <% }) %>
-          <% } else { %>
-            <div style="color: var(--text-muted); font-size: 13px;">No product recipes created yet.</div>
-          <% } %>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      </section>
 
-    <!-- ─── TAB 2: USER MANAGEMENT ─────────────────────────────────────────── -->
-    <div id="tab-users" class="tab-pane">
-      <div class="card">
-        <h2>🔒 Global Registration Controls</h2>
-        <form action="/admin/toggle-register" method="POST" style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
-          <label style="margin: 0; cursor: pointer;">
-            <input type="radio" name="enabled" value="true" <%= regEnabled ? 'checked' : '' %>> Allow New Operator Registration
-          </label>
-          <label style="margin: 0; cursor: pointer;">
-            <input type="radio" name="enabled" value="false" <%= !regEnabled ? 'checked' : '' %>> Disable Registration (Lock Factory Access)
-          </label>
-          <button type="submit" class="btn-primary" style="padding: 0.5rem 1rem;">Save Policy</button>
-        </form>
-      </div>
+      <!-- ─── TAB 3: BROADCAST NOTIFICATIONS ─── -->
+      <section id="tab-notify" class="tab-pane">
+        <div class="glass-card" style="max-width: 650px;">
+          <div class="card-header">
+            <h2 class="card-title">
+              <span>🔔</span> Send Factory Broadcast Notification
+            </h2>
+          </div>
 
-      <div class="grid-2">
-        <div class="card">
-          <h2>➕ Create User Account</h2>
-          <form action="/admin/create-user" method="POST">
+          <form action="/admin/send-notification" method="POST">
             <div class="form-group">
-              <label>Operator Email</label>
-              <input type="email" name="email" placeholder="worker@factory.com" required>
+              <label>Target Audience</label>
+              <select name="targetUserId" required>
+                <option value="all">-- Send Globally to All Factory Operators --</option>
+                <% if (users && users.length > 0) { %>
+                  <% users.forEach(user => { %>
+                    <option value="<%= user.id %>"><%= user.email %></option>
+                  <% }) %>
+                <% } %>
+              </select>
             </div>
+
             <div class="form-group">
-              <label>Temporary Password</label>
-              <input type="password" name="password" placeholder="Min 6 characters" required>
+              <label>Notification Title</label>
+              <input type="text" name="title" placeholder="e.g. Shift 2 Production Target Updated" required>
             </div>
-            <button type="submit" class="btn-primary">Create Account</button>
+
+            <div class="form-group">
+              <label>Message Content</label>
+              <textarea name="message" rows="3" placeholder="Enter instructions or notification details for operators..." required></textarea>
+            </div>
+
+            <button type="submit" class="btn-primary">Broadcast Notification</button>
           </form>
         </div>
+      </section>
 
-        <div class="card">
-          <h2>👥 Factory Accounts (<%= users.length %>)</h2>
-          <div class="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>User Email</th>
-                  <th>Created</th>
-                  <th>Reset Password</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% if (users && users.length > 0) { %>
-                  <% users.forEach(u => { %>
-                    <tr>
-                      <td><strong><%= u.email %></strong></td>
-                      <td style="font-size: 12px; color: var(--text-muted);"><%= new Date(u.created_at).toLocaleDateString() %></td>
-                      <td>
-                        <form action="/admin/update-user" method="POST" style="display: flex; gap: 0.4rem;">
-                          <input type="hidden" name="userId" value="<%= u.id %>">
-                          <input type="password" name="password" placeholder="New Pass" required style="padding: 0.4rem; font-size: 12px; width: 110px;">
-                          <button type="submit" class="btn-primary" style="padding: 0.4rem 0.6rem; font-size: 11px;">Update</button>
-                        </form>
-                      </td>
-                    </tr>
-                  <% }) %>
-                <% } else { %>
-                  <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">No operator accounts found.</td></tr>
-                <% } %>
-              </tbody>
-            </table>
+      <!-- ─── TAB 4: MASTER DATABASE RESET & CLEAN WIPE ─── -->
+      <section id="tab-wipe" class="tab-pane">
+        <div class="glass-card" style="border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.04);">
+          <div class="card-header" style="border-bottom-color: rgba(239, 68, 68, 0.2);">
+            <h2 class="card-title" style="color: #F87171;">
+              <span>⚠️</span> Master Database Clean Wipe (Pre-Handover Reset)
+            </h2>
           </div>
+
+          <p style="color: var(--text-secondary); font-size: 13.5px; line-height: 1.6; margin-bottom: 16px;">
+            This administrative key action completely empties testing data across all factory modules in Supabase so you can test thoroughly and hand over a clean production database to the client.
+          </p>
+
+          <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-bottom: 20px;">
+            <h3 style="margin: 0 0 10px 0; font-size: 14px; color: var(--text-primary); font-weight: 700;">Tables that will be wiped globally:</h3>
+            <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: var(--text-secondary); line-height: 1.8;">
+              <li><strong>Production Logs & Orders:</strong> All active/completed batches and process stage entries.</li>
+              <li><strong>Inventory Items:</strong> All test raw materials and finished goods stock items.</li>
+              <li><strong>HR & Payroll:</strong> All employee staff directory records, attendance punch-ins, and salary payments.</li>
+              <li><strong>In-App Notifications:</strong> All user alerts and push logs.</li>
+              <li><strong>Product Recipes:</strong> <em>Protected.</em> Predefined product types and process steps are preserved so production can start immediately.</li>
+            </ul>
+          </div>
+
+          <form action="/admin/master-wipe" method="POST" onsubmit="return confirm('DANGER: Are you 100% sure you want to wipe all factory operational data?');" style="max-width: 520px;">
+            <div class="form-group">
+              <label style="color: #FCA5A5;">Type <strong>DELETE-ALL-DATA</strong> to authorize master wipe:</label>
+              <input type="text" name="confirm_phrase" placeholder="DELETE-ALL-DATA" required style="border-color: rgba(239, 68, 68, 0.5); font-weight: 700; letter-spacing: 0.5px;">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 20px;">
+              <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-weight: 500;">
+                <input type="checkbox" name="wipe_users" value="true"> Also delete test operator user accounts (Admin account is protected)
+              </label>
+            </div>
+
+            <button type="submit" class="btn-danger">Execute Global Clean Wipe</button>
+          </form>
         </div>
-      </div>
+      </section>
     </div>
-
-    <!-- ─── TAB 3: BROADCAST NOTIFICATIONS ─────────────────────────────────── -->
-    <div id="tab-notify" class="tab-pane">
-      <div class="card" style="max-width: 650px;">
-        <h2>📢 Send In-App Push Broadcast</h2>
-        <form action="/admin/send-notification" method="POST">
-          <div class="form-group">
-            <label>Target Audience</label>
-            <select name="targetUserId" required>
-              <option value="all">-- Send to All Operators Globally --</option>
-              <% if (users && users.length > 0) { %>
-                <% users.forEach(user => { %>
-                  <option value="<%= user.id %>"><%= user.email %></option>
-                <% }) %>
-              <% } %>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Notification Title</label>
-            <input type="text" name="title" placeholder="e.g. Shift 2 Production Target Updated" required>
-          </div>
-          <div class="form-group">
-            <label>Message Content</label>
-            <textarea name="message" rows="3" placeholder="Enter message for operators..." required></textarea>
-          </div>
-          <button type="submit" class="btn-primary">Broadcast Notification</button>
-        </form>
-      </div>
-    </div>
-
-    <!-- ─── TAB 4: MASTER DATABASE RESET & CLEAN WIPE ─────────────────────── -->
-    <div id="tab-wipe" class="tab-pane">
-      <div class="card" style="border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.04);">
-        <h2 style="color: #F87171;">⚠️ Factory Master Clean Wipe (Pre-Handover Testing Reset)</h2>
-        <p style="color: var(--text-muted); font-size: 13.5px; line-height: 1.6;">
-          This administrative key action completely empties testing data across all factory modules in Supabase so you can test thoroughly and hand over a clean production database to the client.
-        </p>
-
-        <div style="background: var(--surface-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem;">
-          <h3 style="margin: 0 0 0.75rem 0; font-size: 14px; color: var(--text-main);">Tables that will be wiped globally:</h3>
-          <ul style="margin: 0; padding-left: 1.2rem; font-size: 13px; color: var(--text-muted); line-height: 1.7;">
-            <li><strong>Production Logs & Orders:</strong> All active/completed batches and process stage entries.</li>
-            <li><strong>Inventory Items:</strong> All test raw materials and finished goods stock items.</li>
-            <li><strong>HR & Payroll:</strong> All employee staff directory records, attendance punch-ins, and salary payments.</li>
-            <li><strong>In-App Notifications:</strong> All user alerts and push logs.</li>
-            <li><strong>Product Recipes:</strong> <em>Protected.</em> Predefined product types and process steps are preserved so production can start immediately.</li>
-          </ul>
-        </div>
-
-        <form action="/admin/master-wipe" method="POST" onsubmit="return confirm('DANGER: Are you 100% sure you want to wipe all factory operational data?');" style="max-width: 500px;">
-          <div class="form-group">
-            <label style="color: #FCA5A5;">Type <strong>DELETE-ALL-DATA</strong> to authorize master wipe:</label>
-            <input type="text" name="confirm_phrase" placeholder="DELETE-ALL-DATA" required style="border-color: rgba(239, 68, 68, 0.5); font-weight: 700; letter-spacing: 0.5px;">
-          </div>
-          <div class="form-group">
-            <label style="cursor: pointer; display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted);">
-              <input type="checkbox" name="wipe_users" value="true"> Also delete test operator user accounts (Admin account is protected)
-            </label>
-          </div>
-          <button type="submit" class="btn-danger">Execute Global Clean Wipe</button>
-        </form>
-      </div>
-    </div>
-
-  </div>
+  </main>
 
   <script>
-    function switchTab(tabId) {
+    function switchTab(tabId, element) {
+      // Hide all panes
       document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-      document.getElementById(tabId).classList.add('active');
-      event.target.classList.add('active');
+      // Remove active from all nav items and mobile buttons
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.mobile-tab-btn').forEach(el => el.classList.remove('active'));
+
+      // Show selected pane
+      const targetPane = document.getElementById(tabId);
+      if (targetPane) {
+        targetPane.classList.add('active');
+      }
+
+      // Add active to the clicked item if provided
+      if (element) {
+        element.classList.add('active');
+      }
+
+      // Sync mobile and desktop navs
+      const navButtons = document.querySelectorAll('.sidebar-nav .nav-item');
+      const mobileButtons = document.querySelectorAll('.mobile-nav-bar .mobile-tab-btn');
+      const tabMap = {
+        'tab-production': 0,
+        'tab-users': 1,
+        'tab-notify': 2,
+        'tab-wipe': 3
+      };
+      const idx = tabMap[tabId];
+      if (idx !== undefined) {
+        if (navButtons[idx]) navButtons[idx].classList.add('active');
+        if (mobileButtons[idx]) mobileButtons[idx].classList.add('active');
+      }
     }
   </script>
 </body>
