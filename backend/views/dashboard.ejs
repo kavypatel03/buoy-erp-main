@@ -1392,7 +1392,7 @@
             </div>
 
             <!-- Device Stats Ribbon -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
               <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px; text-align: center;">
                 <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Registered Devices</div>
                 <div style="font-size: 22px; font-weight: 800; color: var(--primary); margin-top: 4px;"><%= pushStats.totalDevices %></div>
@@ -1402,6 +1402,16 @@
                 <div style="font-size: 22px; font-weight: 800; color: var(--accent); margin-top: 4px;"><%= pushStats.activeUsersWithDevices %></div>
               </div>
             </div>
+
+            <% if (!pushStats.tableExists || pushStats.totalDevices === 0) { %>
+              <div style="background: rgba(91, 61, 245, 0.06); border: 1px dashed var(--primary); border-radius: 10px; padding: 12px; margin-bottom: 14px; font-size: 12px; line-height: 1.5; color: var(--text-secondary);">
+                <strong style="color: var(--primary); display: block; margin-bottom: 4px;">⚡ How Active Devices Appear Here:</strong>
+                <ol style="margin: 0; padding-left: 18px;">
+                  <li>Ensure the <code>user_fcm_tokens</code> table exists by running <code>supabase_setup_fcm_tokens.sql</code> in your Supabase SQL Editor.</li>
+                  <li>When operators open the newly updated Android app, each device automatically registers its FCM push token with your server.</li>
+                </ol>
+              </div>
+            <% } %>
 
             <!-- Test Push Button -->
             <form action="/admin/test-push-notification" method="POST" style="margin-bottom: 18px;">

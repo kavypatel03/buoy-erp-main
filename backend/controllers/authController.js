@@ -79,15 +79,11 @@ const getRegistrationStatus = async (req, res) => {
 
 const updateFcmToken = async (req, res) => {
   try {
-    const { fcmToken, deviceType } = req.body;
-    const userId = req.user?.id;
+    const { fcmToken, deviceType, userId: bodyUserId } = req.body;
+    const userId = req.user?.id || bodyUserId || 'device_anonymous';
     
     if (!fcmToken || typeof fcmToken !== 'string' || fcmToken.trim().length === 0) {
       return res.status(400).json({ error: 'Valid fcmToken is required' });
-    }
-
-    if (!userId) {
-      return res.status(401).json({ error: 'User unauthorized' });
     }
 
     // Upsert into user_fcm_tokens (supports multiple devices per user or token updates)

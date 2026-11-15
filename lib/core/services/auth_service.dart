@@ -94,21 +94,21 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('fcm_token', token);
       final userToken = prefs.getString('token');
-      if (userToken == null) {
-        await prefs.setString('pending_fcm_token', token);
-        return;
+
+      final headers = <String, String>{
+        'Content-Type': 'application/json',
+      };
+      if (userToken != null && userToken.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $userToken';
       }
 
       await http.post(
         Uri.parse('$baseUrl/fcm-token'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $userToken',
-        },
+        headers: headers,
         body: jsonEncode({'fcmToken': token, 'deviceType': 'android'}),
       );
     } catch (e) {
-      print('Failed to update FCM token: $e');
+      // Non-blocking log
     }
   }
 

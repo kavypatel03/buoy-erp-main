@@ -8,8 +8,15 @@ router.post('/register', authController.register);
 router.post('/login', authController.login);
 router.get('/registration-status', authController.getRegistrationStatus);
 
-// Protected route (requires valid JWT token)
+// Protected routes
 router.get('/profile', requireAuth, authController.getProfile);
-router.post('/fcm-token', requireAuth, authController.updateFcmToken);
+
+// Device FCM registration (supports both authenticated users and initial device registrations)
+router.post('/fcm-token', (req, res, next) => {
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    return requireAuth(req, res, next);
+  }
+  next();
+}, authController.updateFcmToken);
 
 module.exports = router;
