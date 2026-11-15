@@ -7,6 +7,7 @@ on:
       - 'lib/**'
       - 'android/**'
       - 'pubspec.yaml'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 permissions:
@@ -33,11 +34,14 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Make Gradlew Executable
+        run: chmod +x android/gradlew
+
       - name: Install Project Dependencies
         run: flutter pub get
 
       - name: Build Release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --no-tree-shake-icons
 
       - name: Rename Release APK
         run: |

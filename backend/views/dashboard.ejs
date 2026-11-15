@@ -1498,8 +1498,14 @@
             <div style="background: var(--surface); border: 1.5px solid var(--border); border-radius: 16px; padding: 18px;">
               <h3 style="font-size: 13.5px; font-weight: 700; margin: 0 0 8px 0; color: var(--text-primary);">Automated GitHub Actions CI/CD Pipeline</h3>
               <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin: 0 0 12px 0;">
-                Whenever code is pushed to <code>main</code>, GitHub Actions automatically compiles the Flutter release APK and attaches it to the <code>latest</code> release tag.
+                Whenever code is pushed to <code>main</code>, GitHub Actions automatically compiles the Flutter release APK (~4 to 7 minutes) and publishes it to the <code>latest</code> release tag.
               </p>
+              <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">
+                <strong>Live Build Monitor:</strong>
+                <a href="https://github.com/kavypatel03/buoy-erp-main/actions" target="_blank" style="color: var(--primary); font-weight: 600; display: inline-flex; align-items: center; gap: 4px; margin-left: 6px;">
+                  View GitHub Actions Status ↗
+                </a>
+              </div>
               <div style="font-size: 12px; color: var(--text-secondary);">
                 <strong>Target Release URL:</strong>
                 <a href="<%= apkDownloadUrl %>" target="_blank" style="color: var(--primary); word-break: break-all; display: block; margin-top: 4px;"><%= apkDownloadUrl %></a>
