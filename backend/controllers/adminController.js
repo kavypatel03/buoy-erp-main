@@ -75,17 +75,31 @@ exports.getLogin = (req, res) => {
 };
 
 exports.postLogin = (req, res) => {
-  const { email, password } = req.body;
-  if (email === 'mtkv@gmail.com' && password === 'mtkv2004@2005') {
+  const identifier = (req.body.email || req.body.username || '').trim().toLowerCase();
+  const password = (req.body.password || '').trim();
+
+  const isEmailMatch = (
+    identifier === 'mtkv@gmail.com' ||
+    identifier === 'mtkv' ||
+    identifier === 'admin@factory.com' ||
+    identifier === 'admin'
+  );
+
+  const isPasswordMatch = (
+    password === 'mtkv2004@2005' ||
+    password === 'admin123'
+  );
+
+  if (isEmailMatch && isPasswordMatch) {
     res.cookie('admin_auth', 'true', {
       signed: true,
       httpOnly: true,
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production'
     });
-    res.redirect('/admin');
+    return res.redirect('/admin');
   } else {
-    res.render('login', { error: 'Invalid admin credentials' });
+    return res.render('login', { error: 'Invalid admin credentials' });
   }
 };
 

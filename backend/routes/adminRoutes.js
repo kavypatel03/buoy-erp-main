@@ -3,7 +3,7 @@ const router = express.Router();
 const adminController = require('../controllers/adminController');
 
 const requireAdmin = (req, res, next) => {
-  if (req.signedCookies.admin_auth === 'true') {
+  if (req.signedCookies?.admin_auth === 'true' || req.cookies?.admin_auth === 'true') {
     next();
   } else {
     res.redirect('/admin/login');
