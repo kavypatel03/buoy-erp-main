@@ -8,6 +8,7 @@ import 'help_support_page.dart';
 import 'my_profile_page.dart';
 import '../../../../core/services/profile_service.dart';
 import '../../../../core/services/auth_service.dart';
+import '../../../../core/services/app_update_service.dart';
 import '../../../../app/app.dart';
 import '../../../../core/widgets/liquid_glass_toggle.dart';
 
@@ -256,6 +257,15 @@ class SettingsPageState extends State<SettingsPage> with AutomaticKeepAliveClien
                   child: Column(children: [
                     _buildTile(
                       context,
+                      icon: Icons.system_update_rounded,
+                      iconColor: AppColors.primary,
+                      title: 'Check for Updates',
+                      subtitle: 'Current: ${AppConstants.fullVersionString}',
+                      onTap: () => AppUpdateService.checkForUpdates(context, manual: true),
+                    ),
+                    Divider(color: dividerColor, height: 1, indent: 56, endIndent: 16),
+                    _buildTile(
+                      context,
                       icon: Icons.help_outline_rounded,
                       iconColor: AppColors.success,
                       title: 'Help & Support',
@@ -316,36 +326,40 @@ class SettingsPageState extends State<SettingsPage> with AutomaticKeepAliveClien
 
               const SizedBox(height: 24),
 
-              // App version badge
+              // App version badge (clickable to check updates)
               Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 7,
-                        height: 7,
-                        decoration: const BoxDecoration(
-                          color: AppColors.success,
-                          shape: BoxShape.circle,
+                child: InkWell(
+                  onTap: () => AppUpdateService.checkForUpdates(context, manual: true),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: const BoxDecoration(
+                            color: AppColors.success,
+                            shape: BoxShape.circle,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${AppConstants.appName} ${AppConstants.fullVersionString} • ${AppConstants.buildDate}',
-                        style: const TextStyle(
-                          fontSize: 11.5,
-                          color: AppColors.textMuted,
-                          fontWeight: FontWeight.w600,
+                        const SizedBox(width: 8),
+                        Text(
+                          '${AppConstants.appName} ${AppConstants.fullVersionString} • ${AppConstants.buildDate}',
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            color: AppColors.textMuted,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),

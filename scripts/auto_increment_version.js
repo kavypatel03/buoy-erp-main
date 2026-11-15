@@ -49,7 +49,20 @@ const constantsContent = `class AppConstants {
 fs.writeFileSync(constantsPath, constantsContent, 'utf8');
 console.log(`✅ Updated AppConstants with version: v${newVersionStr} (Build ${build})`);
 
-// 3. Output for shell scripts if needed
+// 3. Update backend/config/version.json for In-App Live Update Engine
+const versionJsonPath = path.join(__dirname, '../backend/config/version.json');
+const versionJsonData = {
+  latestVersion: newVersionStr,
+  buildNumber: build,
+  downloadUrl: 'https://github.com/kavypatel03/buoy-erp-main/raw/main/web/download/buoy-erp.apk',
+  releaseNotes: 'Continuous production release with latest factory performance and features.',
+  releaseDate: now.toISOString(),
+  forceUpdate: false
+};
+fs.writeFileSync(versionJsonPath, JSON.stringify(versionJsonData, null, 2), 'utf8');
+console.log(`✅ Updated backend/config/version.json with build ${build}`);
+
+// 4. Output for shell scripts if needed
 if (process.argv.includes('--env')) {
   fs.writeFileSync(path.join(__dirname, 'version.env'), `APP_VERSION=${newVersionStr}\nBUILD_NUMBER=${build}\n`);
 }

@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const path = require('path');
+const fs = require('fs');
 
 // Import routes and middleware
 const itemRoutes = require('./routes/itemRoutes');
@@ -62,33 +63,45 @@ app.get('/health', (req, res) => {
 // App version & In-App Auto-Update endpoint
 app.get('/api/app/version', async (req, res) => {
   try {
-    let latestVersion = '1.0.0';
-    let downloadUrl = 'https://github.com/kavypatel03/buoy-erp-main/raw/main/web/download/buoy-erp.apk';
+    let versionInfo = {
+      latestVersion: '1.0.3',
+      buildNumber: 4,
+      downloadUrl: 'https://github.com/kavypatel03/buoy-erp-main/raw/main/web/download/buoy-erp.apk',
+      releaseNotes: 'Continuous production release with latest factory performance and features.',
+      releaseDate: new Date().toISOString(),
+      forceUpdate: false
+    };
 
+    try {
+      const vPath = path.join(__dirname, 'config/version.json');
+      if (fs.existsSync(vPath)) {
+        const fileContent = JSON.parse(fs.readFileSync(vPath, 'utf8'));
+        versionInfo = { ...versionInfo, ...fileContent };
+      }
+    } catch (_) {}
+
+    // Allow Admin Console to override if customized in database
     const { data } = await supabaseAdmin
       .from('app_settings')
       .select('*')
-      .in('key', ['apk_download_url', 'apk_version']);
+      .in('key', ['apk_download_url', 'apk_version', 'apk_build_number', 'apk_release_notes']);
 
     if (data && data.length > 0) {
       const u = data.find(r => r.key === 'apk_download_url');
       const v = data.find(r => r.key === 'apk_version');
-      if (u?.value) downloadUrl = u.value;
-      if (v?.value) latestVersion = v.value;
+      const b = data.find(r => r.key === 'apk_build_number');
+      const n = data.find(r => r.key === 'apk_release_notes');
+      if (u?.value) versionInfo.downloadUrl = u.value;
+      if (v?.value) versionInfo.latestVersion = v.value;
+      if (b?.value && parseInt(b.value, 10)) versionInfo.buildNumber = parseInt(b.value, 10);
+      if (n?.value) versionInfo.releaseNotes = n.value;
     }
 
+    res.status(200).json(versionInfo);
+  } catch (err) {
     res.status(200).json({
-      latestVersion,
-      buildNumber: 1,
-      releaseDate: new Date().toISOString(),
-      downloadUrl,
-      releaseNotes: 'Continuous live over-the-air updates enabled. Latest factory release.',
-      forceUpdate: false
-    });
-  } catch (_) {
-    res.status(200).json({
-      latestVersion: '1.0.0',
-      buildNumber: 1,
+      latestVersion: '1.0.3',
+      buildNumber: 4,
       downloadUrl: 'https://github.com/kavypatel03/buoy-erp-main/raw/main/web/download/buoy-erp.apk',
       releaseNotes: 'Production release',
       forceUpdate: false
