@@ -28,3 +28,4 @@ WITH CHECK (true);
 -- Index for instant lookup when sending broadcasts
 CREATE INDEX IF NOT EXISTS idx_user_fcm_tokens_user_id ON public.user_fcm_tokens (user_id);
 CREATE INDEX IF NOT EXISTS idx_user_fcm_tokens_token ON public.user_fcm_tokens (token);
+
