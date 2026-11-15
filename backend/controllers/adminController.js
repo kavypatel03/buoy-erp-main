@@ -235,29 +235,47 @@ exports.updateUser = async (req, res) => {
 
 exports.sendNotification = async (req, res) => {
   try {
-    const { targetUserId, title, message } = req.body;
+    let { audience, targetUserId, selectedUsers, title, message } = req.body;
 
-    if (targetUserId === 'all') {
-      const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
-      if (users && users.length > 0) {
-        const notifications = users.map(u => ({
-          user_id: u.id,
-          title,
-          message,
-          is_read: false
-        }));
-        await supabaseAdmin.from('notifications').insert(notifications);
-      }
-    } else {
-      await supabaseAdmin.from('notifications').insert({
-        user_id: targetUserId,
-        title,
-        message,
-        is_read: false
-      });
+    if (!title || !message) {
+      throw new Error('Notification title and message are required');
     }
 
-    res.redirect('/admin?success=Notification+sent');
+    let userIds = [];
+    if (audience === 'all' || targetUserId === 'all') {
+      const { data: { users }, error: listErr } = await supabaseAdmin.auth.admin.listUsers();
+      if (listErr) throw listErr;
+      if (users && users.length > 0) {
+        userIds = users.map(u => u.id);
+      }
+    } else {
+      if (Array.isArray(selectedUsers)) {
+        userIds = selectedUsers.filter(id => typeof id === 'string' && id.trim().length > 0);
+      } else if (typeof selectedUsers === 'string' && selectedUsers.trim().length > 0) {
+        userIds = [selectedUsers.trim()];
+      } else if (targetUserId && targetUserId !== 'all') {
+        userIds = [targetUserId.trim()];
+      }
+    }
+
+    if (userIds.length === 0) {
+      throw new Error('Please select at least one recipient user or choose All Operators');
+    }
+
+    const notifications = userIds.map(uid => ({
+      user_id: uid,
+      title: title.trim(),
+      message: message.trim(),
+      is_read: false
+    }));
+
+    const { error: insertErr } = await supabaseAdmin.from('notifications').insert(notifications);
+    if (insertErr) throw insertErr;
+
+    const countMsg = audience === 'all' || targetUserId === 'all'
+      ? 'Broadcast+sent+to+all+operators'
+      : `Notification+sent+to+${userIds.length}+selected+user(s)`;
+    res.redirect(`/admin?success=${countMsg}`);
   } catch (err) {
     res.redirect('/admin?error=' + encodeURIComponent(err.message));
   }

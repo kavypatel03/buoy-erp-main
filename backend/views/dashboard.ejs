@@ -7,6 +7,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Instant Theme Detection (Zero-Flicker) -->
+  <script>
+    (function() {
+      const savedTheme = localStorage.getItem('buoy_admin_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    })();
+  </script>
+
   <style>
     :root {
       --primary: #5B3DF5;
@@ -28,6 +37,18 @@
       --sidebar-width: 250px;
     }
 
+    /* ─── LIGHT THEME OVERRIDES (AppColors.dart Light Palette) ─── */
+    [data-theme="light"] {
+      --bg: #F8FAFC;
+      --surface: #FFFFFF;
+      --card: #FFFFFF;
+      --border: #E2E8F0;
+      --divider: #CBD5E1;
+      --text-primary: #0F172A;
+      --text-secondary: #64748B;
+      --text-muted: #94A3B8;
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -41,6 +62,7 @@
       min-height: 100vh;
       display: flex;
       overflow-x: hidden;
+      transition: background-color 0.2s ease, color 0.2s ease;
     }
 
     /* ─── WEB DESKTOP SIDEBAR (Matches main_shell_screen.dart) ─── */
@@ -57,6 +79,7 @@
       height: 100vh;
       overflow-y: auto;
       z-index: 50;
+      transition: background-color 0.2s, border-color 0.2s;
     }
 
     .sidebar-header {
@@ -82,6 +105,13 @@
       line-height: 0.85;
       flex-shrink: 0;
       user-select: none;
+      transition: all 0.2s;
+    }
+
+    [data-theme="light"] .buoy-logo-box {
+      background: #FFFFFF;
+      border-color: #E2E8F0;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
     }
 
     .buoy-logo-box .row-1, .buoy-logo-box .row-2 {
@@ -121,6 +151,11 @@
       width: fit-content;
     }
 
+    [data-theme="light"] .brand-badge {
+      color: var(--primary);
+      background: rgba(91, 61, 245, 0.08);
+    }
+
     /* Sidebar Navigation Items */
     .sidebar-nav {
       flex: 1;
@@ -148,15 +183,20 @@
     }
 
     .nav-item:hover:not(.active) {
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(91, 61, 245, 0.06);
       color: var(--text-primary);
     }
 
     .nav-item.active {
-      background: rgba(91, 61, 245, 0.2);
+      background: rgba(91, 61, 245, 0.15);
       border-color: rgba(91, 61, 245, 0.4);
-      color: var(--primary-light);
+      color: var(--primary);
       font-weight: 700;
+    }
+
+    [data-theme="dark"] .nav-item.active {
+      background: rgba(91, 61, 245, 0.2);
+      color: var(--primary-light);
     }
 
     .nav-item .icon {
@@ -243,13 +283,13 @@
       flex-direction: column;
       min-width: 0;
       background: var(--bg);
+      transition: background-color 0.2s;
     }
 
     /* Top Bar Header */
     .top-header {
       height: 68px;
-      background: rgba(22, 22, 31, 0.85);
-      backdrop-filter: blur(16px);
+      background: var(--surface);
       border-bottom: 1px solid var(--border);
       padding: 0 24px;
       display: flex;
@@ -258,6 +298,17 @@
       position: sticky;
       top: 0;
       z-index: 40;
+      backdrop-filter: blur(16px);
+      transition: background-color 0.2s, border-color 0.2s;
+    }
+
+    [data-theme="dark"] .top-header {
+      background: rgba(22, 22, 31, 0.85);
+    }
+
+    [data-theme="light"] .top-header {
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
     }
 
     .header-left {
@@ -275,7 +326,7 @@
       font-weight: 700;
       color: var(--text-primary);
       letter-spacing: -0.2px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     }
 
     .sync-badge {
@@ -284,11 +335,15 @@
       gap: 7px;
       background: rgba(16, 185, 129, 0.12);
       border: 1px solid rgba(16, 185, 129, 0.35);
-      color: #34D399;
+      color: #10B981;
       font-size: 12px;
       font-weight: 600;
       padding: 6px 14px;
       border-radius: 20px;
+    }
+
+    [data-theme="dark"] .sync-badge {
+      color: #34D399;
     }
 
     .sync-badge .dot {
@@ -333,14 +388,42 @@
     }
 
     .stat-badge strong {
-      color: var(--primary-light);
+      color: var(--primary);
       font-weight: 700;
+    }
+
+    [data-theme="dark"] .stat-badge strong {
+      color: var(--primary-light);
+    }
+
+    /* Theme Toggle Button */
+    .btn-theme-toggle {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 7px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 12.5px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      font-family: inherit;
+      user-select: none;
+    }
+
+    .btn-theme-toggle:hover {
+      border-color: var(--primary);
+      background: rgba(91, 61, 245, 0.08);
+      transform: translateY(-1px);
     }
 
     .btn-logout {
       background: rgba(239, 68, 68, 0.12);
       border: 1px solid rgba(239, 68, 68, 0.3);
-      color: #F87171;
+      color: #EF4444;
       padding: 7px 14px;
       border-radius: 12px;
       text-decoration: none;
@@ -352,8 +435,12 @@
       transition: all 0.2s;
     }
 
+    [data-theme="dark"] .btn-logout {
+      color: #F87171;
+    }
+
     .btn-logout:hover {
-      background: rgba(239, 68, 68, 0.25);
+      background: rgba(239, 68, 68, 0.22);
     }
 
     /* Content Area */
@@ -379,12 +466,20 @@
     .alert-success {
       background: rgba(16, 185, 129, 0.12);
       border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #10B981;
+    }
+
+    [data-theme="dark"] .alert-success {
       color: #34D399;
     }
 
     .alert-error {
       background: rgba(239, 68, 68, 0.12);
       border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #EF4444;
+    }
+
+    [data-theme="dark"] .alert-error {
       color: #F87171;
     }
 
@@ -410,6 +505,11 @@
       border-radius: 20px;
       padding: 22px;
       margin-bottom: 22px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
+      transition: background-color 0.2s, border-color 0.2s;
+    }
+
+    [data-theme="dark"] .glass-card {
       box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
     }
 
@@ -442,6 +542,7 @@
       .grid-2 { grid-template-columns: 1fr; }
       .sidebar { display: none; }
       .mobile-nav-bar { display: flex !important; }
+      .stats-ribbon { display: none; }
     }
 
     /* Forms & Inputs (Matches ErpInputField) */
@@ -481,8 +582,8 @@
     }
 
     input:focus, select:focus, textarea:focus {
-      border-color: var(--primary-light);
-      box-shadow: 0 0 0 3px rgba(91, 61, 245, 0.25);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(91, 61, 245, 0.18);
       background: var(--surface);
     }
 
@@ -572,16 +673,16 @@
       height: 14px;
       border-radius: 50%;
       display: inline-block;
-      box-shadow: 0 0 6px rgba(0,0,0,0.4);
+      box-shadow: 0 0 6px rgba(0,0,0,0.2);
     }
 
     .cat-badge {
       font-size: 11px;
       color: var(--text-secondary);
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(91, 61, 245, 0.08);
       padding: 2px 8px;
       border-radius: 6px;
-      font-weight: 500;
+      font-weight: 600;
     }
 
     .steps-flow {
@@ -592,9 +693,9 @@
     }
 
     .step-chip {
-      background: rgba(91, 61, 245, 0.15);
-      border: 1px solid rgba(91, 61, 245, 0.35);
-      color: #C4B5FD;
+      background: rgba(91, 61, 245, 0.12);
+      border: 1px solid rgba(91, 61, 245, 0.3);
+      color: var(--primary);
       padding: 5px 10px;
       border-radius: 8px;
       font-size: 12px;
@@ -604,9 +705,15 @@
       gap: 6px;
     }
 
+    [data-theme="dark"] .step-chip {
+      color: #C4B5FD;
+      background: rgba(91, 61, 245, 0.15);
+      border-color: rgba(91, 61, 245, 0.35);
+    }
+
     .step-chip .tol {
       font-size: 10px;
-      color: #8166FF;
+      color: var(--primary-light);
       font-weight: 700;
     }
 
@@ -625,7 +732,7 @@
     }
 
     th {
-      background: rgba(22, 22, 31, 0.95);
+      background: var(--surface);
       color: var(--text-secondary);
       text-align: left;
       padding: 12px 16px;
@@ -634,6 +741,10 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
       border-bottom: 1px solid var(--border);
+    }
+
+    [data-theme="dark"] th {
+      background: rgba(22, 22, 31, 0.95);
     }
 
     td {
@@ -655,9 +766,10 @@
       display: none;
       background: var(--card);
       border-bottom: 1px solid var(--border);
-      padding: 12px 16px;
+      padding: 10px 16px;
       overflow-x: auto;
       gap: 8px;
+      align-items: center;
     }
 
     .mobile-tab-btn {
@@ -676,6 +788,165 @@
       background: var(--primary);
       color: #FFFFFF;
       border-color: var(--primary);
+    }
+
+    /* ─── NOTIFICATION AUDIENCE PICKER STYLES ─── */
+    .audience-selector-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .audience-option-card {
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      background: var(--surface);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .audience-option-card.selected {
+      border-color: var(--primary);
+      background: rgba(91, 61, 245, 0.08);
+      box-shadow: 0 0 0 1px var(--primary);
+    }
+
+    .audience-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .audience-desc {
+      font-size: 11.5px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .user-checklist-container {
+      border: 1.2px solid var(--border);
+      border-radius: 16px;
+      background: var(--surface);
+      padding: 14px;
+      margin-bottom: 16px;
+      display: none;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .user-checklist-container.visible {
+      display: block;
+    }
+
+    .checklist-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .user-search-input {
+      padding: 9px 14px !important;
+      font-size: 13px !important;
+      border-radius: 12px !important;
+      max-width: 280px;
+    }
+
+    .checklist-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-action-small {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+
+    .btn-action-small:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .selection-counter {
+      background: var(--primary);
+      color: #FFFFFF;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 20px;
+    }
+
+    .user-scroll-box {
+      max-height: 220px;
+      overflow-y: auto;
+      border: 1px solid var(--divider);
+      border-radius: 12px;
+      background: var(--card);
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .user-select-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .user-select-row:hover {
+      background: rgba(91, 61, 245, 0.08);
+    }
+
+    .user-select-row input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    .user-select-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow: hidden;
+    }
+
+    .user-select-email {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-select-date {
+      font-size: 10.5px;
+      color: var(--text-secondary);
     }
   </style>
 </head>
@@ -749,6 +1020,9 @@
       <button class="mobile-tab-btn" onclick="switchTab('tab-users', this)">👥 Users</button>
       <button class="mobile-tab-btn" onclick="switchTab('tab-notify', this)">🔔 Broadcast</button>
       <button class="mobile-tab-btn" onclick="switchTab('tab-wipe', this)">⚠️ Wipe</button>
+      <button class="btn-theme-toggle" onclick="toggleTheme()" style="padding: 6px 10px; font-size: 11px;">
+        <span class="theme-icon-indicator">☀️</span>
+      </button>
     </div>
 
     <!-- Top Header Bar (Matches ErpHeaderBar) -->
@@ -770,6 +1044,12 @@
           <div class="stat-badge"><span>Batches:</span> <strong><%= stats.orders %></strong></div>
           <div class="stat-badge"><span>Logs:</span> <strong><%= stats.logs %></strong></div>
         </div>
+
+        <!-- Light / Dark Mode Toggle Button -->
+        <button type="button" class="btn-theme-toggle" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Light / Dark Mode">
+          <span id="themeIcon">☀️</span>
+          <span id="themeText">Light</span>
+        </button>
 
         <a href="/admin/logout" class="btn-logout">
           <span>Logout</span>
@@ -972,39 +1252,82 @@
         </div>
       </section>
 
-      <!-- ─── TAB 3: BROADCAST NOTIFICATIONS ─── -->
+      <!-- ─── TAB 3: BROADCAST NOTIFICATIONS (ALL USERS OR SELECTABLE USERS) ─── -->
       <section id="tab-notify" class="tab-pane">
-        <div class="glass-card" style="max-width: 650px;">
+        <div class="glass-card" style="max-width: 720px;">
           <div class="card-header">
             <h2 class="card-title">
-              <span>🔔</span> Send Factory Broadcast Notification
+              <span>🔔</span> Send Notification Broadcast
             </h2>
           </div>
 
-          <form action="/admin/send-notification" method="POST">
-            <div class="form-group">
-              <label>Target Audience</label>
-              <select name="targetUserId" required>
-                <option value="all">-- Send Globally to All Factory Operators --</option>
+          <form action="/admin/send-notification" method="POST" id="notificationForm">
+            <!-- Audience Selection Toggle Cards -->
+            <label style="margin-bottom: 8px;">Recipient Audience</label>
+            <div class="audience-selector-grid">
+              <!-- Option 1: All Operators -->
+              <div class="audience-option-card selected" id="cardAudienceAll" onclick="selectAudience('all')">
+                <input type="radio" name="audience" id="radioAudienceAll" value="all" checked style="display:none;">
+                <div class="audience-header">
+                  <span>🌐</span>
+                  <span>All Factory Operators</span>
+                </div>
+                <p class="audience-desc">Broadcast notification to all active user accounts in the factory globally.</p>
+              </div>
+
+              <!-- Option 2: Particular Selectable Users -->
+              <div class="audience-option-card" id="cardAudienceCustom" onclick="selectAudience('custom')">
+                <input type="radio" name="audience" id="radioAudienceCustom" value="custom" style="display:none;">
+                <div class="audience-header">
+                  <span>👥</span>
+                  <span>Select Particular Users</span>
+                </div>
+                <p class="audience-desc">Choose specific individual operators from the user directory.</p>
+              </div>
+            </div>
+
+            <!-- Interactive User Checklist Panel (Appears when Select Particular Users is clicked) -->
+            <div class="user-checklist-container" id="userChecklistPanel">
+              <div class="checklist-toolbar">
+                <input type="text" id="userFilterInput" class="user-search-input" placeholder="🔍 Search operator email..." onkeyup="filterUsers()">
+                <div class="checklist-actions">
+                  <button type="button" class="btn-action-small" onclick="selectAllUsers(true)">Select All</button>
+                  <button type="button" class="btn-action-small" onclick="selectAllUsers(false)">Deselect All</button>
+                  <span class="selection-counter" id="selectedCounter">0 selected</span>
+                </div>
+              </div>
+
+              <div class="user-scroll-box" id="userScrollBox">
                 <% if (users && users.length > 0) { %>
                   <% users.forEach(user => { %>
-                    <option value="<%= user.id %>"><%= user.email %></option>
+                    <label class="user-select-row" data-email="<%= user.email.toLowerCase() %>">
+                      <input type="checkbox" name="selectedUsers" value="<%= user.id %>" onchange="updateSelectedCounter()">
+                      <div class="user-select-info">
+                        <span class="user-select-email"><%= user.email %></span>
+                        <span class="user-select-date">Joined <%= new Date(user.created_at).toLocaleDateString() %></span>
+                      </div>
+                    </label>
                   <% }) %>
+                <% } else { %>
+                  <div style="padding: 12px; text-align: center; color: var(--text-secondary); font-size: 13px;">No operator accounts found.</div>
                 <% } %>
-              </select>
+              </div>
             </div>
 
             <div class="form-group">
               <label>Notification Title</label>
-              <input type="text" name="title" placeholder="e.g. Shift 2 Production Target Updated" required>
+              <input type="text" name="title" id="notifTitle" placeholder="e.g. Shift 2 Production Target Updated" required>
             </div>
 
             <div class="form-group">
               <label>Message Content</label>
-              <textarea name="message" rows="3" placeholder="Enter instructions or notification details for operators..." required></textarea>
+              <textarea name="message" id="notifMessage" rows="3" placeholder="Enter instructions or notification details for operators..." required></textarea>
             </div>
 
-            <button type="submit" class="btn-primary">Broadcast Notification</button>
+            <button type="submit" class="btn-primary" id="btnSendNotification">
+              <span>🚀</span>
+              <span id="btnSendText">Broadcast to All Operators</span>
+            </button>
           </form>
         </div>
       </section>
@@ -1013,7 +1336,7 @@
       <section id="tab-wipe" class="tab-pane">
         <div class="glass-card" style="border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.04);">
           <div class="card-header" style="border-bottom-color: rgba(239, 68, 68, 0.2);">
-            <h2 class="card-title" style="color: #F87171;">
+            <h2 class="card-title" style="color: #EF4444;">
               <span>⚠️</span> Master Database Clean Wipe (Pre-Handover Reset)
             </h2>
           </div>
@@ -1035,7 +1358,7 @@
 
           <form action="/admin/master-wipe" method="POST" onsubmit="return confirm('DANGER: Are you 100% sure you want to wipe all factory operational data?');" style="max-width: 520px;">
             <div class="form-group">
-              <label style="color: #FCA5A5;">Type <strong>DELETE-ALL-DATA</strong> to authorize master wipe:</label>
+              <label style="color: #EF4444; font-weight: 700;">Type <strong>DELETE-ALL-DATA</strong> to authorize master wipe:</label>
               <input type="text" name="confirm_phrase" placeholder="DELETE-ALL-DATA" required style="border-color: rgba(239, 68, 68, 0.5); font-weight: 700; letter-spacing: 0.5px;">
             </div>
 
@@ -1053,25 +1376,47 @@
   </main>
 
   <script>
+    // ─── THEME TOGGLE LOGIC ───────────────────────────────────────────────────
+    function initTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      updateThemeUI(current);
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const nextTheme = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', nextTheme);
+      localStorage.setItem('buoy_admin_theme', nextTheme);
+      updateThemeUI(nextTheme);
+    }
+
+    function updateThemeUI(theme) {
+      const icon = document.getElementById('themeIcon');
+      const text = document.getElementById('themeText');
+      const mobileIndicators = document.querySelectorAll('.theme-icon-indicator');
+
+      if (theme === 'light') {
+        if (icon) icon.textContent = '🌙';
+        if (text) text.textContent = 'Dark';
+        mobileIndicators.forEach(i => i.textContent = '🌙');
+      } else {
+        if (icon) icon.textContent = '☀️';
+        if (text) text.textContent = 'Light';
+        mobileIndicators.forEach(i => i.textContent = '☀️');
+      }
+    }
+    initTheme();
+
+    // ─── TAB NAVIGATION ───────────────────────────────────────────────────────
     function switchTab(tabId, element) {
-      // Hide all panes
       document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
-      // Remove active from all nav items and mobile buttons
       document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.mobile-tab-btn').forEach(el => el.classList.remove('active'));
 
-      // Show selected pane
       const targetPane = document.getElementById(tabId);
-      if (targetPane) {
-        targetPane.classList.add('active');
-      }
+      if (targetPane) targetPane.classList.add('active');
+      if (element) element.classList.add('active');
 
-      // Add active to the clicked item if provided
-      if (element) {
-        element.classList.add('active');
-      }
-
-      // Sync mobile and desktop navs
       const navButtons = document.querySelectorAll('.sidebar-nav .nav-item');
       const mobileButtons = document.querySelectorAll('.mobile-nav-bar .mobile-tab-btn');
       const tabMap = {
@@ -1084,6 +1429,69 @@
       if (idx !== undefined) {
         if (navButtons[idx]) navButtons[idx].classList.add('active');
         if (mobileButtons[idx]) mobileButtons[idx].classList.add('active');
+      }
+    }
+
+    // ─── NOTIFICATION AUDIENCE LOGIC ──────────────────────────────────────────
+    function selectAudience(mode) {
+      const cardAll = document.getElementById('cardAudienceAll');
+      const cardCustom = document.getElementById('cardAudienceCustom');
+      const radioAll = document.getElementById('radioAudienceAll');
+      const radioCustom = document.getElementById('radioAudienceCustom');
+      const panel = document.getElementById('userChecklistPanel');
+      const btnText = document.getElementById('btnSendText');
+
+      if (mode === 'all') {
+        cardAll.classList.add('selected');
+        cardCustom.classList.remove('selected');
+        radioAll.checked = true;
+        radioCustom.checked = false;
+        panel.classList.remove('visible');
+        btnText.textContent = 'Broadcast to All Operators';
+      } else {
+        cardCustom.classList.add('selected');
+        cardAll.classList.remove('selected');
+        radioCustom.checked = true;
+        radioAll.checked = false;
+        panel.classList.add('visible');
+        updateSelectedCounter();
+      }
+    }
+
+    function filterUsers() {
+      const query = document.getElementById('userFilterInput').value.toLowerCase().trim();
+      const rows = document.querySelectorAll('.user-select-row');
+      rows.forEach(r => {
+        const email = r.getAttribute('data-email') || '';
+        r.style.display = email.includes(query) ? 'flex' : 'none';
+      });
+    }
+
+    function selectAllUsers(check) {
+      const checkboxes = document.querySelectorAll('.user-select-row input[type="checkbox"]');
+      checkboxes.forEach(cb => {
+        // Only select visible ones if filtered
+        const row = cb.closest('.user-select-row');
+        if (row && row.style.display !== 'none') {
+          cb.checked = check;
+        }
+      });
+      updateSelectedCounter();
+    }
+
+    function updateSelectedCounter() {
+      const checked = document.querySelectorAll('.user-select-row input[type="checkbox"]:checked');
+      const counter = document.getElementById('selectedCounter');
+      const btnText = document.getElementById('btnSendText');
+      const count = checked.length;
+      if (counter) counter.textContent = `${count} selected`;
+
+      if (document.getElementById('radioAudienceCustom').checked) {
+        if (count > 0) {
+          btnText.textContent = `Send Notification to ${count} Operator(s)`;
+        } else {
+          btnText.textContent = 'Select Operator(s) to Send';
+        }
       }
     }
   </script>
