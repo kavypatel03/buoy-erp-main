@@ -332,13 +332,21 @@
     .footer-note a:hover {
       text-decoration: underline;
     }
+    [data-lucide] {
+      width: 16px;
+      height: 16px;
+      stroke-width: 2.2;
+      vertical-align: middle;
+      display: inline-block;
+    }
   </style>
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
   <!-- Top Right Theme Toggle -->
   <div class="top-theme-toggle">
     <button type="button" class="btn-theme-toggle" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Theme">
-      <span id="themeIcon">☀️</span>
+      <span id="themeIcon"><i data-lucide="sun"></i></span>
       <span id="themeText">Light</span>
     </button>
   </div>
@@ -367,7 +375,7 @@
 
     <% if (error) { %>
       <div class="error-banner">
-        <span>⚠</span>
+        <i data-lucide="alert-triangle"></i>
         <span><%= error %></span>
       </div>
     <% } %>
@@ -414,14 +422,16 @@
       const icon = document.getElementById('themeIcon');
       const text = document.getElementById('themeText');
       if (theme === 'light') {
-        if (icon) icon.textContent = '🌙';
+        if (icon) icon.innerHTML = '<i data-lucide="moon"></i>';
         if (text) text.textContent = 'Dark';
       } else {
-        if (icon) icon.textContent = '☀️';
+        if (icon) icon.innerHTML = '<i data-lucide="sun"></i>';
         if (text) text.textContent = 'Light';
       }
+      if (window.lucide) lucide.createIcons();
     }
     initTheme();
+    if (window.lucide) lucide.createIcons();
   </script>
 </body>
 </html>

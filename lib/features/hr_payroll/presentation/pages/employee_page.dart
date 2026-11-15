@@ -79,6 +79,7 @@ class EmployeePage extends StatefulWidget {
 class EmployeePageState extends State<EmployeePage> with AutomaticKeepAliveClientMixin {
   int _currentSubIndex = 0; // 0: List, 1: Add New, 2: Details, 3: Edit
   String _selectedFilter = 'All Employee';
+  String _selectedSort = 'Default';
   EmployeeModel? _selectedEmployee;
 
   @override
@@ -178,6 +179,12 @@ class EmployeePageState extends State<EmployeePage> with AutomaticKeepAliveClien
       return true;
     }).toList();
 
+    if (_selectedSort == 'Name') {
+      filteredList.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    } else if (_selectedSort == 'Salary') {
+      filteredList.sort((a, b) => (double.tryParse(b.payableSalary) ?? 0).compareTo(double.tryParse(a.payableSalary) ?? 0));
+    }
+
     final clockedInCount = _employees.where((e) => e.isIn).length;
 
     return Scaffold(
@@ -205,7 +212,28 @@ class EmployeePageState extends State<EmployeePage> with AutomaticKeepAliveClien
               ),
             ),
 
-            // Summary stats strip
+            const SizedBox(height: 8),
+
+            // 1. Filter chips & Sorting (Matches Inventory UI pattern exact under header)
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Row(
+                children: [
+                  _buildFilterChip('All Employee'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Available'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Unavailable'),
+                  const SizedBox(width: 8),
+                  _buildSortChip(),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // 2. Summary stats strip (underneath filter options, matching Inventory pattern)
             if (!_isLoading && _employees.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
@@ -220,21 +248,7 @@ class EmployeePageState extends State<EmployeePage> with AutomaticKeepAliveClien
                 ),
               ),
 
-            // Filter chips
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Row(
-                children: [
-                  _buildFilterChip('All Employee'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Available'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Unavailable'),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 14),
+            const SizedBox(height: 6),
 
             // Content List
             Expanded(
@@ -445,6 +459,55 @@ class EmployeePageState extends State<EmployeePage> with AutomaticKeepAliveClien
                 ? Colors.white
                 : (isDark ? AppColors.darkTextSecondary : const Color(0xFF475569)),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSortChip() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isCustomSort = _selectedSort != 'Default';
+
+    return PopupMenuButton<String>(
+      onSelected: (val) {
+        HapticFeedback.selectionClick();
+        setState(() => _selectedSort = val);
+      },
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: isDark ? AppColors.darkCard : Colors.white,
+      itemBuilder: (context) => [
+        const PopupMenuItem(value: 'Default', child: Text('Default Order')),
+        const PopupMenuItem(value: 'Name', child: Text('Sort by Name (A-Z)')),
+        const PopupMenuItem(value: 'Salary', child: Text('Sort by Salary (High to Low)')),
+      ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isCustomSort ? AppColors.primary.withValues(alpha: 0.15) : (isDark ? AppColors.darkCard : Colors.white),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: isCustomSort ? AppColors.primary : (isDark ? AppColors.darkCardBorder : AppColors.border),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.sort_rounded,
+              size: 15,
+              color: isCustomSort ? AppColors.primary : (isDark ? AppColors.darkTextSecondary : const Color(0xFF475569)),
+            ),
+            const SizedBox(width: 5),
+            Text(
+              _selectedSort == 'Default' ? 'Sort' : _selectedSort,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: isCustomSort ? FontWeight.w700 : FontWeight.w600,
+                color: isCustomSort ? AppColors.primary : (isDark ? AppColors.darkTextSecondary : const Color(0xFF475569)),
+              ),
+            ),
+          ],
         ),
       ),
     );

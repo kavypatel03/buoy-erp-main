@@ -9,16 +9,18 @@ class ProductionService {
   static String get exportExcelUrl => '$baseUrl/wastage-report/export/excel';
   static String get exportPdfUrl => '$baseUrl/wastage-report/export/pdf';
 
-  static Future<String> getExportExcelUrlWithAuth() async {
+  static Future<String> getExportExcelUrlWithAuth({String? orderId}) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token') ?? '';
-    return '$exportExcelUrl?token=$token';
+    final orderParam = (orderId != null && orderId.isNotEmpty) ? '&order_id=$orderId' : '';
+    return '$exportExcelUrl?token=$token$orderParam';
   }
 
-  static Future<String> getExportPdfUrlWithAuth() async {
+  static Future<String> getExportPdfUrlWithAuth({String? orderId}) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token') ?? '';
-    return '$exportPdfUrl?token=$token';
+    final orderParam = (orderId != null && orderId.isNotEmpty) ? '&order_id=$orderId' : '';
+    return '$exportPdfUrl?token=$token$orderParam';
   }
 
   static List<dynamic>? _cachedProductTypes;

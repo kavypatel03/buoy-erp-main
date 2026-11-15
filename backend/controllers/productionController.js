@@ -624,10 +624,30 @@ function _getWeekNumber(d) {
 // ─── 10. EXPORT WASTAGE REPORT IN EXCEL / CSV ────────────────────────────────
 exports.exportWastageExcel = async (req, res) => {
   try {
-    const { data: rawLogs } = await getClient(req)
+    let rawLogs = null;
+    let query = getClient(req)
       .from('production_logs')
       .select('id, order_id, process_name, input_qty, output_qty, wastage_qty, created_at, production_orders(product_name, status)')
       .order('created_at', { ascending: false });
+
+    if (req.query && req.query.order_id) {
+      query = query.eq('order_id', req.query.order_id);
+    }
+
+    const { data, error } = await query;
+    if (!error && data) {
+      rawLogs = data;
+    } else {
+      let fallbackQuery = getClient(req)
+        .from('production_logs')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (req.query && req.query.order_id) {
+        fallbackQuery = fallbackQuery.eq('order_id', req.query.order_id);
+      }
+      const { data: simpleData } = await fallbackQuery;
+      rawLogs = simpleData || [];
+    }
 
     const analytics = _computeWastageAnalytics(rawLogs || []);
 
@@ -678,10 +698,30 @@ exports.exportWastageExcel = async (req, res) => {
 // ─── 11. EXPORT WASTAGE REPORT IN EXECUTIVE PRINTABLE PDF / HTML ─────────────
 exports.exportWastagePdf = async (req, res) => {
   try {
-    const { data: rawLogs } = await getClient(req)
+    let rawLogs = null;
+    let query = getClient(req)
       .from('production_logs')
       .select('id, order_id, process_name, input_qty, output_qty, wastage_qty, created_at, production_orders(product_name, status)')
       .order('created_at', { ascending: false });
+
+    if (req.query && req.query.order_id) {
+      query = query.eq('order_id', req.query.order_id);
+    }
+
+    const { data, error } = await query;
+    if (!error && data) {
+      rawLogs = data;
+    } else {
+      let fallbackQuery = getClient(req)
+        .from('production_logs')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (req.query && req.query.order_id) {
+        fallbackQuery = fallbackQuery.eq('order_id', req.query.order_id);
+      }
+      const { data: simpleData } = await fallbackQuery;
+      rawLogs = simpleData || [];
+    }
 
     const report = _computeWastageAnalytics(rawLogs || []);
     const s = report.summary;

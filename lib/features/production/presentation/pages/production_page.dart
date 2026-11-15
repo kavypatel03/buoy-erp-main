@@ -1040,41 +1040,74 @@ class ProductionPageState extends State<ProductionPage>
             ErpHeaderBar(
               title: _selectedOrder['product_name'] ?? 'Order',
               onBackTap: popSubScreen,
-              trailing: Row(children: [
-                if (!isCompleted)
-                  _IconBtn(
-                    icon: Icons.check_circle_outline_rounded,
-                    color: AppColors.success,
-                    tooltip: 'Complete Order',
-                    onTap: () async {
-                      final confirm = await _confirmDialog(
-                        'Complete Order',
-                        'Mark "${_selectedOrder['product_name']}" as fully completed?',
-                      );
-                      if (confirm != true) return;
-                      setState(() => _isLoading = true);
-                      final res = await ProductionService.completeOrder(
-                          _selectedOrder['id']);
-                      if (res['success'] && mounted) {
-                        setState(() {
-                          _selectedOrder['status'] = 'Completed';
-                          _isLoading = false;
-                        });
-                        HapticFeedback.lightImpact();
-                      } else {
-                        setState(() => _isLoading = false);
-                        if (mounted) _showError(res['error'] ?? 'Failed');
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!isCompleted) ...[
+                    _IconBtn(
+                      icon: Icons.check_circle_outline_rounded,
+                      color: AppColors.success,
+                      tooltip: 'Complete Order',
+                      onTap: () async {
+                        final confirm = await _confirmDialog(
+                          'Complete Order',
+                          'Mark "${_selectedOrder['product_name']}" as fully completed?',
+                        );
+                        if (confirm != true) return;
+                        setState(() => _isLoading = true);
+                        final res = await ProductionService.completeOrder(
+                            _selectedOrder['id']);
+                        if (res['success'] && mounted) {
+                          setState(() {
+                            _selectedOrder['status'] = 'Completed';
+                            _isLoading = false;
+                          });
+                          HapticFeedback.lightImpact();
+                        } else {
+                          setState(() => _isLoading = false);
+                          if (mounted) _showError(res['error'] ?? 'Failed');
+                        }
+                      },
+                    ),
+                    const SizedBox(width: 6),
+                    _IconBtn(
+                      icon: Icons.add_task_rounded,
+                      tooltip: 'Log Step',
+                      onTap: _showAddLogModal,
+                      filled: true,
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                  _ExportMenuCapsule(
+                    onExportExcel: () async {
+                      final url = await ProductionService.getExportExcelUrlWithAuth(orderId: _selectedOrder['id']);
+                      downloadFileFromUrl(url, filename: 'order-${_selectedOrder['id']}-logs.csv');
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Downloading Order Logs (Excel / CSV)...'),
+                            backgroundColor: AppColors.success,
+                          ),
+                        );
                       }
                     },
+                    onExportPdf: () async {
+                      final url = await ProductionService.getExportPdfUrlWithAuth(orderId: _selectedOrder['id']);
+                      downloadFileFromUrl(url, filename: 'order-${_selectedOrder['id']}-report.html');
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Opening Order Report for Print / PDF...'),
+                            backgroundColor: AppColors.primary,
+                          ),
+                        );
+                      }
+                    },
+                    onRefresh: () => _fetchOrders(),
+                    isDark: isDark,
                   ),
-                const SizedBox(width: 6),
-                _IconBtn(
-                  icon: Icons.add_task_rounded,
-                  tooltip: 'Log Step',
-                  onTap: _showAddLogModal,
-                  filled: !isCompleted,
-                ),
-              ]),
+                ],
+              ),
             ),
 
             // Status banner
@@ -1239,52 +1272,35 @@ class ProductionPageState extends State<ProductionPage>
         child: Column(
           children: [
             ErpHeaderBar(
-              title: 'ML Wastage Analytics',
+              title: 'Wastage & Yield Audit',
               onBackTap: popSubScreen,
-              trailing: Row(
-                children: [
-                  _IconBtn(
-                    icon: Icons.table_view_rounded,
-                    color: AppColors.success,
-                    tooltip: 'Export Excel / CSV',
-                    onTap: () async {
-                      final url = await ProductionService.getExportExcelUrlWithAuth();
-                      downloadFileFromUrl(url, filename: 'buoy-factory-wastage-report.csv');
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Downloading Wastage Report (Excel / CSV)...'),
-                            backgroundColor: AppColors.success,
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 6),
-                  _IconBtn(
-                    icon: Icons.picture_as_pdf_rounded,
-                    color: AppColors.error,
-                    tooltip: 'Export Executive PDF',
-                    onTap: () async {
-                      final url = await ProductionService.getExportPdfUrlWithAuth();
-                      downloadFileFromUrl(url, filename: 'buoy-factory-wastage-report.html');
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Opening Executive Wastage Report for Print / PDF...'),
-                            backgroundColor: AppColors.primary,
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 6),
-                  _IconBtn(
-                    icon: Icons.refresh_rounded,
-                    tooltip: 'Refresh',
-                    onTap: _fetchWastageReport,
-                  ),
-                ],
+              trailing: _ExportMenuCapsule(
+                onExportExcel: () async {
+                  final url = await ProductionService.getExportExcelUrlWithAuth();
+                  downloadFileFromUrl(url, filename: 'buoy-factory-wastage-report.csv');
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Downloading Wastage Report (Excel / CSV)...'),
+                        backgroundColor: AppColors.success,
+                      ),
+                    );
+                  }
+                },
+                onExportPdf: () async {
+                  final url = await ProductionService.getExportPdfUrlWithAuth();
+                  downloadFileFromUrl(url, filename: 'buoy-factory-wastage-report.html');
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Opening Executive Wastage Report for Print / PDF...'),
+                        backgroundColor: AppColors.primary,
+                      ),
+                    );
+                  }
+                },
+                onRefresh: _fetchWastageReport,
+                isDark: isDark,
               ),
             ),
 
@@ -1767,7 +1783,7 @@ class _MlScorecard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'ML Wastage Predictor',
+                    'Factory Production Health',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -1797,7 +1813,7 @@ class _MlScorecard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      anomalyCount > 0 ? '$anomalyCount ML Outliers' : 'Nominal Tolerances',
+                      anomalyCount > 0 ? '$anomalyCount Issues Detected' : 'All Stages Normal',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -1873,11 +1889,11 @@ class _MlScorecard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Average Wastage Rate: ${overallWaste.toStringAsFixed(1)}%',
+                      'Total Scrap & Waste Rate: ${overallWaste.toStringAsFixed(1)}%',
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.error,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -2034,7 +2050,7 @@ class _AnomalyBanner extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'ML Gaussian Anomalies Detected (${anomalies.length})',
+                      'High Scrap & Waste Alert (${anomalies.length} Stage${anomalies.length > 1 ? 's' : ''} Need Attention)',
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -2043,7 +2059,7 @@ class _AnomalyBanner extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Processes exceeding standard Gaussian statistical tolerance thresholds (Z-Score > 2.0σ)',
+                      'These stages lost significantly more raw material than standard factory limits. Check machinery or handling.',
                       style: TextStyle(
                         fontSize: 11,
                         color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
@@ -2056,7 +2072,6 @@ class _AnomalyBanner extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           ...anomalies.take(3).map((a) {
-            final zScore = a['z_score']?.toString() ?? '2.0';
             final wastePct = a['wastage_pct']?.toString() ?? '0';
             final proc = a['process_name'] ?? 'Process';
             final prod = a['product_name'] ?? 'Production';
@@ -2079,14 +2094,22 @@ class _AnomalyBanner extends StatelessWidget {
                         Text(
                           '$proc ($prod)',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 12.5,
                             fontWeight: FontWeight.w700,
                             color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
+                        const SizedBox(height: 2),
                         Text(
-                          'Wastage Rate: $wastePct%  •  Deviance: Z = +$zScoreσ',
-                          style: const TextStyle(fontSize: 11, color: AppColors.error, fontWeight: FontWeight.w600),
+                          'Scrap Lost: $wastePct% of input material',
+                          style: const TextStyle(fontSize: 11, color: AppColors.error, fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          severity == 'High'
+                              ? '💡 Action: Inspect machine alignment or blade sharpness immediately'
+                              : '💡 Action: Verify raw material quality batch for next run',
+                          style: TextStyle(fontSize: 10.5, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                         ),
                       ],
                     ),
@@ -2098,7 +2121,7 @@ class _AnomalyBanner extends StatelessWidget {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      severity,
+                      severity == 'High' ? 'CRITICAL' : 'CHECK STEP',
                       style: const TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
@@ -2215,7 +2238,7 @@ class _BatchWastageCardState extends State<_BatchWastageCard> {
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            'ML Bottleneck Stage: $bottleneck',
+                            '⚠️ Highest Scrap Stage: $bottleneck (Needs Inspection)',
                             style: const TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w700,
@@ -2719,6 +2742,122 @@ class _IconBtn extends StatelessWidget {
           ),
           child: Icon(icon, color: filled ? Colors.white : c, size: 20),
         ),
+      ),
+    );
+  }
+}
+
+class _ExportMenuCapsule extends StatelessWidget {
+  final Future<void> Function() onExportExcel;
+  final Future<void> Function() onExportPdf;
+  final VoidCallback onRefresh;
+  final bool isDark;
+
+  const _ExportMenuCapsule({
+    required this.onExportExcel,
+    required this.onExportPdf,
+    required this.onRefresh,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      onSelected: (val) async {
+        HapticFeedback.lightImpact();
+        if (val == 'excel') {
+          await onExportExcel();
+        } else if (val == 'pdf') {
+          await onExportPdf();
+        } else if (val == 'refresh') {
+          onRefresh();
+        }
+      },
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      color: isDark ? AppColors.darkCard : Colors.white,
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          value: 'excel',
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.table_view_rounded, color: AppColors.success, size: 18),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Download Excel / CSV', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                    Text('Production log spreadsheet', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem(
+          value: 'pdf',
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.error, size: 18),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Executive Print / PDF', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                    Text('Printable report audit', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem(
+          value: 'refresh',
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.refresh_rounded, color: AppColors.primary, size: 18),
+              ),
+              const SizedBox(width: 12),
+              const Text('Refresh Analytics', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+            ],
+          ),
+        ),
+      ],
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkCard : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDark ? AppColors.darkCardBorder : AppColors.border,
+            width: 1,
+          ),
+        ),
+        child: const Icon(Icons.more_vert_rounded, size: 20),
       ),
     );
   }

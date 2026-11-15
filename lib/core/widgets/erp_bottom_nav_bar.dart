@@ -76,7 +76,7 @@ class _ErpBottomNavBarState extends State<ErpBottomNavBar> with SingleTickerProv
       child: ClipRRect(
         borderRadius: BorderRadius.circular(40),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
           child: Container(
             decoration: BoxDecoration(
               color: isDarkMode
@@ -124,7 +124,7 @@ class _ErpBottomNavBarState extends State<ErpBottomNavBar> with SingleTickerProv
                   onHorizontalDragEnd: (details) => _handleDragEnd(details, maxWidth),
                   child: Stack(
                     children: [
-                      // Liquid Glass Sliding Blob
+                      // Liquid Glass Sliding Blob (Isolated Repaint for 60-120fps)
                       AnimatedPositioned(
                         duration: _isDragging ? const Duration(milliseconds: 40) : const Duration(milliseconds: 320),
                         curve: _isDragging ? Curves.linear : Curves.easeOutBack,
@@ -132,50 +132,41 @@ class _ErpBottomNavBarState extends State<ErpBottomNavBar> with SingleTickerProv
                         left: targetLeft,
                         width: circleSize,
                         height: circleSize,
-                        child: AnimatedScale(
-                          duration: const Duration(milliseconds: 150),
-                          scale: _isDragging ? 1.15 : 1.0,
-                          curve: Curves.easeInOut,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(circleSize / 2),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: isDarkMode
-                                        ? [
-                                            const Color(0xFF5B3DF5).withValues(alpha: 0.38),
-                                            Colors.white.withValues(alpha: 0.14),
-                                          ]
-                                        : [
-                                            const Color(0xFF5B3DF5).withValues(alpha: 0.18),
-                                            Colors.white.withValues(alpha: 0.72),
-                                          ],
-                                  ),
-                                  border: Border.all(
-                                    color: isDarkMode
-                                        ? Colors.white.withValues(alpha: 0.35)
-                                        : Colors.white.withValues(alpha: 0.90),
-                                    width: 1.5,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFF5B3DF5).withValues(alpha: 0.35),
-                                      blurRadius: 16,
-                                      spreadRadius: 1,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.08),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
+                        child: RepaintBoundary(
+                          child: AnimatedScale(
+                            duration: const Duration(milliseconds: 150),
+                            scale: _isDragging ? 1.15 : 1.0,
+                            curve: Curves.easeInOut,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: isDarkMode
+                                      ? [
+                                          const Color(0xFF5B3DF5).withValues(alpha: 0.55),
+                                          Colors.white.withValues(alpha: 0.22),
+                                        ]
+                                      : [
+                                          const Color(0xFF5B3DF5).withValues(alpha: 0.25),
+                                          Colors.white.withValues(alpha: 0.85),
+                                        ],
                                 ),
+                                border: Border.all(
+                                  color: isDarkMode
+                                      ? Colors.white.withValues(alpha: 0.40)
+                                      : Colors.white.withValues(alpha: 0.95),
+                                  width: 1.5,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF5B3DF5).withValues(alpha: isDarkMode ? 0.45 : 0.25),
+                                    blurRadius: 14,
+                                    spreadRadius: 1,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
                               ),
                             ),
                           ),

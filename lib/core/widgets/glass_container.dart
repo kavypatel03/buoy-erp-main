@@ -31,7 +31,7 @@ class GlassContainer extends StatefulWidget {
     this.margin,
     this.width,
     this.height,
-    this.blur = 18,          // Frosted glass blur active by default
+    this.blur = 10,          // Optimized lightweight blur when enabled
     this.opacity = 0.82,     // Translucent liquid glass
     this.backgroundColor,
     this.isCircle = false,
@@ -39,7 +39,7 @@ class GlassContainer extends StatefulWidget {
     this.useGradientBorder = true,
     this.alignment,
     this.onTap,
-    this.enableBlur = true,  // Enabled by default for authentic iOS liquid glass
+    this.enableBlur = false, // Disabled by default for silky smooth 60-120 FPS on 2GB/4GB devices
   });
 
   @override
@@ -110,9 +110,7 @@ class _GlassContainerState extends State<GlassContainer>
     Widget inner = Container(
       padding: widget.padding,
       decoration: BoxDecoration(
-        color: widget.enableBlur
-            ? bg.withValues(alpha: widget.opacity.clamp(0.0, 1.0))
-            : bg,
+        color: bg.withValues(alpha: widget.opacity.clamp(0.0, 1.0)),
         shape: widget.isCircle ? BoxShape.circle : BoxShape.rectangle,
         borderRadius: shapeBorderRadius,
         border: effectiveBorder,

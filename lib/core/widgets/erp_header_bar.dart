@@ -62,16 +62,25 @@ class ErpHeaderBar extends StatelessWidget {
           ),
 
           // ── Center: Title pill ─────────────────────────────────────────────
-          GlassContainer(
-            borderRadius: 25,
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: iconColor,
-                letterSpacing: -0.2,
+          Expanded(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                child: GlassContainer(
+                  borderRadius: 25,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                      color: iconColor,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
