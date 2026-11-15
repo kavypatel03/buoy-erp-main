@@ -102,9 +102,9 @@ class ProductionPageState extends State<ProductionPage>
     }
   }
 
-  Future<void> _fetchOrders() async {
+  Future<void> _fetchOrders({bool silent = false}) async {
     final isFirstLoad = _orders.isEmpty;
-    if (isFirstLoad && mounted) setState(() => _isLoading = true);
+    if (!silent && isFirstLoad && mounted) setState(() => _isLoading = true);
     final res = await ProductionService.getOrders();
     if (mounted) {
       setState(() {
@@ -145,12 +145,10 @@ class ProductionPageState extends State<ProductionPage>
   Future<void> _showAddOrderModal() async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     _batchCodeCtrl.text = 'Batch #${_orders.length + 1}';
+    
+    // Background fetch if not already in memory - doesn't block opening
     if (_productTypes.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Loading product types...'), duration: Duration(seconds: 1)),
-      );
-      await _fetchProductTypes();
-      if (!mounted) return;
+      _fetchProductTypes();
     }
     if (_productTypes.isNotEmpty && _selectedProductType == null) {
       _selectedProductType = _productTypes[0];
@@ -161,6 +159,9 @@ class ProductionPageState extends State<ProductionPage>
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(builder: (context, setModal) {
+        if (_productTypes.isNotEmpty && _selectedProductType == null) {
+          _selectedProductType = _productTypes[0];
+        }
         final steps = (_selectedProductType?['steps'] as List?) ?? [];
 
         return _ThemedSheet(
@@ -207,73 +208,100 @@ class ProductionPageState extends State<ProductionPage>
                         color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                       )),
                   const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isDark ? AppColors.darkCard : Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: isDark ? AppColors.darkCardBorder : const Color(0xFFE2E8F0),
-                        width: 1.2,
+                  if (_productTypes.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: isDark ? AppColors.darkCard : Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isDark ? AppColors.darkCardBorder : const Color(0xFFE2E8F0),
+                          width: 1.2,
+                        ),
                       ),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _selectedProductType?['id']?.toString() ?? (_productTypes.isNotEmpty ? _productTypes[0]['id']?.toString() : null),
-                        isExpanded: true,
-                        dropdownColor: isDark ? AppColors.darkCard : Colors.white,
-                        items: _productTypes.map<DropdownMenuItem<String>>((prod) {
-                          final pId = prod['id']?.toString() ?? '';
-                          final pName = prod['name']?.toString() ?? 'Product';
-                          final pSteps = (prod['steps'] as List?)?.length ?? 0;
-                          return DropdownMenuItem<String>(
-                            value: pId,
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 12, height: 12,
-                                  decoration: BoxDecoration(
-                                    color: _parseColor(prod['color']),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    pName,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
-                                      color: isDark ? AppColors.darkTextPrimary : const Color(0xFF0F172A),
+                      child: Row(
+                        children: [
+                          const SizedBox(
+                            width: 14, height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                          ),
+                          const SizedBox(width: 10),
+                          Text('Loading product recipes...',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                              )),
+                        ],
+                      ),
+                    )
+                  else
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isDark ? AppColors.darkCard : Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isDark ? AppColors.darkCardBorder : const Color(0xFFE2E8F0),
+                          width: 1.2,
+                        ),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedProductType?['id']?.toString() ?? (_productTypes.isNotEmpty ? _productTypes[0]['id']?.toString() : null),
+                          isExpanded: true,
+                          dropdownColor: isDark ? AppColors.darkCard : Colors.white,
+                          items: _productTypes.map<DropdownMenuItem<String>>((prod) {
+                            final pId = prod['id']?.toString() ?? '';
+                            final pName = prod['name']?.toString() ?? 'Product';
+                            final pSteps = (prod['steps'] as List?)?.length ?? 0;
+                            return DropdownMenuItem<String>(
+                              value: pId,
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 12, height: 12,
+                                    decoration: BoxDecoration(
+                                      color: _parseColor(prod['color']),
+                                      shape: BoxShape.circle,
                                     ),
                                   ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(6),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      pName,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                        color: isDark ? AppColors.darkTextPrimary : const Color(0xFF0F172A),
+                                      ),
+                                    ),
                                   ),
-                                  child: Text(
-                                    '$pSteps Steps',
-                                    style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: AppColors.primary),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      '$pSteps Steps',
+                                      style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: AppColors.primary),
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          setModal(() {
-                            _selectedProductType = _productTypes.firstWhere(
-                              (p) => p['id']?.toString() == val,
-                              orElse: () => _selectedProductType,
+                                ],
+                              ),
                             );
-                          });
-                        },
+                          }).toList(),
+                          onChanged: (val) {
+                            setModal(() {
+                              _selectedProductType = _productTypes.firstWhere(
+                                (p) => p['id']?.toString() == val,
+                                orElse: () => _selectedProductType,
+                              );
+                            });
+                          },
+                        ),
                       ),
                     ),
-                  ),
                   const SizedBox(height: 14),
 
                   // Pre-defined Steps Sequence Preview
@@ -343,19 +371,46 @@ class ProductionPageState extends State<ProductionPage>
                       final prodName = _selectedProductType?['name'] ?? 'Production Item';
                       final batch = _batchCodeCtrl.text.trim();
                       final fullName = batch.isNotEmpty ? '$prodName — $batch' : prodName;
+                      final selectedProdId = _selectedProductType?['id']?.toString();
 
                       Navigator.pop(ctx);
-                      setState(() => _isLoading = true);
+
+                      // 1. Instant Optimistic UI Update (Zero Lag)
+                      final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+                      final optimisticOrder = {
+                        'id': tempId,
+                        'product_name': fullName,
+                        'product_id': selectedProdId,
+                        'batch_code': batch,
+                        'status': 'In Progress',
+                        'created_at': DateTime.now().toIso8601String(),
+                        'production_logs': <dynamic>[],
+                      };
+                      setState(() {
+                        _orders = [optimisticOrder, ..._orders];
+                      });
+
+                      // 2. Perform Network Call
                       final res = await ProductionService.createOrder(
                         fullName,
-                        productId: _selectedProductType?['id'],
+                        productId: selectedProdId,
                         batchCode: batch,
                       );
-                      if (res['success']) {
-                        _fetchOrders();
-                      } else {
-                        setState(() => _isLoading = false);
-                        if (mounted) _showError(res['error'] ?? 'Failed');
+
+                      if (res['success'] && mounted) {
+                        setState(() {
+                          final idx = _orders.indexWhere((o) => o['id'] == tempId);
+                          if (idx != -1) {
+                            _orders[idx] = res['data'];
+                          }
+                        });
+                        // Background silent sync
+                        _fetchOrders(silent: true);
+                      } else if (mounted) {
+                        setState(() {
+                          _orders.removeWhere((o) => o['id'] == tempId);
+                        });
+                        _showError(res['error'] ?? 'Failed to start production');
                       }
                     },
                   ),
@@ -481,49 +536,57 @@ class ProductionPageState extends State<ProductionPage>
                   ),
                   const SizedBox(height: 16),
 
-                  // Recipe / Product selection
-                  if (_productTypes.isNotEmpty) ...[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  // Fixed Order Recipe Badge (No product switching during log step)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: isDark ? 0.12 : 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.25),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Row(
                       children: [
-                        Text('Recipe / Product:',
+                        Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: _parseColor(matchedProd?['color']),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            matchedProd?['name']?.toString() ?? orderTitle.split(' — ').first.trim(),
                             style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                            )),
-                        DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: matchedProd?['id']?.toString() ?? _productTypes[0]['id']?.toString(),
-                            isDense: true,
-                            dropdownColor: isDark ? AppColors.darkCard : Colors.white,
-                            items: _productTypes.map<DropdownMenuItem<String>>((p) {
-                              return DropdownMenuItem<String>(
-                                value: p['id']?.toString() ?? '',
-                                child: Text(
-                                  p['name']?.toString() ?? 'Recipe',
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primary),
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: (val) {
-                              setModal(() {
-                                matchedProd = _productTypes.firstWhere(
-                                  (p) => p['id']?.toString() == val,
-                                  orElse: () => matchedProd,
-                                );
-                                final newSteps = (matchedProd?['steps'] as List?) ?? [];
-                                if (newSteps.isNotEmpty) {
-                                  _processNameCtrl.text = newSteps[0]['process_name'] ?? newSteps[0]['name'] ?? 'Step 1';
-                                }
-                              });
-                            },
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: isDark ? AppColors.darkTextPrimary : const Color(0xFF0F172A),
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            steps.isNotEmpty ? '${steps.length} Stages' : 'Standard',
+                            style: const TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                  ],
+                  ),
+                  const SizedBox(height: 14),
 
                   // Auto-suggested stage selector chip bar
                   Builder(builder: (ctx) {

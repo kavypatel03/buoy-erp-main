@@ -21,7 +21,27 @@ class ProductionService {
     return '$exportPdfUrl?token=$token';
   }
 
-  static Future<Map<String, dynamic>> getProductTypes() async {
+  static List<dynamic>? _cachedProductTypes;
+
+  static Future<Map<String, dynamic>> getProductTypes({bool forceRefresh = false}) async {
+    if (!forceRefresh && _cachedProductTypes != null && _cachedProductTypes!.isNotEmpty) {
+      // Trigger a silent background update
+      _refreshProductTypesInBackground();
+      return {'success': true, 'data': _cachedProductTypes};
+    }
+    return _fetchProductTypesFromNetwork();
+  }
+
+  static Future<void> _refreshProductTypesInBackground() async {
+    try {
+      final res = await _fetchProductTypesFromNetwork();
+      if (res['success'] && res['data'] is List) {
+        _cachedProductTypes = res['data'];
+      }
+    } catch (_) {}
+  }
+
+  static Future<Map<String, dynamic>> _fetchProductTypesFromNetwork() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
@@ -31,8 +51,15 @@ class ProductionService {
         Uri.parse('$baseUrl/product-types'),
         headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
       );
-      return _handleResponse(response);
+      final handled = _handleResponse(response);
+      if (handled['success'] && handled['data'] is List) {
+        _cachedProductTypes = handled['data'];
+      }
+      return handled;
     } catch (e) {
+      if (_cachedProductTypes != null) {
+        return {'success': true, 'data': _cachedProductTypes};
+      }
       return {'success': false, 'error': e.toString()};
     }
   }
