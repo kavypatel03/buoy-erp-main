@@ -8,11 +8,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   
-  <!-- Instant Theme Detection (Zero-Flicker) -->
+  <!-- Instant Theme Detection (Zero-Flicker & Safe Storage) -->
   <script>
     (function() {
-      const savedTheme = localStorage.getItem('buoy_admin_theme') || 'dark';
-      document.documentElement.setAttribute('data-theme', savedTheme);
+      try {
+        var savedTheme = (typeof localStorage !== 'undefined' && localStorage.getItem('buoy_admin_theme')) || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      } catch (_) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
     })();
   </script>
 
@@ -1063,13 +1067,6 @@
     }
 
   </style>
-  <!-- Lucide Vector Icons (Multi-CDN with Failover) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.460.0/umd/lucide.min.js"></script>
-  <script>
-    if (!window.lucide) {
-      document.write('<script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"><\\/script>');
-    }
-  </script>
 </head>
 <body>
 
@@ -1718,9 +1715,23 @@
       });
     }
 
-    // ─── THEME TOGGLE LOGIC ───────────────────────────────────────────────────
+    // ─── SAFE STORAGE & THEME LOGIC (TRACKING PROTECTION RESILIENT) ───────────
+    function safeGetTheme() {
+      try {
+        return (typeof localStorage !== 'undefined' && localStorage.getItem('buoy_admin_theme')) || 'dark';
+      } catch (_) {
+        return 'dark';
+      }
+    }
+
+    function safeSetTheme(val) {
+      try {
+        if (typeof localStorage !== 'undefined') localStorage.setItem('buoy_admin_theme', val);
+      } catch (_) {}
+    }
+
     function initTheme() {
-      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const current = document.documentElement.getAttribute('data-theme') || safeGetTheme();
       updateThemeUI(current);
     }
 
@@ -1728,7 +1739,7 @@
       const current = document.documentElement.getAttribute('data-theme') || 'dark';
       const nextTheme = current === 'dark' ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', nextTheme);
-      localStorage.setItem('buoy_admin_theme', nextTheme);
+      safeSetTheme(nextTheme);
       updateThemeUI(nextTheme);
     }
 
