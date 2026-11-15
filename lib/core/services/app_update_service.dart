@@ -4,12 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shorebird_code_push/shorebird_code_push.dart';
 import '../../app/constants/app_colors.dart';
+import '../../app/constants/app_constants.dart';
 import '../config/api_config.dart';
 import '../utils/download_helper.dart';
 
 class AppUpdateService {
-  static const String currentAppVersion = '1.0.0';
-  static const int currentBuildNumber = 1;
+  static String get currentAppVersion => AppConstants.appVersion;
+  static int get currentBuildNumber => AppConstants.buildNumber;
 
   static final ShorebirdUpdater _updater = ShorebirdUpdater();
   static bool _isChecking = false;

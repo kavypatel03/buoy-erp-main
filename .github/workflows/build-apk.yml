@@ -40,6 +40,9 @@ jobs:
       - name: Accept Android SDK Licenses
         run: yes | flutter doctor --android-licenses || true
 
+      - name: Auto-increment App Version & Build Number
+        run: node scripts/auto_increment_version.js
+
       - name: Install Project Dependencies
         run: flutter pub get
 

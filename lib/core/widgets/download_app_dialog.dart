@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../app/constants/app_colors.dart';
+import '../../app/constants/app_constants.dart';
 import '../utils/download_helper.dart';
 
 class DownloadAppDialog extends StatelessWidget {
@@ -104,9 +105,9 @@ class DownloadAppDialog extends StatelessWidget {
                   color: AppColors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text(
-                  'Android APK • v1.0.0 Release (59.8 MB)',
-                  style: TextStyle(
+                child: Text(
+                  'Android APK • ${AppConstants.fullVersionString} Release',
+                  style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: AppColors.primary,

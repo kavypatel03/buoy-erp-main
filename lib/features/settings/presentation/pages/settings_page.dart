@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../app/constants/app_colors.dart';
+import '../../../../app/constants/app_constants.dart';
 import '../../../../core/widgets/erp_header_bar.dart';
 import '../../../../core/widgets/glass_container.dart';
 import 'change_password_page.dart';
@@ -315,10 +316,38 @@ class SettingsPageState extends State<SettingsPage> with AutomaticKeepAliveClien
 
               const SizedBox(height: 24),
 
-              // App version
-              const Text(
-                'Buoy ERP v1.0.0',
-                style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+              // App version badge
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: const BoxDecoration(
+                          color: AppColors.success,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${AppConstants.appName} ${AppConstants.fullVersionString} • ${AppConstants.buildDate}',
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          color: AppColors.textMuted,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
