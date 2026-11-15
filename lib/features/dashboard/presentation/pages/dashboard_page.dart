@@ -28,13 +28,16 @@ class DashboardPage extends StatefulWidget {
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> {
+class _DashboardPageState extends State<DashboardPage> with AutomaticKeepAliveClientMixin {
   final PageController _pageController = PageController();
   final ValueNotifier<int> _currentCarouselIndex = ValueNotifier<int>(1);
   Timer? _autoSlideTimer;
   Timer? _notificationPollTimer;
   Timer? _summaryRefreshTimer;
   final Set<String> _poppedNotificationIds = {};
+
+  @override
+  bool get wantKeepAlive => true;
 
   // Summary stats — start with '-' to show loading
   String _totalItems = '-';
@@ -43,11 +46,24 @@ class _DashboardPageState extends State<DashboardPage> {
   String _clockedIn = '-';
   String _totalEmployees = '-';
   String _logsToday = '-';
-  bool _summaryLoading = true;
+  late bool _summaryLoading;
 
   @override
   void initState() {
     super.initState();
+
+    final cached = DashboardService.cachedSummary;
+    if (cached != null) {
+      _totalItems = '${cached['totalItems'] ?? 0}';
+      _lowStockItems = '${cached['lowStockItems'] ?? 0}';
+      _activeOrders = '${cached['activeOrders'] ?? 0}';
+      _clockedIn = '${cached['clockedInEmployees'] ?? 0}';
+      _totalEmployees = '${cached['totalEmployees'] ?? 0}';
+      _logsToday = '${cached['logsToday'] ?? 0}';
+      _summaryLoading = false;
+    } else {
+      _summaryLoading = true;
+    }
 
     // Auto-sliding carousel
     _autoSlideTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
@@ -130,6 +146,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,

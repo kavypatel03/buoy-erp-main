@@ -948,6 +948,31 @@
       font-size: 10.5px;
       color: var(--text-secondary);
     }
+
+    /* Modal Backdrop & Content */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .modal-content {
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--border);
+      animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
   </style>
 </head>
 <body>
@@ -1136,10 +1161,15 @@
                       <span class="cat-badge"><%= prod.category || 'General' %></span>
                     </div>
 
-                    <form action="/admin/production/delete-product" method="POST" onsubmit="return confirm('Delete <%= prod.name %> recipe?');" style="margin: 0;">
-                      <input type="hidden" name="product_id" value="<%= prod.id %>">
-                      <button type="submit" style="background: none; border: none; color: #EF4444; font-size: 12px; font-weight: 700; cursor: pointer;">Delete</button>
-                    </form>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <button type="button" class="btn-action-small" onclick='openEditProductModal(<%= JSON.stringify(prod) %>)'>
+                        ✏️ Edit
+                      </button>
+                      <form action="/admin/production/delete-product" method="POST" onsubmit="return confirm('Delete <%= prod.name %> recipe?');" style="margin: 0;">
+                        <input type="hidden" name="product_id" value="<%= prod.id %>">
+                        <button type="submit" style="background: none; border: none; color: #EF4444; font-size: 12px; font-weight: 700; cursor: pointer;">Delete</button>
+                      </form>
+                    </div>
                   </div>
 
                   <div style="font-size: 12px; color: var(--text-secondary); font-weight: 600;">
@@ -1639,6 +1669,71 @@
         }
       }
     }
+
+    // ─── EDIT PRODUCT MODAL LOGIC ──────────────────────────────────────────────
+    function openEditProductModal(prod) {
+      document.getElementById('editProdId').value = prod.id;
+      document.getElementById('editProdName').value = prod.name;
+      document.getElementById('editProdCategory').value = prod.category || '';
+      document.getElementById('editProdColor').value = prod.color || '#5B3DF5';
+      
+      const steps = prod.steps || [];
+      const stepsLines = steps.map(s => `${s.process_name} (${s.expected_tolerance_pct || 5}%)`);
+      document.getElementById('editProdSteps').value = stepsLines.join('\n');
+      
+      const modal = document.getElementById('editProductModal');
+      modal.style.display = 'flex';
+    }
+
+    function closeEditProductModal() {
+      const modal = document.getElementById('editProductModal');
+      modal.style.display = 'none';
+    }
   </script>
+
+  <!-- Edit Product Modal Dialog -->
+  <div id="editProductModal" class="modal-backdrop" style="display: none;" onclick="if(event.target === this) closeEditProductModal();">
+    <div class="glass-card modal-content" style="max-width: 540px; width: 100%; margin: 20px auto; position: relative;">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 class="card-title"><span>✏️</span> Edit Product Recipe</h2>
+        <button type="button" onclick="closeEditProductModal()" style="background: none; border: none; font-size: 24px; line-height: 1; color: var(--text-secondary); cursor: pointer;">&times;</button>
+      </div>
+
+      <form action="/admin/production/edit-product" method="POST">
+        <input type="hidden" name="product_id" id="editProdId">
+
+        <div class="form-group">
+          <label>Product Name</label>
+          <input type="text" name="product_name" id="editProdName" required>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Category</label>
+            <input type="text" name="category" id="editProdCategory" placeholder="e.g. Pencils, Erasers">
+          </div>
+          <div class="form-group">
+            <label>Badge Color</label>
+            <input type="color" name="color" id="editProdColor" style="height: 42px; padding: 2px; cursor: pointer; width: 100%;">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Process Steps & Tolerances (One per line)</label>
+          <textarea name="steps_text" id="editProdSteps" rows="6" placeholder="Paper Cutting (3%)\nRolling & Glueing (4%)\nDrying (2%)" required></textarea>
+          <small style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; display: block;">
+            Format: <code>Process Name (Tolerance%)</code>
+          </small>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px;">
+          <button type="button" class="btn-action-small" onclick="closeEditProductModal()" style="padding: 10px 16px;">Cancel</button>
+          <button type="submit" class="btn-primary" style="padding: 10px 20px;">
+            <span>💾</span> Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </body>
 </html>

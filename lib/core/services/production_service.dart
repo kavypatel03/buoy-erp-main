@@ -64,7 +64,27 @@ class ProductionService {
     }
   }
 
-  static Future<Map<String, dynamic>> getOrders() async {
+  static List<dynamic>? _cachedOrders;
+  static List<dynamic>? get cachedOrders => _cachedOrders;
+
+  static Future<Map<String, dynamic>> getOrders({bool forceRefresh = false}) async {
+    if (!forceRefresh && _cachedOrders != null && _cachedOrders!.isNotEmpty) {
+      _refreshOrdersInBackground();
+      return {'success': true, 'data': _cachedOrders};
+    }
+    return _fetchOrdersFromNetwork();
+  }
+
+  static Future<void> _refreshOrdersInBackground() async {
+    try {
+      final res = await _fetchOrdersFromNetwork();
+      if (res['success'] && res['data'] is List) {
+        _cachedOrders = res['data'];
+      }
+    } catch (_) {}
+  }
+
+  static Future<Map<String, dynamic>> _fetchOrdersFromNetwork() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
@@ -73,9 +93,17 @@ class ProductionService {
       final response = await http.get(
         Uri.parse('$baseUrl/orders'),
         headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
-      );
-      return _handleResponse(response);
+      ).timeout(const Duration(seconds: 12));
+
+      final handled = _handleResponse(response);
+      if (handled['success'] && handled['data'] is List) {
+        _cachedOrders = handled['data'];
+      }
+      return handled;
     } catch (e) {
+      if (_cachedOrders != null) {
+        return {'success': true, 'data': _cachedOrders};
+      }
       return {'success': false, 'error': e.toString()};
     }
   }

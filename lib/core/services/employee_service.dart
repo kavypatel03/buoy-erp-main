@@ -6,7 +6,28 @@ import '../config/api_config.dart';
 class EmployeeService {
   static String get baseUrl => '${ApiConfig.baseUrl}/employees';
 
-  static Future<Map<String, dynamic>> getEmployees() async {
+  // ─── In-Memory Cache (Instant Replay, Zero Waiting) ───
+  static List<dynamic>? _cachedEmployees;
+  static List<dynamic>? get cachedEmployees => _cachedEmployees;
+
+  static Future<Map<String, dynamic>> getEmployees({bool forceRefresh = false}) async {
+    if (!forceRefresh && _cachedEmployees != null && _cachedEmployees!.isNotEmpty) {
+      _refreshInBackground();
+      return {'success': true, 'data': _cachedEmployees};
+    }
+    return _fetchEmployeesFromNetwork();
+  }
+
+  static Future<void> _refreshInBackground() async {
+    try {
+      final res = await _fetchEmployeesFromNetwork();
+      if (res['success'] && res['data'] is List) {
+        _cachedEmployees = res['data'];
+      }
+    } catch (_) {}
+  }
+
+  static Future<Map<String, dynamic>> _fetchEmployeesFromNetwork() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
@@ -19,10 +40,17 @@ class EmployeeService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      );
+      ).timeout(const Duration(seconds: 12));
 
-      return _handleResponse(response);
+      final result = _handleResponse(response);
+      if (result['success'] && result['data'] is List) {
+        _cachedEmployees = result['data'];
+      }
+      return result;
     } catch (e) {
+      if (_cachedEmployees != null) {
+        return {'success': true, 'data': _cachedEmployees};
+      }
       return {'success': false, 'error': e.toString()};
     }
   }

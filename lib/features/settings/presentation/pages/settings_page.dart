@@ -17,11 +17,14 @@ class SettingsPage extends StatefulWidget {
   State<SettingsPage> createState() => SettingsPageState();
 }
 
-class SettingsPageState extends State<SettingsPage> {
+class SettingsPageState extends State<SettingsPage> with AutomaticKeepAliveClientMixin {
   int _currentSubIndex = 0;
   String _firstName = 'Admin user';
   String _email = 'admin@factory.com';
   String _occupation = 'Administrator';
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -60,6 +63,7 @@ class SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     switch (_currentSubIndex) {
       case 1: return MyProfilePage(onBack: _onBackToSettings);
       case 2: return ChangePasswordPage(onBack: _onBackToSettings);

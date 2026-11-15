@@ -51,10 +51,13 @@ class LowStocksPage extends StatefulWidget {
   State<LowStocksPage> createState() => LowStocksPageState();
 }
 
-class LowStocksPageState extends State<LowStocksPage> {
+class LowStocksPageState extends State<LowStocksPage> with AutomaticKeepAliveClientMixin {
   int _currentSubIndex = 0; // 0: List, 1: Details, 2: Add New Item
   String _selectedCategory = 'All Items';
   InventoryItemModel? _selectedItem;
+
+  @override
+  bool get wantKeepAlive => true;
 
   bool get hasSubScreen => _currentSubIndex > 0;
 
@@ -73,64 +76,75 @@ class LowStocksPageState extends State<LowStocksPage> {
   }
 
   List<InventoryItemModel> _inventoryItems = [];
-  bool _isLoading = true;
+  late bool _isLoading;
 
   @override
   void initState() {
     super.initState();
+    final cached = InventoryService.cachedItems;
+    if (cached != null && cached.isNotEmpty) {
+      _inventoryItems = _mapJsonToItems(cached);
+      _isLoading = false;
+    } else {
+      _isLoading = true;
+    }
     _fetchItems();
+  }
+
+  List<InventoryItemModel> _mapJsonToItems(List<dynamic> data) {
+    return data.map((json) {
+      // Determine color based on stock (clamp negative stock to 0)
+      double rawStock = double.tryParse(json['stock_quantity']?.toString() ?? '0') ?? 0;
+      double stock = rawStock < 0 ? 0 : rawStock;
+      double min = double.tryParse(json['min_quantity']?.toString() ?? '0') ?? 0;
+      Color metricColor = stock <= min ? const Color(0xFFFF334B) : const Color(0xFF00B039);
+      final stockDisplay = stock.truncateToDouble() == stock ? stock.toInt().toString() : stock.toString();
+      
+      // Determine icon based on category
+      IconData icon = Icons.inventory_2_rounded;
+      Color iconBg = const Color(0xFFF1F5F9);
+      String cat = json['category']?.toString().toLowerCase() ?? '';
+      if (cat.contains('paper')) {
+        icon = Icons.description_rounded; iconBg = const Color(0xFFFEF3C7);
+      } else if (cat.contains('lead') || cat.contains('graphite')) {
+        icon = Icons.grain_rounded; iconBg = const Color(0xFFE0E7FF);
+      } else if (cat.contains('color') || cat.contains('pigment')) {
+        icon = Icons.color_lens_rounded; iconBg = const Color(0xFFE0F2FE);
+      } else if (cat.contains('chemical') || cat.contains('adhesive')) {
+        icon = Icons.science_rounded; iconBg = const Color(0xFFFEE2E2);
+      }
+
+      return InventoryItemModel(
+        id: json['id']?.toString() ?? '',
+        title: json['title'] ?? 'Unknown',
+        subtitle: json['subtitle'] ?? '',
+        metric: stockDisplay,
+        unit: json['unit']?.toString() ?? 'Kg',
+        metricColor: metricColor,
+        icon: icon,
+        iconBgColor: iconBg,
+        itemCode: json['item_code']?.toString() ?? '',
+        type: json['type']?.toString() ?? '',
+        category: json['category']?.toString() ?? 'Other',
+        stockQuantity: stockDisplay,
+        minQuantity: json['min_quantity']?.toString() ?? '0',
+        description: json['description']?.toString() ?? '',
+        imageUrl: json['image_url']?.toString() ?? '',
+      );
+    }).toList();
   }
 
   Future<void> _fetchItems() async {
     final isFirstLoad = _inventoryItems.isEmpty;
-    if (isFirstLoad) setState(() => _isLoading = true);
+    if (isFirstLoad && mounted) setState(() => _isLoading = true);
     final result = await InventoryService.getItems();
     if (result['success'] && mounted) {
       final List<dynamic> data = result['data'];
       setState(() {
-        _inventoryItems = data.map((json) {
-          // Determine color based on stock (clamp negative stock to 0)
-          double rawStock = double.tryParse(json['stock_quantity']?.toString() ?? '0') ?? 0;
-          double stock = rawStock < 0 ? 0 : rawStock;
-          double min = double.tryParse(json['min_quantity']?.toString() ?? '0') ?? 0;
-          Color metricColor = stock <= min ? const Color(0xFFFF334B) : const Color(0xFF00B039);
-          final stockDisplay = stock.truncateToDouble() == stock ? stock.toInt().toString() : stock.toString();
-          
-          // Determine icon based on category
-          IconData icon = Icons.inventory_2_rounded;
-          Color iconBg = const Color(0xFFF1F5F9);
-          String cat = json['category']?.toString().toLowerCase() ?? '';
-          if (cat.contains('paper')) {
-            icon = Icons.description_rounded; iconBg = const Color(0xFFFEF3C7);
-          } else if (cat.contains('lead') || cat.contains('graphite')) {
-            icon = Icons.grain_rounded; iconBg = const Color(0xFFE0E7FF);
-          } else if (cat.contains('color') || cat.contains('pigment')) {
-            icon = Icons.color_lens_rounded; iconBg = const Color(0xFFE0F2FE);
-          } else if (cat.contains('chemical') || cat.contains('adhesive')) {
-            icon = Icons.science_rounded; iconBg = const Color(0xFFFEE2E2);
-          }
-
-          return InventoryItemModel(
-            id: json['id']?.toString() ?? '',
-            title: json['title']?.toString() ?? 'Unknown',
-            subtitle: json['subtitle']?.toString() ?? '',
-            metric: stockDisplay,
-            unit: json['unit']?.toString() ?? 'Kg',
-            metricColor: metricColor,
-            icon: icon,
-            iconBgColor: iconBg,
-            itemCode: json['item_code']?.toString() ?? '',
-            type: json['type']?.toString() ?? '',
-            category: json['category']?.toString() ?? 'Other',
-            stockQuantity: stockDisplay,
-            minQuantity: json['min_quantity']?.toString() ?? '0',
-            description: json['description']?.toString() ?? '',
-            imageUrl: json['image_url']?.toString() ?? '',
-          );
-        }).toList();
+        _inventoryItems = _mapJsonToItems(data);
         _isLoading = false;
       });
-    } else {
+    } else if (mounted) {
       setState(() => _isLoading = false);
     }
   }
@@ -150,6 +164,7 @@ class LowStocksPageState extends State<LowStocksPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     switch (_currentSubIndex) {
       case 1:
         return _buildItemDetailsScreen();

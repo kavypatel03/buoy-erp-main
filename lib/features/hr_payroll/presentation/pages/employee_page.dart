@@ -76,12 +76,15 @@ class EmployeePage extends StatefulWidget {
   State<EmployeePage> createState() => EmployeePageState();
 }
 
-class EmployeePageState extends State<EmployeePage> {
+class EmployeePageState extends State<EmployeePage> with AutomaticKeepAliveClientMixin {
   int _currentSubIndex = 0; // 0: List, 1: Add New, 2: Details, 3: Edit
   String _selectedFilter = 'All Employee';
   EmployeeModel? _selectedEmployee;
 
-  bool _isLoading = false;
+  @override
+  bool get wantKeepAlive => true;
+
+  late bool _isLoading;
   List<EmployeeModel> _employees = [];
 
   final ImagePicker _picker = ImagePicker();
@@ -90,6 +93,13 @@ class EmployeePageState extends State<EmployeePage> {
   @override
   void initState() {
     super.initState();
+    final cached = EmployeeService.cachedEmployees;
+    if (cached != null && cached.isNotEmpty) {
+      _employees = cached.map((e) => EmployeeModel.fromJson(e)).toList();
+      _isLoading = false;
+    } else {
+      _isLoading = true;
+    }
     _fetchEmployees();
   }
 
@@ -146,6 +156,7 @@ class EmployeePageState extends State<EmployeePage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     switch (_currentSubIndex) {
       case 1:
         return _buildAddNewEmployeeScreen();

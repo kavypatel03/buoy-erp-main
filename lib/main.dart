@@ -8,7 +8,7 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Launch the UI immediately so the app opens instantly with zero freeze
-  runApp(const BouyApp());
+  runApp(const BuoyApp());
 
   // Initialize background services asynchronously in a non-blocking manner
   if (!kIsWeb) {

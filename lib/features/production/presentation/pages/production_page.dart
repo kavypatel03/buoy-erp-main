@@ -38,14 +38,17 @@ class ProductionPage extends StatefulWidget {
 }
 
 class ProductionPageState extends State<ProductionPage>
-    with SingleTickerProviderStateMixin {
-  bool _isLoading = true;
+    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+  late bool _isLoading;
   List<dynamic> _orders = [];
   dynamic _wastageReport; // Map with ML summary & horizons, or fallback List
   List<dynamic> _inventoryItems = [];
   List<dynamic> _productTypes = [];
   dynamic _selectedProductType;
   String _selectedHorizon = 'by_production';
+
+  @override
+  bool get wantKeepAlive => true;
 
   // 0 = Orders, 1 = Order Details, 2 = Wastage Report
   int _currentSubIndex = 0;
@@ -67,6 +70,15 @@ class ProductionPageState extends State<ProductionPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+
+    final cached = ProductionService.cachedOrders;
+    if (cached != null && cached.isNotEmpty) {
+      _orders = cached;
+      _isLoading = false;
+    } else {
+      _isLoading = true;
+    }
+
     _fetchOrders();
     _fetchInventory();
     _fetchProductTypes();
@@ -893,6 +905,7 @@ class ProductionPageState extends State<ProductionPage>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     if (_currentSubIndex == 1 && _selectedOrder != null) {
       return _buildOrderDetails();
     }

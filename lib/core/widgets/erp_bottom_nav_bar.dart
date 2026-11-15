@@ -76,25 +76,30 @@ class _ErpBottomNavBarState extends State<ErpBottomNavBar> with SingleTickerProv
       child: ClipRRect(
         borderRadius: BorderRadius.circular(40),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
           child: Container(
             decoration: BoxDecoration(
               color: isDarkMode
-                  ? const Color(0xFF16161F).withValues(alpha: 0.88)
-                  : Colors.white.withValues(alpha: 0.85),
+                  ? const Color(0xFF13131C).withValues(alpha: 0.58)
+                  : Colors.white.withValues(alpha: 0.62),
               borderRadius: BorderRadius.circular(40),
               border: Border.all(
                 color: isDarkMode
-                    ? Colors.white.withValues(alpha: 0.14)
-                    : Colors.white.withValues(alpha: 0.7),
+                    ? Colors.white.withValues(alpha: 0.22)
+                    : Colors.white.withValues(alpha: 0.85),
                 width: 1.2,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: isDarkMode ? 0.35 : 0.08),
-                  blurRadius: 18,
-                  spreadRadius: 1,
-                  offset: const Offset(0, 4),
+                  color: Colors.black.withValues(alpha: isDarkMode ? 0.40 : 0.08),
+                  blurRadius: 24,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 8),
+                ),
+                BoxShadow(
+                  color: const Color(0xFF5B3DF5).withValues(alpha: isDarkMode ? 0.12 : 0.06),
+                  blurRadius: 16,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
@@ -131,41 +136,47 @@ class _ErpBottomNavBarState extends State<ErpBottomNavBar> with SingleTickerProv
                           duration: const Duration(milliseconds: 150),
                           scale: _isDragging ? 1.15 : 1.0,
                           curve: Curves.easeInOut,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: isDarkMode
-                                    ? [
-                                        Colors.white.withValues(alpha: 0.25),
-                                        Colors.white.withValues(alpha: 0.10),
-                                      ]
-                                    : [
-                                        Colors.white.withValues(alpha: 0.85),
-                                        Colors.white.withValues(alpha: 0.50),
-                                      ],
-                              ),
-                              border: Border.all(
-                                color: isDarkMode
-                                    ? Colors.white.withValues(alpha: 0.3)
-                                    : Colors.white.withValues(alpha: 0.85),
-                                width: 1.5,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF5B3DF5).withValues(alpha: 0.22),
-                                  blurRadius: 14,
-                                  spreadRadius: 1,
-                                  offset: const Offset(0, 4),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(circleSize / 2),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: isDarkMode
+                                        ? [
+                                            const Color(0xFF5B3DF5).withValues(alpha: 0.38),
+                                            Colors.white.withValues(alpha: 0.14),
+                                          ]
+                                        : [
+                                            const Color(0xFF5B3DF5).withValues(alpha: 0.18),
+                                            Colors.white.withValues(alpha: 0.72),
+                                          ],
+                                  ),
+                                  border: Border.all(
+                                    color: isDarkMode
+                                        ? Colors.white.withValues(alpha: 0.35)
+                                        : Colors.white.withValues(alpha: 0.90),
+                                    width: 1.5,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF5B3DF5).withValues(alpha: 0.35),
+                                      blurRadius: 16,
+                                      spreadRadius: 1,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.08),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.08),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
+                              ),
                             ),
                           ),
                         ),

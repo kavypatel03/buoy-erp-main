@@ -47,3 +47,7 @@ app.*.map.json
 !web/download/buoy-erp.apk
 node_modules/
 npm-debug.log*
+
+*firebase-adminsdk*.json
+*firebase-service-account*.json
+backend/firebase-service-account.json

@@ -22,6 +22,7 @@ router.post('/send-notification', requireAdmin, adminController.sendNotification
 
 // Production Product Recipes & Steps
 router.post('/production/add-product', requireAdmin, adminController.addProductType);
+router.post('/production/edit-product', requireAdmin, adminController.editProductType);
 router.post('/production/delete-product', requireAdmin, adminController.deleteProductType);
 
 // Factory Master Reset & Clean Wipe

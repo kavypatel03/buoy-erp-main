@@ -31,15 +31,15 @@ class GlassContainer extends StatefulWidget {
     this.margin,
     this.width,
     this.height,
-    this.blur = 0,          // OFF by default for performance
-    this.opacity = 1.0,     // Solid by default — blur handles translucency
+    this.blur = 18,          // Frosted glass blur active by default
+    this.opacity = 0.82,     // Translucent liquid glass
     this.backgroundColor,
     this.isCircle = false,
     this.border,
-    this.useGradientBorder = false,
+    this.useGradientBorder = true,
     this.alignment,
     this.onTap,
-    this.enableBlur = false, // Explicit opt-in for blur-needed areas
+    this.enableBlur = true,  // Enabled by default for authentic iOS liquid glass
   });
 
   @override
@@ -91,17 +91,20 @@ class _GlassContainerState extends State<GlassContainer>
     final Color bg = widget.backgroundColor ??
         (isDark ? AppColors.darkCard : Colors.white);
 
-    // Border color
-    final Color borderColor = isDark
-        ? AppColors.darkCardBorder
-        : const Color(0xFFE2E8F0);
-
     final effectiveRadius = widget.isCircle
         ? (widget.width != null ? widget.width! / 2 : 50.0)
         : widget.borderRadius;
 
     final shapeBorderRadius =
         widget.isCircle ? null : BorderRadius.circular(effectiveRadius);
+
+    final effectiveBorder = widget.border ??
+        Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.16)
+              : Colors.white.withValues(alpha: 0.75),
+          width: 1.1,
+        );
 
     // ── Inner container ──────────────────────────────────────────────────────
     Widget inner = Container(
@@ -112,8 +115,7 @@ class _GlassContainerState extends State<GlassContainer>
             : bg,
         shape: widget.isCircle ? BoxShape.circle : BoxShape.rectangle,
         borderRadius: shapeBorderRadius,
-        border: widget.border ??
-            Border.all(color: borderColor, width: 1.0),
+        border: effectiveBorder,
       ),
       child: widget.child,
     );

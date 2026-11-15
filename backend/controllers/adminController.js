@@ -388,6 +388,64 @@ exports.deleteProductType = async (req, res) => {
   }
 };
 
+exports.editProductType = async (req, res) => {
+  try {
+    const { product_id, product_name, category, color, steps_text } = req.body;
+    if (!product_id) throw new Error('Missing product ID');
+    if (!product_name) throw new Error('Product name is required');
+
+    // 1. Update product base info
+    const { error: pErr } = await supabaseAdmin
+      .from('production_products')
+      .update({
+        name: product_name.trim(),
+        category: category || 'Factory Production',
+        color: color || '#2563EB'
+      })
+      .eq('id', product_id);
+
+    if (pErr) throw pErr;
+
+    // 2. If steps_text provided, update sequence of steps
+    if (steps_text !== undefined) {
+      // Clear old step templates
+      await supabaseAdmin
+        .from('production_process_templates')
+        .delete()
+        .eq('product_id', product_id);
+
+      const stepLines = steps_text
+        .split('\n')
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+
+      const stepRows = stepLines.map((line, idx) => {
+        let name = line;
+        let tol = 5.0;
+        const match = line.match(/^(.+?)\s*\(([0-9.]+)%?\)$/);
+        if (match) {
+          name = match[1].trim();
+          tol = parseFloat(match[2]);
+        }
+        return {
+          product_id: product_id,
+          step_number: idx + 1,
+          process_name: name,
+          expected_tolerance_pct: tol
+        };
+      });
+
+      if (stepRows.length > 0) {
+        await supabaseAdmin.from('production_process_templates').insert(stepRows);
+      }
+    }
+
+    res.redirect('/admin?success=Product+recipe+updated+successfully');
+  } catch (err) {
+    res.redirect('/admin?error=' + encodeURIComponent(err.message));
+  }
+};
+
 // â”€â”€â”€ FACTORY MASTER RESET & CLEAN WIPE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 exports.masterWipe = async (req, res) => {
   try {

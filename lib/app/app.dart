@@ -5,8 +5,8 @@ import 'theme/app_theme.dart';
 
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
 
-class BouyApp extends StatelessWidget {
-  const BouyApp({super.key});
+class BuoyApp extends StatelessWidget {
+  const BuoyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
