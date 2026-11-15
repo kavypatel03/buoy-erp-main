@@ -63,7 +63,7 @@ app.get('/health', (req, res) => {
 app.get('/api/app/version', async (req, res) => {
   try {
     let latestVersion = '1.0.0';
-    let downloadUrl = 'https://github.com/kavypatel03/buoy-erp-main/releases/latest/download/buoy-erp.apk';
+    let downloadUrl = 'https://github.com/kavypatel03/buoy-erp-main/raw/main/web/download/buoy-erp.apk';
 
     const { data } = await supabaseAdmin
       .from('app_settings')
@@ -89,7 +89,7 @@ app.get('/api/app/version', async (req, res) => {
     res.status(200).json({
       latestVersion: '1.0.0',
       buildNumber: 1,
-      downloadUrl: 'https://github.com/kavypatel03/buoy-erp-main/releases/latest/download/buoy-erp.apk',
+      downloadUrl: 'https://github.com/kavypatel03/buoy-erp-main/raw/main/web/download/buoy-erp.apk',
       releaseNotes: 'Production release',
       forceUpdate: false
     });
@@ -109,10 +109,10 @@ app.get(['/download/buoy-erp.apk', '/api/app/download'], async (req, res) => {
       return res.redirect(302, data.value);
     }
 
-    // Default: redirect directly to the latest GitHub Actions built APK
-    return res.redirect(302, 'https://github.com/kavypatel03/buoy-erp-main/releases/latest/download/buoy-erp.apk');
+    // Default: redirect directly to the verified raw GitHub APK release binary
+    return res.redirect(302, 'https://github.com/kavypatel03/buoy-erp-main/raw/main/web/download/buoy-erp.apk');
   } catch (err) {
-    return res.redirect(302, 'https://github.com/kavypatel03/buoy-erp-main/releases/latest/download/buoy-erp.apk');
+    return res.redirect(302, 'https://github.com/kavypatel03/buoy-erp-main/raw/main/web/download/buoy-erp.apk');
   }
 });
 

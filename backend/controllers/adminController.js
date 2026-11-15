@@ -157,7 +157,7 @@ exports.getDashboard = async (req, res) => {
     }
 
     // Extract Release APK & OTA download settings
-    let apkDownloadUrl = 'https://github.com/kavypatel03/buoy-erp-main/releases/latest/download/buoy-erp.apk';
+    let apkDownloadUrl = 'https://github.com/kavypatel03/buoy-erp-main/raw/main/web/download/buoy-erp.apk';
     let apkVersion = '1.0.0';
     if (apkSettingsResult.status === 'fulfilled' && apkSettingsResult.value?.data) {
       const rows = apkSettingsResult.value.data;
