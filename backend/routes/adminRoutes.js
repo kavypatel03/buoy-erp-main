@@ -27,4 +27,7 @@ router.post('/production/delete-product', requireAdmin, adminController.deletePr
 // Factory Master Reset & Clean Wipe
 router.post('/master-wipe', requireAdmin, adminController.masterWipe);
 
+// Release APK & OTA Manager
+router.post('/update-apk-settings', requireAdmin, adminController.updateApkSettings);
+
 module.exports = router;

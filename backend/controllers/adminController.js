@@ -99,7 +99,7 @@ exports.logout = (req, res) => {
 
 exports.getDashboard = async (req, res) => {
   try {
-    const [usersResult, settingsResult, productsResult, statsResult] = await Promise.allSettled([
+    const [usersResult, settingsResult, productsResult, statsResult, apkSettingsResult] = await Promise.allSettled([
       supabaseAdmin.auth.admin.listUsers(),
       supabaseAdmin.from('app_settings').select('value').eq('key', 'registration_enabled').maybeSingle(),
       supabaseAdmin.from('production_products').select('*, production_process_templates(*)').order('created_at', { ascending: true }),
@@ -108,7 +108,8 @@ exports.getDashboard = async (req, res) => {
         supabaseAdmin.from('employees').select('id', { count: 'exact', head: true }),
         supabaseAdmin.from('production_orders').select('id', { count: 'exact', head: true }),
         supabaseAdmin.from('production_logs').select('id', { count: 'exact', head: true }),
-      ])
+      ]),
+      supabaseAdmin.from('app_settings').select('*').in('key', ['apk_download_url', 'apk_version']),
     ]);
 
     // Extract users
@@ -155,6 +156,17 @@ exports.getDashboard = async (req, res) => {
       stats.logs = logRes.count || 0;
     }
 
+    // Extract Release APK & OTA download settings
+    let apkDownloadUrl = 'https://github.com/kavypatel03/buoy-erp-main/releases/latest/download/buoy-erp.apk';
+    let apkVersion = '1.0.0';
+    if (apkSettingsResult.status === 'fulfilled' && apkSettingsResult.value?.data) {
+      const rows = apkSettingsResult.value.data;
+      const urlRow = rows.find(r => r.key === 'apk_download_url');
+      const verRow = rows.find(r => r.key === 'apk_version');
+      if (urlRow?.value) apkDownloadUrl = urlRow.value;
+      if (verRow?.value) apkVersion = verRow.value;
+    }
+
     const successMsg = req.query.success || null;
     const errorMsg = req.query.error || null;
 
@@ -163,6 +175,8 @@ exports.getDashboard = async (req, res) => {
       regEnabled,
       products,
       stats,
+      apkDownloadUrl,
+      apkVersion,
       success: successMsg,
       error: errorMsg
     });
@@ -173,6 +187,8 @@ exports.getDashboard = async (req, res) => {
       regEnabled: true,
       products: DEFAULT_PRODUCTS,
       stats: { items: 0, employees: 0, orders: 0, logs: 0 },
+      apkDownloadUrl: 'https://github.com/kavypatel03/buoy-erp-main/releases/latest/download/buoy-erp.apk',
+      apkVersion: '1.0.0',
       success: null,
       error: err.message
     });
@@ -392,6 +408,55 @@ exports.masterWipe = async (req, res) => {
     res.redirect('/admin?success=Factory+database+wiped+successfully!+Ready+for+client+handover.');
   } catch (err) {
     console.error('masterWipe error:', err);
+    res.redirect('/admin?error=' + encodeURIComponent(err.message));
+  }
+};
+
+// ─── RELEASE APK & OTA SETTINGS ──────────────────────────────────────────────
+exports.updateApkSettings = async (req, res) => {
+  try {
+    const { apk_download_url, apk_version } = req.body;
+
+    if (apk_download_url) {
+      const { data: existing } = await supabaseAdmin
+        .from('app_settings')
+        .select('*')
+        .eq('key', 'apk_download_url')
+        .maybeSingle();
+
+      if (existing) {
+        await supabaseAdmin
+          .from('app_settings')
+          .update({ value: apk_download_url.trim() })
+          .eq('key', 'apk_download_url');
+      } else {
+        await supabaseAdmin
+          .from('app_settings')
+          .insert({ key: 'apk_download_url', value: apk_download_url.trim() });
+      }
+    }
+
+    if (apk_version) {
+      const { data: existingV } = await supabaseAdmin
+        .from('app_settings')
+        .select('*')
+        .eq('key', 'apk_version')
+        .maybeSingle();
+
+      if (existingV) {
+        await supabaseAdmin
+          .from('app_settings')
+          .update({ value: apk_version.trim() })
+          .eq('key', 'apk_version');
+      } else {
+        await supabaseAdmin
+          .from('app_settings')
+          .insert({ key: 'apk_version', value: apk_version.trim() });
+      }
+    }
+
+    res.redirect('/admin?success=Release+APK+download+URL+updated+successfully');
+  } catch (err) {
     res.redirect('/admin?error=' + encodeURIComponent(err.message));
   }
 };

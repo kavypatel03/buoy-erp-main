@@ -1,0 +1,73 @@
+name: Build & Release Updated Android APK
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'lib/**'
+      - 'android/**'
+      - 'pubspec.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    name: Build Release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Project Dependencies
+        run: flutter pub get
+
+      - name: Build Release APK
+        run: flutter build apk --release
+
+      - name: Rename Release APK
+        run: |
+          mkdir -p build/release-output
+          cp build/app/outputs/flutter-apk/app-release.apk build/release-output/buoy-erp.apk
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: buoy-erp-release-apk
+          path: build/release-output/buoy-erp.apk
+          if-no-files-found: error
+
+      - name: Publish / Update 'latest' GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: latest
+          name: "Buoy ERP Latest Production Release"
+          body: |
+            ## Buoy ERP Android Release APK
+            - **Build Trigger**: Automatic CI/CD Pipeline
+            - **Commit**: ${{ github.sha }}
+            - **Updated**: ${{ github.event.head_commit.timestamp || 'Latest' }}
+
+            Download the updated APK below:
+            - [**buoy-erp.apk**](https://github.com/${{ github.repository }}/releases/latest/download/buoy-erp.apk)
+          draft: false
+          prerelease: false
+          files: build/release-output/buoy-erp.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

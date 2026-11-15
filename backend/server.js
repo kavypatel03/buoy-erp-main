@@ -14,6 +14,7 @@ const employeeRoutes = require('./routes/employeeRoutes');
 const productionRoutes = require('./routes/productionRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const requireAuth = require('./middleware/authMiddleware');
+const { supabaseAdmin } = require('./config/supabase');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -59,15 +60,60 @@ app.get('/health', (req, res) => {
 });
 
 // App version & In-App Auto-Update endpoint
-app.get('/api/app/version', (req, res) => {
-  res.status(200).json({
-    latestVersion: '1.0.0',
-    buildNumber: 1,
-    releaseDate: new Date().toISOString(),
-    downloadUrl: 'https://buoy-erp.vercel.app/download/buoy-erp.apk',
-    releaseNotes: 'Continuous Over-The-Air updates enabled. Performance and recipe sync optimizations.',
-    forceUpdate: false
-  });
+app.get('/api/app/version', async (req, res) => {
+  try {
+    let latestVersion = '1.0.0';
+    let downloadUrl = 'https://github.com/kavypatel03/buoy-erp-main/releases/latest/download/buoy-erp.apk';
+
+    const { data } = await supabaseAdmin
+      .from('app_settings')
+      .select('*')
+      .in('key', ['apk_download_url', 'apk_version']);
+
+    if (data && data.length > 0) {
+      const u = data.find(r => r.key === 'apk_download_url');
+      const v = data.find(r => r.key === 'apk_version');
+      if (u?.value) downloadUrl = u.value;
+      if (v?.value) latestVersion = v.value;
+    }
+
+    res.status(200).json({
+      latestVersion,
+      buildNumber: 1,
+      releaseDate: new Date().toISOString(),
+      downloadUrl,
+      releaseNotes: 'Continuous live over-the-air updates enabled. Latest factory release.',
+      forceUpdate: false
+    });
+  } catch (_) {
+    res.status(200).json({
+      latestVersion: '1.0.0',
+      buildNumber: 1,
+      downloadUrl: 'https://github.com/kavypatel03/buoy-erp-main/releases/latest/download/buoy-erp.apk',
+      releaseNotes: 'Production release',
+      forceUpdate: false
+    });
+  }
+});
+
+// Dynamic APK Download Handler: always routes user to the latest updated release APK
+app.get(['/download/buoy-erp.apk', '/api/app/download'], async (req, res) => {
+  try {
+    const { data } = await supabaseAdmin
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'apk_download_url')
+      .maybeSingle();
+
+    if (data && data.value && data.value.startsWith('http')) {
+      return res.redirect(302, data.value);
+    }
+
+    // Default: redirect directly to the latest GitHub Actions built APK
+    return res.redirect(302, 'https://github.com/kavypatel03/buoy-erp-main/releases/latest/download/buoy-erp.apk');
+  } catch (err) {
+    return res.redirect(302, 'https://github.com/kavypatel03/buoy-erp-main/releases/latest/download/buoy-erp.apk');
+  }
 });
 
 // Start the server (Only if not running in a serverless environment like Vercel)

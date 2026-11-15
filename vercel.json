@@ -7,6 +7,7 @@
     }
   },
   "rewrites": [
+    { "source": "/download/buoy-erp.apk", "destination": "/api/index.js" },
     { "source": "/download/(.*)", "destination": "/download/$1" },
     { "source": "/api/(.*)", "destination": "/api/index.js" },
     { "source": "/admin", "destination": "/api/index.js" },
