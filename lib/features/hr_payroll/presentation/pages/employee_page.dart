@@ -94,7 +94,8 @@ class EmployeePageState extends State<EmployeePage> {
   }
 
   Future<void> _fetchEmployees() async {
-    if (mounted) setState(() => _isLoading = true);
+    final isFirstLoad = _employees.isEmpty;
+    if (isFirstLoad && mounted) setState(() => _isLoading = true);
     final res = await EmployeeService.getEmployees();
     if (!mounted) return;
     setState(() => _isLoading = false);

@@ -1,4 +1,4 @@
-const supabaseConfig = require('../config/supabase');
+﻿const supabaseConfig = require('../config/supabase');
 const { createClient } = require('@supabase/supabase-js');
 const admin = require('firebase-admin');
 
@@ -91,37 +91,40 @@ exports.logout = (req, res) => {
 
 exports.getDashboard = async (req, res) => {
   try {
-    let users = [];
-    let regEnabled = true;
+    const [usersResult, settingsResult, productsResult, statsResult] = await Promise.allSettled([
+      supabaseAdmin.auth.admin.listUsers(),
+      supabaseAdmin.from('app_settings').select('value').eq('key', 'registration_enabled').maybeSingle(),
+      supabaseAdmin.from('production_products').select('*, production_process_templates(*)').order('created_at', { ascending: true }),
+      Promise.all([
+        supabaseAdmin.from('items').select('id', { count: 'exact', head: true }),
+        supabaseAdmin.from('employees').select('id', { count: 'exact', head: true }),
+        supabaseAdmin.from('production_orders').select('id', { count: 'exact', head: true }),
+        supabaseAdmin.from('production_logs').select('id', { count: 'exact', head: true }),
+      ])
+    ]);
 
-    // Fetch users using admin API
-    try {
-      const { data, error } = await supabaseAdmin.auth.admin.listUsers();
+    // Extract users
+    let users = [];
+    if (usersResult.status === 'fulfilled') {
+      const { data, error } = usersResult.value;
       if (!error && data?.users) users = data.users;
-    } catch (e) {
-      console.warn('listUsers warning:', e.message);
+    } else {
+      console.warn('listUsers warning:', usersResult.reason?.message);
     }
 
-    // Fetch registration setting
-    try {
-      const { data: settingsData } = await supabaseAdmin
-        .from('app_settings')
-        .select('value')
-        .eq('key', 'registration_enabled')
-        .maybeSingle();
+    // Extract registration setting
+    let regEnabled = true;
+    if (settingsResult.status === 'fulfilled') {
+      const { data: settingsData } = settingsResult.value;
       if (settingsData) {
         regEnabled = settingsData.value === 'true' || settingsData.value === true;
       }
-    } catch (e) {}
+    }
 
-    // Fetch Product Types & Recipes
+    // Extract products
     let products = [];
-    try {
-      const { data: dbProducts } = await supabaseAdmin
-        .from('production_products')
-        .select('*, production_process_templates(*)')
-        .order('created_at', { ascending: true });
-
+    if (productsResult.status === 'fulfilled') {
+      const { data: dbProducts } = productsResult.value;
       if (dbProducts && dbProducts.length > 0) {
         products = dbProducts.map(p => ({
           ...p,
@@ -130,24 +133,19 @@ exports.getDashboard = async (req, res) => {
       } else {
         products = DEFAULT_PRODUCTS;
       }
-    } catch (e) {
+    } else {
       products = DEFAULT_PRODUCTS;
     }
 
-    // Fetch Live Database Stats
+    // Extract stats
     const stats = { items: 0, employees: 0, orders: 0, logs: 0 };
-    try {
-      const [itRes, empRes, ordRes, logRes] = await Promise.all([
-        supabaseAdmin.from('items').select('id', { count: 'exact', head: true }),
-        supabaseAdmin.from('employees').select('id', { count: 'exact', head: true }),
-        supabaseAdmin.from('production_orders').select('id', { count: 'exact', head: true }),
-        supabaseAdmin.from('production_logs').select('id', { count: 'exact', head: true })
-      ]);
+    if (statsResult.status === 'fulfilled') {
+      const [itRes, empRes, ordRes, logRes] = statsResult.value;
       stats.items = itRes.count || 0;
       stats.employees = empRes.count || 0;
       stats.orders = ordRes.count || 0;
       stats.logs = logRes.count || 0;
-    } catch (e) {}
+    }
 
     const successMsg = req.query.success || null;
     const errorMsg = req.query.error || null;
@@ -257,7 +255,7 @@ exports.sendNotification = async (req, res) => {
   }
 };
 
-// ─── PRODUCTION PRODUCTS & STEPS MANAGEMENT ──────────────────────────────────
+// â”€â”€â”€ PRODUCTION PRODUCTS & STEPS MANAGEMENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 exports.addProductType = async (req, res) => {
   try {
     const { product_name, category, color, steps_text } = req.body;
@@ -325,7 +323,7 @@ exports.deleteProductType = async (req, res) => {
   }
 };
 
-// ─── FACTORY MASTER RESET & CLEAN WIPE ───────────────────────────────────────
+// â”€â”€â”€ FACTORY MASTER RESET & CLEAN WIPE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 exports.masterWipe = async (req, res) => {
   try {
     const { confirm_phrase, wipe_users } = req.body;

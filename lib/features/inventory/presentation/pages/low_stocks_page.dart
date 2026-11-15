@@ -82,7 +82,8 @@ class LowStocksPageState extends State<LowStocksPage> {
   }
 
   Future<void> _fetchItems() async {
-    setState(() => _isLoading = true);
+    final isFirstLoad = _inventoryItems.isEmpty;
+    if (isFirstLoad) setState(() => _isLoading = true);
     final result = await InventoryService.getItems();
     if (result['success'] && mounted) {
       final List<dynamic> data = result['data'];

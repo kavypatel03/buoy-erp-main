@@ -103,7 +103,8 @@ class ProductionPageState extends State<ProductionPage>
   }
 
   Future<void> _fetchOrders() async {
-    if (mounted) setState(() => _isLoading = true);
+    final isFirstLoad = _orders.isEmpty;
+    if (isFirstLoad && mounted) setState(() => _isLoading = true);
     final res = await ProductionService.getOrders();
     if (mounted) {
       setState(() {
@@ -118,7 +119,12 @@ class ProductionPageState extends State<ProductionPage>
     final res = await ProductionService.getWastageReport(horizon: _selectedHorizon);
     if (mounted) {
       setState(() {
-        if (res['success']) _wastageReport = res['data'];
+        if (res['success'] && res['data'] != null) {
+          _wastageReport = res['data'];
+        } else if (!res['success'] && _wastageReport == null) {
+          // Only set null if we have no prior data
+          _wastageReport = null;
+        }
         _isLoading = false;
       });
     }
@@ -136,9 +142,16 @@ class ProductionPageState extends State<ProductionPage>
 
   // ─── Modals ─────────────────────────────────────────────────────────────────
 
-  void _showAddOrderModal() {
+  Future<void> _showAddOrderModal() async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     _batchCodeCtrl.text = 'Batch #${_orders.length + 1}';
+    if (_productTypes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Loading product types...'), duration: Duration(seconds: 1)),
+      );
+      await _fetchProductTypes();
+      if (!mounted) return;
+    }
     if (_productTypes.isNotEmpty && _selectedProductType == null) {
       _selectedProductType = _productTypes[0];
     }
@@ -359,23 +372,44 @@ class ProductionPageState extends State<ProductionPage>
     return AppColors.primary;
   }
 
-  void _showAddLogModal() {
+  Future<void> _showAddLogModal() async {
     _processNameCtrl.clear();
     _inputQtyCtrl.clear();
     _outputQtyCtrl.clear();
     _selectedItemId = null;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    if (_productTypes.isEmpty) {
+      await _fetchProductTypes();
+      if (!mounted) return;
+    }
+
     // Determine matching product recipe and pre-select the NEXT planned stage
     final orderTitle = _selectedOrder?['product_name']?.toString() ?? '';
     dynamic matchedProd;
-    for (final p in _productTypes) {
-      final pName = p['name']?.toString().toLowerCase() ?? '';
-      if (orderTitle.toLowerCase().contains(pName) || pName.contains(orderTitle.toLowerCase())) {
-        matchedProd = p;
-        break;
+    // First: match by product_id (most reliable)
+    final productId = _selectedOrder?['product_id']?.toString();
+    if (productId != null && productId.isNotEmpty) {
+      for (final p in _productTypes) {
+        if (p['id']?.toString() == productId) {
+          matchedProd = p;
+          break;
+        }
       }
     }
+    // Second: match by name substring
+    if (matchedProd == null) {
+      for (final p in _productTypes) {
+        final pName = p['name']?.toString().toLowerCase() ?? '';
+        // Strip batch code suffix (everything after " — ") before comparing
+        final cleanTitle = orderTitle.toLowerCase().split(' — ').first.trim();
+        if (cleanTitle.contains(pName) || pName.contains(cleanTitle) || cleanTitle == pName) {
+          matchedProd = p;
+          break;
+        }
+      }
+    }
+    // Fallback: use first product type
     if (matchedProd == null && _productTypes.isNotEmpty) {
       matchedProd = _productTypes[0];
     }
@@ -1037,7 +1071,7 @@ class ProductionPageState extends State<ProductionPage>
         break;
     }
 
-    final hasData = summary.isNotEmpty && (currentList.isNotEmpty || anomalies.isNotEmpty || (double.tryParse(summary['total_input']?.toString() ?? '0') ?? 0) > 0);
+    final hasData = _wastageReport != null && summary.isNotEmpty;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
