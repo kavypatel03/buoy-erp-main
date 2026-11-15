@@ -332,15 +332,24 @@
     .footer-note a:hover {
       text-decoration: underline;
     }
-    [data-lucide] {
+    [data-lucide], svg.lucide {
       width: 16px;
       height: 16px;
       stroke-width: 2.2;
       vertical-align: middle;
       display: inline-block;
+      flex-shrink: 0;
+      stroke: currentColor;
+      fill: none;
     }
   </style>
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Lucide Vector Icons (Multi-CDN with Failover) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.460.0/umd/lucide.min.js"></script>
+  <script>
+    if (!window.lucide) {
+      document.write('<script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"><\\/script>');
+    }
+  </script>
 </head>
 <body>
   <!-- Top Right Theme Toggle -->
@@ -405,6 +414,41 @@
   </div>
 
   <script>
+    const BUOY_LOGIN_SVGS = {
+      'sun': '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+      'moon': '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+      'alert-triangle': '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'
+    };
+
+    function renderIcons() {
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        try {
+          window.lucide.createIcons();
+          return;
+        } catch (_) {}
+      }
+      document.querySelectorAll('[data-lucide]').forEach(el => {
+        const name = el.getAttribute('data-lucide');
+        const inner = BUOY_LOGIN_SVGS[name];
+        if (inner) {
+          const cls = el.getAttribute('class') || '';
+          const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          svg.setAttribute('class', `lucide lucide-${name} ${cls}`.trim());
+          svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+          svg.setAttribute('width', '18');
+          svg.setAttribute('height', '18');
+          svg.setAttribute('viewBox', '0 0 24 24');
+          svg.setAttribute('fill', 'none');
+          svg.setAttribute('stroke', 'currentColor');
+          svg.setAttribute('stroke-width', '2.2');
+          svg.setAttribute('stroke-linecap', 'round');
+          svg.setAttribute('stroke-linejoin', 'round');
+          svg.innerHTML = inner;
+          el.parentNode.replaceChild(svg, el);
+        }
+      });
+    }
+
     function initTheme() {
       const current = document.documentElement.getAttribute('data-theme') || 'dark';
       updateThemeUI(current);
@@ -428,10 +472,12 @@
         if (icon) icon.innerHTML = '<i data-lucide="sun"></i>';
         if (text) text.textContent = 'Light';
       }
-      if (window.lucide) lucide.createIcons();
+      renderIcons();
     }
     initTheme();
-    if (window.lucide) lucide.createIcons();
+    renderIcons();
+    document.addEventListener('DOMContentLoaded', renderIcons);
+    window.addEventListener('load', renderIcons);
   </script>
 </body>
 </html>
