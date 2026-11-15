@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../app/constants/app_colors.dart';
+import '../../../../core/services/app_update_service.dart';
 import '../../../../core/widgets/download_app_dialog.dart';
 import '../../../../core/widgets/erp_bottom_nav_bar.dart';
 import '../../../dashboard/presentation/pages/dashboard_page.dart';
@@ -42,6 +43,9 @@ class _MainShellScreenState extends State<MainShellScreen> {
     if (_currentIndex != 0) {
       _tabHistory.add(_currentIndex);
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AppUpdateService.checkForUpdates(context);
+    });
   }
 
   @override

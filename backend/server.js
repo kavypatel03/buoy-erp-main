@@ -58,6 +58,18 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Backend is running' });
 });
 
+// App version & In-App Auto-Update endpoint
+app.get('/api/app/version', (req, res) => {
+  res.status(200).json({
+    latestVersion: '1.0.0',
+    buildNumber: 1,
+    releaseDate: new Date().toISOString(),
+    downloadUrl: 'https://buoy-erp.vercel.app/download/buoy-erp.apk',
+    releaseNotes: 'Continuous Over-The-Air updates enabled. Performance and recipe sync optimizations.',
+    forceUpdate: false
+  });
+});
+
 // Start the server (Only if not running in a serverless environment like Vercel)
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {

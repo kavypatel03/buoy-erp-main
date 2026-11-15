@@ -1,11 +1,11 @@
 {
-    "name": "final_project",
-    "short_name": "final_project",
+    "name": "Buoy ERP",
+    "short_name": "Buoy ERP",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#ffffff",
+    "background_color": "#0D0D14",
     "theme_color": "#5B3DF5",
-    "description": "A new Flutter project.",
+    "description": "Buoy Factory Cloud ERP",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
