@@ -1,4 +1,5 @@
-const admin = require('firebase-admin');
+const { initializeApp, cert, getApps, deleteApp } = require('firebase-admin/app');
+const { getMessaging } = require('firebase-admin/messaging');
 const supabaseAdmin = require('../config/supabase');
 const fs = require('fs');
 const path = require('path');
@@ -29,14 +30,19 @@ function parseServiceAccount(input) {
  * Initializes Firebase Admin SDK from:
  * 1. Explicit credentials passed
  * 2. process.env.FIREBASE_SERVICE_ACCOUNT (JSON string or base64)
- * 3. File backend/firebase-service-account.json
+ * 3. File in backend/ or root matching *firebase-adminsdk*.json
  * 4. Stored in Supabase app_settings (key: 'firebase_service_account')
  */
 async function initFirebase(customCreds = null) {
-  if (admin.apps.length > 0) {
-    isInitialized = true;
-    initError = null;
-    return true;
+  try {
+    const activeApps = getApps();
+    if (activeApps && activeApps.length > 0) {
+      isInitialized = true;
+      initError = null;
+      return true;
+    }
+  } catch (e) {
+    // getApps check error
   }
 
   let creds = null;
@@ -50,14 +56,21 @@ async function initFirebase(customCreds = null) {
     creds = parseServiceAccount(process.env.FIREBASE_SERVICE_ACCOUNT);
   }
 
-  // 2. Check local file
+  // 2. Check local file in backend or project root
   if (!creds) {
-    const filePath = path.join(__dirname, '../firebase-service-account.json');
-    if (fs.existsSync(filePath)) {
-      try {
-        creds = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-      } catch (e) {
-        console.warn('Failed to parse local firebase-service-account.json:', e.message);
+    const candidates = [
+      path.join(__dirname, '../firebase-service-account.json'),
+      path.join(__dirname, '../../buoy-erp-firebase-adminsdk-fbsvc-1eb002d928.json'),
+      path.join(process.cwd(), 'buoy-erp-firebase-adminsdk-fbsvc-1eb002d928.json'),
+      path.join(process.cwd(), 'backend/firebase-service-account.json')
+    ];
+
+    for (const p of candidates) {
+      if (fs.existsSync(p)) {
+        try {
+          creds = JSON.parse(fs.readFileSync(p, 'utf8'));
+          if (creds && creds.project_id) break;
+        } catch (_) {}
       }
     }
   }
@@ -75,24 +88,24 @@ async function initFirebase(customCreds = null) {
         creds = parseServiceAccount(data.value);
       }
     } catch (e) {
-      // Supabase not ready or offline
+      // Supabase table offline
     }
   }
 
   if (creds && creds.project_id && (creds.private_key || creds.client_email)) {
     try {
-      admin.initializeApp({
-        credential: admin.credential.cert(creds),
+      initializeApp({
+        credential: cert(creds),
         projectId: creds.project_id
       });
       isInitialized = true;
       initError = null;
-      console.log(`✅ Firebase Admin initialized successfully for project: ${creds.project_id}`);
+      console.log(`✅ Firebase Admin SDK connected to project: ${creds.project_id}`);
       return true;
     } catch (err) {
       isInitialized = false;
       initError = err.message;
-      console.error('❌ Firebase Admin initialization failed:', err.message);
+      console.error('❌ Firebase Admin initialization error:', err.message);
       return false;
     }
   }
@@ -102,7 +115,7 @@ async function initFirebase(customCreds = null) {
   return false;
 }
 
-// Automatically try initializing on module load
+// Auto-run on module import
 initFirebase().catch(() => {});
 
 /**
@@ -110,7 +123,6 @@ initFirebase().catch(() => {});
  */
 async function getPushStats() {
   if (!isInitialized) {
-    // Try one more time in case app_settings was updated
     await initFirebase();
   }
 
@@ -147,11 +159,11 @@ async function getPushStats() {
  */
 async function saveCredentials(jsonString) {
   const parsed = parseServiceAccount(jsonString);
-  if (!parsed || !parsed.project_id) {
+  if (!parsed || !parsed.project_id || !parsed.private_key) {
     throw new Error('Invalid Firebase service account JSON. Ensure it has "project_id" and "private_key".');
   }
 
-  // Persist to Supabase app_settings
+  // Persist to Supabase app_settings so it works across all Vercel instances instantly
   await supabaseAdmin
     .from('app_settings')
     .upsert({
@@ -160,12 +172,17 @@ async function saveCredentials(jsonString) {
       updated_at: new Date().toISOString()
     }, { onConflict: 'key' });
 
-  // Reinitialize Firebase
-  if (admin.apps.length > 0) {
-    await Promise.all(admin.apps.map(app => app.delete()));
-    isInitialized = false;
+  // Delete existing Firebase apps before re-initializing
+  try {
+    const activeApps = getApps();
+    if (activeApps && activeApps.length > 0) {
+      await Promise.all(activeApps.map(app => deleteApp(app)));
+    }
+  } catch (e) {
+    console.warn('Error clearing active Firebase apps:', e.message);
   }
 
+  isInitialized = false;
   return await initFirebase(parsed);
 }
 
@@ -240,7 +257,8 @@ async function sendPushNotification({ userIds = 'all', title, body, data = {} })
       tokens: tokens
     };
 
-    const response = await admin.messaging().sendEachForMulticast(payload);
+    const messaging = getMessaging();
+    const response = await messaging.sendEachForMulticast(payload);
     console.log(`[PushNotification] Result: ${response.successCount} succeeded, ${response.failureCount} failed.`);
 
     // Automatically prune dead / unregistered tokens

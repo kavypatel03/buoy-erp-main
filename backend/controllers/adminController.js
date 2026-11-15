@@ -1,6 +1,5 @@
 const supabaseConfig = require('../config/supabase');
 const { createClient } = require('@supabase/supabase-js');
-const admin = require('firebase-admin');
 const pushNotificationService = require('../services/pushNotificationService');
 
 // Create admin client bypassing RLS using SERVICE_ROLE_KEY if available
