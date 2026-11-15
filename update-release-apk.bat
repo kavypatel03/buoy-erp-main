@@ -44,3 +44,4 @@ echo   SUCCESS! Release APK updated and published.
 echo   Users downloading from the web will get this build!
 echo ========================================================
 pause
+
