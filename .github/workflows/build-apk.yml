@@ -47,7 +47,17 @@ jobs:
         run: flutter pub get
 
       - name: Build Release APK
-        run: flutter build apk --release --no-tree-shake-icons --android-skip-build-dependency-validation -v
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx3584m -XX:MaxMetaspaceSize=1024m'"
+        run: |
+          set -o pipefail
+          flutter build apk --release --no-tree-shake-icons --android-skip-build-dependency-validation 2>&1 | tee build_log.txt || {
+            echo "### ❌ Build Failure Log" >> $GITHUB_STEP_SUMMARY
+            echo '```text' >> $GITHUB_STEP_SUMMARY
+            tail -n 120 build_log.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit 1
+          }
 
       - name: Rename Release APK
         run: |
